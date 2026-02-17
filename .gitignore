@@ -1,0 +1,25 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno
+.env
+
+# Archivos personales (no subir al repo)
+CALENDARIO.md
+NOTAS_IMPLEMENTACION.md
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
