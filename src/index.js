@@ -1,12 +1,16 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
 const connectDB = require('./config/database');
 
 dotenv.config();
 connectDB();
 
 const app = express();
+
+// ── Ficheros estáticos (frontend) ─────────────────────────────────────────────
+app.use(express.static(path.join(__dirname, '../public')));
 
 // ── Middlewares ───────────────────────────────────────────────────────────────
 app.use(cors());
@@ -37,5 +41,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🍔 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(` Servidor corriendo en http://localhost:${PORT}`);
 });

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buena Burger — Pedidos Online</title>
+    <meta name="description"
+        content="Haz tu pedido online en Buena Burger. Hamburguesas smash 100% vacuno fresco. Viernes, Sábados y Domingos · 20:30–23:00">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- ═══════════════════════════ LANDING ═══════════════════════════════════ -->
+    <div id="page-landing" class="page page-active">
+        <div class="landing-corner landing-corner--left">
+            <button class="landing-action-btn" onclick="navegarA('carta')">PIDE AHORA</button>
+        </div>
+        <div class="landing-corner landing-corner--right">
+            <button class="landing-action-btn" id="btn-auth-landing" onclick="abrirAuth(event)">ACCEDER</button>
+        </div>
+
+        <div class="landing-logo" onclick="navegarA('landing')">
+            <img src="images/logo.png"
+                alt="Buena Burger" class="logo-img">
+        </div>
+
+        <nav class="landing-nav">
+            <a onclick="navegarA('carta')">CARTA</a>
+            <a onclick="navegarA('nosotros')">NOSOTROS</a>
+            <a onclick="navegarA('filosofia')">FILOSOFÍA</a>
+            <a onclick="navegarA('funcionamiento')">FUNCIONAMIENTO</a>
+        </nav>
+    </div>
+
+    <!-- ═══════════════════════════ PÁGINAS INTERNAS ══════════════════════════ -->
+
+    <!-- Shared sticky header for all inner pages -->
+    <template id="tpl-header">
+        <header class="sticky-header">
+            <button class="sh-back" onclick="navegarA('landing')">
+                <img src="images/logo.png"
+                    alt="Buena Burger" class="sh-logo-img">
+            </button>
+            <nav class="sh-nav">
+                <a class="sh-link" onclick="navegarA('carta')">CARTA</a>
+                <a class="sh-link" onclick="navegarA('nosotros')">NOSOTROS</a>
+                <a class="sh-link" onclick="navegarA('filosofia')">FILOSOFÍA</a>
+                <a class="sh-link" onclick="navegarA('funcionamiento')">FUNCIONAMIENTO</a>
+            </nav>
+            <div class="sh-actions">
+                <button class="sh-action-btn" id="btn-auth-header" onclick="abrirAuth(event)">ACCEDER</button>
+                <button class="sh-carrito-btn" onclick="abrirCarrito()">🛒 <span
+                        id="carrito-count-header">0</span></button>
+            </div>
+        </header>
+    </template>
+
+    <!-- ── CARTA ─────────────────────────────────────────────────────────────── -->
+    <div id="page-carta" class="page">
+        <div class="page-header-slot"></div>
+        <div class="page-body">
+            <div class="page-inner">
+                <h1 class="page-title">CARTA</h1>
+                <p class="page-intro">Todas nuestras hamburguesas son de carne 100% de vacuno fresca. Nuestro pan es un
+                    brioche tierno con un toque de sabor a mantequilla, nuestras salsas son todas caseras y nuestro
+                    bacon es el más crujiente y sabroso que vas a probar.</p>
+                <div class="categoria-tabs">
+                    <button class="tab active" onclick="filtrarCategoria('all', this)">TODO</button>
+                    <button class="tab" onclick="filtrarCategoria('HAMBURGUESA', this)">HAMBURGUESAS</button>
+                    <button class="tab" onclick="filtrarCategoria('PATATAS', this)">PATATAS</button>
+                    <button class="tab" onclick="filtrarCategoria('BEBIDA', this)">BEBIDAS</button>
+                </div>
+                <div class="productos-lista" id="productos-grid">
+                    <p class="lista-loading">Cargando carta...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── NOSOTROS ───────────────────────────────────────────────────────────── -->
+    <div id="page-nosotros" class="page">
+        <div class="page-header-slot"></div>
+        <div class="page-body page-nosotros-body">
+            <div class="page-inner">
+                <h1 class="page-title">NOSOTROS</h1>
+                <p class="page-lead">Lo que te imaginas cuando piensas en <em>Hamburguesa</em> o literalmente, en una
+                    <strong>'buena burger'</strong>.
+                </p>
+                <p class="page-text-red">Sin más pretensiones que hacerte disfrutar de un bocado sencillo en el que el
+                    sabor es el protagonista. Sin lotus, mermeladas ni inventos raros desde 2022. Querrás volver una vez
+                    que la pruebes y no sabrás por qué&nbsp;;)</p>
+            </div>
+            <div class="nosotros-burger-block">🍔</div>
+        </div>
+    </div>
+
+    <!-- ── FILOSOFÍA ──────────────────────────────────────────────────────────── -->
+    <div id="page-filosofia" class="page">
+        <div class="page-header-slot"></div>
+        <div class="page-body">
+            <div class="page-inner">
+                <h1 class="page-title">FILOSOFÍA</h1>
+            </div>
+            <div class="filosofia-body">
+                <p>Nacimos de la necesidad de traer a Cantabria <strong>un estilo de hamburguesa fresco y
+                        honesto</strong>, que rescata los sabores sencillos y las técnicas americanas originales,
+                    consiguiendo un producto que funciona por una razón muy sencilla: <strong>su sabor a
+                        hamburguesa</strong>.</p>
+                <p>A diferencia de otras cadenas o burgers que tratan de sorprender al cliente con ingredientes
+                    extraordinarios y mezclas poco convencionales, <strong>nosotros nos centramos en perfeccionar al
+                        máximo la técnica con los ingredientes tradicionales</strong>, que para nosotros son ya
+                    suficientes para conseguir un resultado increíble. Y nuestros clientes hablan por sí mismos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── FUNCIONAMIENTO ─────────────────────────────────────────────────────── -->
+    <div id="page-funcionamiento" class="page">
+        <div class="page-header-slot"></div>
+        <div class="page-body page-func-body">
+            <div class="page-inner">
+                <h1 class="page-title page-title--white">FUNCIONAMIENTO</h1>
+                <p class="page-text-white">Toda buena burger antes de ser comida, necesita ser entregada a un cliente
+                    hambriento y en nuestro caso si el hambre es inaguantable estará de suerte: <strong>Nos
+                        comprometemos a entregar los pedidos siempre a la hora acordada, ni un minuto más o un minuto
+                        menos.</strong></p>
+                <p class="page-text-white">Con esto somos muy estrictos porque creemos que de nada sirve tener un
+                    producto de calidad si a esto no lo acompaña el servicio. Puedes contactarnos 24/7 vía What's App o
+                    llamarnos en horario de apertura.</p>
+                <div class="func-pills">
+                    <span class="func-pill">📅 Viernes · Sábados · Domingos</span>
+                    <span class="func-pill">🕗 20:30 — 23:00</span>
+                    <span class="func-pill">📍 Barrio Argés 2 · Oruña de Piélagos · Cantabria</span>
+                    <span class="func-pill">📞 659 295 700</span>
+                </div>
+                <button class="func-pedido-btn" onclick="navegarA('carta')">HACER PEDIDO ONLINE →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════ FOOTER ═══════════════════════════════════ -->
+    <footer class="footer" id="footer" style="display:none">
+        <div class="footer-inner">
+            <span>📸 <a href="https://www.instagram.com/buenaburgerbb/" target="_blank">@buenaburgerbb</a></span>
+            <span>📞 659 295 700</span>
+            <span>📍 Barrio Argés 2 · Oruña de Piélagos (Cantabria)</span>
+            <span>🕗 Viernes–domingo · 20:30–23:00</span>
+        </div>
+    </footer>
+
+    <!-- ═══════════════════════════ MODALES ══════════════════════════════════ -->
+    <div class="modal-overlay" id="modal-producto" onclick="cerrarModal('modal-producto')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="cerrarModal('modal-producto')">✕</button>
+            <div id="modal-producto-content"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-carrito" onclick="cerrarModal('modal-carrito')">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="cerrarModal('modal-carrito')">✕</button>
+            <h2 class="modal-title">🛒 Tu pedido</h2>
+            <div id="carrito-items"></div>
+            <div id="carrito-footer"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-checkout" onclick="cerrarModal('modal-checkout')">
+        <div class="modal modal-checkout" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="cerrarModal('modal-checkout')">✕</button>
+            <h2 class="modal-title">Completar pedido</h2>
+            <div id="checkout-content"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-auth" onclick="cerrarModal('modal-auth')">
+        <div class="modal modal-auth" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="cerrarModal('modal-auth')">✕</button>
+            <div id="auth-content"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <div id="carrito-count" style="display:none">0</div>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
