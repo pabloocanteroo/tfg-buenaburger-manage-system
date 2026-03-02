@@ -173,7 +173,7 @@ function abrirModalProducto(productoId) {
 
         ${prod.categoria !== 'BEBIDA' ? `
         <div class="opcion-grupo">
-            <span class="opcion-label">✅ Añadir salsas gratis</span>
+            <span class="opcion-label">✅ Añadir salsas</span>
             <div class="opcion-chips">
                 ${extras.filter(e => e.precio === 0).map(e => `
                     <div class="chip anadir" onclick="toggleChip(this, 'anadidos', '${e.nombre}')">${e.nombre}</div>
@@ -181,7 +181,7 @@ function abrirModalProducto(productoId) {
             </div>
         </div>
         <div class="opcion-grupo">
-            <span class="opcion-label">⭐ Extras de pago</span>
+            <span class="opcion-label">⭐ Extras</span>
             <div class="extras-lista">
                 ${extras.filter(e => e.precio > 0).map(e => `
                     <div class="extra-item">
@@ -226,6 +226,7 @@ function ajustarExtra(el, id, nombre, precio, delta) {
 
     currentQty += delta;
     if (currentQty < 0) currentQty = 0;
+    if (currentQty > 10) currentQty = 10;
 
     // Actualizar span visual
     spanInfo.textContent = currentQty;
