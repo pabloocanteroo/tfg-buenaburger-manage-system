@@ -1,0 +1,648 @@
+/* ─────────────────────────────────────────────
+   admin.css — Panel de Administración
+   Buena Burger Management System
+───────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --rojo: #E32A2A;
+    --rojo-dark: #B71C1C;
+    --blanco: #FFFFFF;
+    --gris-bg: #F5F5F5;
+    --gris-borde: #E0E0E0;
+    --gris-texto: #666;
+    --verde: #2E7D32;
+    --verde-bg: #E8F5E9;
+    --rojo-bg: #FFEBEE;
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+    --radio: 10px;
+    --font: 'Barlow', sans-serif;
+    --font-cond: 'Barlow Condensed', sans-serif;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--gris-bg);
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────── */
+.adm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--blanco);
+    border-bottom: 3px solid var(--rojo);
+    padding: 0 24px;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--sombra);
+}
+
+.adm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.adm-logo {
+    height: 40px;
+    object-fit: contain;
+}
+
+.adm-title {
+    font-family: var(--font-cond);
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--rojo);
+    text-transform: uppercase;
+}
+
+.adm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.badge-rol {
+    background: var(--rojo);
+    color: var(--blanco);
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: .75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+}
+
+.btn-nav {
+    text-decoration: none;
+    background: var(--gris-bg);
+    color: #333;
+    border: 1.5px solid var(--gris-borde);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.btn-nav:hover {
+    background: #eee;
+}
+
+.btn-salir {
+    background: var(--rojo);
+    color: var(--blanco);
+    border: none;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: .9rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.btn-salir:hover {
+    background: var(--rojo-dark);
+}
+
+/* ── Layout ─────────────────────────────────── */
+.adm-body {
+    display: flex;
+    flex: 1;
+    min-height: calc(100vh - 64px);
+}
+
+/* ── Sidebar ─────────────────────────────────── */
+.adm-sidebar {
+    width: 180px;
+    background: var(--blanco);
+    border-right: 1px solid var(--gris-borde);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 10px;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 10px 14px;
+    border-radius: var(--radio);
+    font-family: var(--font);
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--gris-texto);
+    cursor: pointer;
+    text-align: left;
+    transition: all .2s;
+}
+
+.nav-btn:hover {
+    background: var(--gris-bg);
+    color: #222;
+}
+
+.nav-btn.active {
+    background: var(--rojo-bg);
+    color: var(--rojo);
+}
+
+.nav-icon {
+    font-size: 1.1rem;
+}
+
+/* ── Main ─────────────────────────────────────── */
+.adm-main {
+    flex: 1;
+    padding: 28px 32px;
+    overflow-y: auto;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ── Sección header ──────────────────────────── */
+.seccion-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.seccion-header h1 {
+    font-family: var(--font-cond);
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #1a1a1a;
+    letter-spacing: .5px;
+}
+
+.seccion-sub {
+    color: var(--gris-texto);
+    font-size: .9rem;
+    margin-top: 4px;
+}
+
+/* ── Navegación de mes ────────────────────────── */
+.mes-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--blanco);
+    border: 1.5px solid var(--gris-borde);
+    border-radius: var(--radio);
+    padding: 6px 14px;
+}
+
+.btn-mes {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: var(--rojo);
+    line-height: 1;
+    padding: 0 4px;
+    transition: transform .15s;
+}
+
+.btn-mes:hover {
+    transform: scale(1.3);
+}
+
+.btn-mes:disabled {
+    color: #ccc;
+    cursor: default;
+}
+
+.mes-label {
+    font-family: var(--font-cond);
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 130px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ── Leyenda ─────────────────────────────────── */
+.leyenda {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .85rem;
+    color: var(--gris-texto);
+    font-weight: 600;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.abierto {
+    background: var(--verde);
+}
+
+.dot.cerrado {
+    background: var(--rojo);
+}
+
+/* ── Grid calendario ────────────────────────── */
+.grid-calendario {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.loading-calendario {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--gris-texto);
+    padding: 40px;
+    font-size: .95rem;
+}
+
+/* ── Tarjeta de día ─────────────────────────── */
+.dia-card {
+    background: var(--blanco);
+    border: 2px solid var(--gris-borde);
+    border-radius: var(--radio);
+    padding: 16px;
+    box-shadow: var(--sombra);
+    transition: transform .15s, box-shadow .15s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dia-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.dia-card.abierto {
+    border-color: var(--verde);
+}
+
+.dia-card.cerrado {
+    border-color: var(--rojo);
+    background: var(--rojo-bg);
+}
+
+.dia-fecha {
+    font-family: var(--font-cond);
+    font-weight: 900;
+    font-size: 1.1rem;
+    color: #1a1a1a;
+    letter-spacing: .5px;
+}
+
+.dia-diaSemana {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--gris-texto);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: -6px;
+}
+
+.dia-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    width: fit-content;
+}
+
+.dia-badge.abierto {
+    background: var(--verde-bg);
+    color: var(--verde);
+}
+
+.dia-badge.cerrado {
+    background: var(--rojo-bg);
+    color: var(--rojo);
+}
+
+.dia-info {
+    font-size: .82rem;
+    color: var(--gris-texto);
+}
+
+.btn-toggle {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: .9rem;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+}
+
+.btn-toggle:active {
+    transform: scale(.97);
+}
+
+.btn-toggle.cerrar {
+    background: var(--rojo);
+    color: var(--blanco);
+}
+
+.btn-toggle.cerrar:hover {
+    background: var(--rojo-dark);
+}
+
+.btn-toggle.abrir {
+    background: var(--verde);
+    color: var(--blanco);
+}
+
+.btn-toggle.abrir:hover {
+    background: #1b5e20;
+}
+
+/* ── Stats ───────────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.stat-card {
+    background: var(--blanco);
+    border: 1.5px solid var(--gris-borde);
+    border-radius: var(--radio);
+    padding: 24px;
+    text-align: center;
+    box-shadow: var(--sombra);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.stat-valor {
+    font-family: var(--font-cond);
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--rojo);
+}
+
+.stat-label {
+    font-size: .85rem;
+    color: var(--gris-texto);
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+/* ── Toast ───────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1a1a1a;
+    color: var(--blanco);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.toast.verde {
+    background: var(--verde);
+}
+
+.toast.rojo {
+    background: var(--rojo);
+}
+
+.toast.visible {
+    opacity: 1;
+}
+
+/* ── Sección empleados ───────────────────────── */
+.emp-form-card {
+    background: var(--blanco);
+    border: 1.5px solid var(--gris-borde);
+    border-radius: var(--radio);
+    padding: 24px;
+    box-shadow: var(--sombra);
+    margin-bottom: 24px;
+}
+
+.emp-form-titulo {
+    font-family: var(--font-cond);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 16px;
+}
+
+.emp-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+}
+
+@media (max-width: 900px) {
+    .emp-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-group--btn {
+        grid-column: 1/-1;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.form-group input {
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: .9rem;
+    font-family: var(--font);
+    outline: none;
+    transition: border .2s;
+}
+
+.form-group input:focus {
+    border-color: var(--rojo);
+}
+
+.btn-crear-emp {
+    background: var(--rojo);
+    color: var(--blanco);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: .95rem;
+    letter-spacing: .5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s;
+    width: 100%;
+}
+
+.btn-crear-emp:hover {
+    background: var(--rojo-dark);
+}
+
+.emp-form-error {
+    color: var(--rojo);
+    font-size: .85rem;
+    margin-top: 8px;
+    font-weight: 600;
+}
+
+.emp-lista-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.emp-lista-header h2 {
+    font-family: var(--font-cond);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.btn-refresh {
+    background: var(--gris-bg);
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.btn-refresh:hover {
+    background: #e0e0e0;
+}
+
+.lista-empleados {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.empleado-card {
+    background: var(--blanco);
+    border: 1.5px solid var(--gris-borde);
+    border-radius: var(--radio);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--sombra);
+    gap: 12px;
+}
+
+.empleado-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.empleado-nombre {
+    font-weight: 700;
+    font-size: .95rem;
+}
+
+.empleado-email {
+    font-size: .82rem;
+    color: var(--gris-texto);
+}
+
+.btn-baja {
+    background: none;
+    border: 1.5px solid var(--rojo);
+    color: var(--rojo);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+}
+
+.btn-baja:hover {
+    background: var(--rojo);
+    color: var(--blanco);
+}

@@ -47,17 +47,6 @@ const validarExtra = [
     validar
 ];
 
-// ── Bloques ───────────────────────────────────────────────────────────────────
-const validarGenerarBloques = [
-    body('fecha')
-        .matches(/^\d{4}-\d{2}-\d{2}$/)
-        .withMessage('Formato de fecha inválido. Usa YYYY-MM-DD'),
-    body('horaInicio').optional().matches(/^\d{2}:\d{2}$/).withMessage('Formato de hora inválido. Usa HH:MM'),
-    body('horaFin').optional().matches(/^\d{2}:\d{2}$/).withMessage('Formato de hora inválido. Usa HH:MM'),
-    body('intervaloMin').optional().isInt({ min: 1, max: 60 }).withMessage('El intervalo debe estar entre 1 y 60 minutos'),
-    body('capacidadMax').optional().isInt({ min: 1 }).withMessage('La capacidad debe ser al menos 1'),
-    validar
-];
 
 const validarQueryFecha = [
     query('fecha')
@@ -107,7 +96,6 @@ module.exports = {
     validarLogin,
     validarProducto,
     validarExtra,
-    validarGenerarBloques,
     validarQueryFecha,
     validarCrearPedido,
     validarCrearPedidoTelefonico,

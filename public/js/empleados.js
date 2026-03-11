@@ -54,13 +54,27 @@ function renderBloques() {
         return;
     }
 
+    // Si TODOS los bloques están cerrados → banner de día cerrado
+    const todoCerrado = bloques.every(b => b.cerrado);
+    if (todoCerrado) {
+        cont.innerHTML = `
+            <div class="dia-cerrado-banner">
+                <div class="dia-cerrado-icon">🔒</div>
+                <div class="dia-cerrado-texto">Este día está cerrado</div>
+                <div class="dia-cerrado-sub">El administrador ha desactivado este día de operación. No se pueden crear ni recibir pedidos.</div>
+            </div>`;
+        return;
+    }
+
     cont.innerHTML = bloques.map(b => {
         const libre = b.capacidadMax - b.hamburgesasOcupadas;
         const pct = Math.min(100, Math.round((b.hamburgesasOcupadas / b.capacidadMax) * 100));
         const forzado = b.hamburgesasOcupadas > b.capacidadMax;
 
         let estadoClass, estadoLabel, barraClass;
-        if (forzado) {
+        if (b.cerrado) {
+            estadoClass = 'estado-lleno'; estadoLabel = '🔒 Cerrado'; barraClass = 'barra-roja';
+        } else if (forzado) {
             estadoClass = 'estado-forzado'; estadoLabel = '⚡Forzado'; barraClass = 'barra-roja';
         } else if (pct >= 100) {
             estadoClass = 'estado-lleno'; estadoLabel = 'LLENO'; barraClass = 'barra-roja';
@@ -72,8 +86,9 @@ function renderBloques() {
 
         const numPedidos = pedidos.filter(p => p.bloques.some(bl => bl._id === b._id || bl === b._id)).length;
         const selected = bloqueSeleccionado === b._id ? ' selected' : '';
+        const clickable = !b.cerrado;
 
-        return `<div class="bloque-card${selected}" onclick="seleccionarBloque('${b._id}', '${b.horaInicio}')">
+        return `<div class="bloque-card${selected}${b.cerrado ? ' bloque-cerrado' : ''}" ${clickable ? `onclick="seleccionarBloque('${b._id}', '${b.horaInicio}')"` : ''}>
             <div class="bloque-card-top">
                 <span class="bloque-hora">${b.horaInicio}</span>
                 <span class="bloque-estado ${estadoClass}">${estadoLabel}</span>
@@ -85,6 +100,7 @@ function renderBloques() {
         </div>`;
     }).join('');
 }
+
 
 // ══ Seleccionar Bloque ═══════════════════════════════════════════════════════
 function seleccionarBloque(id, hora) {

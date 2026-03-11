@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin | Buena Burger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+
+    <!-- ── Header ────────────────────────────────────────────── -->
+    <header class="adm-header">
+        <div class="adm-header-left">
+            <img src="images/logo_clean.png" alt="Buena Burger" class="adm-logo">
+            <span class="adm-title">PANEL DE ADMINISTRACIÓN</span>
+        </div>
+        <div class="adm-header-right">
+            <span id="adm-nombre">Cargando...</span>
+            <span class="badge-rol">ADMIN</span>
+            <a href="/empleados.html" class="btn-nav">👥 Empleados</a>
+            <button class="btn-salir" onclick="cerrarSesion()">SALIR</button>
+        </div>
+    </header>
+
+    <div class="adm-body">
+
+        <!-- ── Sidebar de navegación ────────────────────────── -->
+        <nav class="adm-sidebar">
+            <button class="nav-btn active" id="btn-tab-calendario" onclick="cambiarTab('calendario')">
+                <span class="nav-icon">📅</span>
+                <span>Calendario</span>
+            </button>
+            <button class="nav-btn" id="btn-tab-empleados" onclick="cambiarTab('empleados')">
+                <span class="nav-icon">👥</span>
+                <span>Empleados</span>
+            </button>
+            <button class="nav-btn" id="btn-tab-estadisticas" onclick="cambiarTab('estadisticas')">
+                <span class="nav-icon">📊</span>
+                <span>Estadísticas</span>
+            </button>
+        </nav>
+
+        <!-- ── Contenido principal ─────────────────────────── -->
+        <main class="adm-main">
+
+            <!-- TAB: Calendario de días operativos -->
+            <section id="tab-calendario" class="tab-content active">
+
+                <div class="seccion-header">
+                    <div>
+                        <h1>Calendario operativo</h1>
+                        <p class="seccion-sub">Abre o cierra los días de servicio (viernes, sábados y domingos)</p>
+                    </div>
+                    <div class="mes-nav">
+                        <button class="btn-mes" id="btn-mes-ant" onclick="cambiarMes(-1)">&#8249;</button>
+                        <span id="mes-label" class="mes-label">Cargando...</span>
+                        <button class="btn-mes" id="btn-mes-sig" onclick="cambiarMes(1)">&#8250;</button>
+                    </div>
+                </div>
+
+                <!-- Leyenda -->
+                <div class="leyenda">
+                    <span class="leyenda-item"><span class="dot abierto"></span> Abierto</span>
+                    <span class="leyenda-item"><span class="dot cerrado"></span> Cerrado</span>
+                </div>
+
+                <!-- Grid del calendario -->
+                <div id="grid-calendario" class="grid-calendario">
+                    <div class="loading-calendario">Cargando calendario...</div>
+                </div>
+
+            </section>
+
+            <!-- TAB: Empleados -->
+            <section id="tab-empleados" class="tab-content" style="display:none">
+                <div class="seccion-header">
+                    <div>
+                        <h1>Gestión de empleados</h1>
+                        <p class="seccion-sub">Crea y gestiona las cuentas del personal</p>
+                    </div>
+                </div>
+
+                <!-- Formulario crear empleado -->
+                <div class="emp-form-card">
+                    <h2 class="emp-form-titulo">Nuevo empleado</h2>
+                    <div class="emp-form-grid">
+                        <div class="form-group">
+                            <label>Nombre *</label>
+                            <input type="text" id="emp-nuevo-nombre" placeholder="Nombre del empleado">
+                        </div>
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" id="emp-nuevo-email" placeholder="empleado@buenaburger.es">
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña *</label>
+                            <input type="password" id="emp-nuevo-pass" placeholder="Mínimo 6 caracteres">
+                        </div>
+                        <div class="form-group form-group--btn">
+                            <button class="btn-crear-emp" onclick="crearEmpleado()">➕ Crear empleado</button>
+                        </div>
+                    </div>
+                    <p id="emp-form-error" class="emp-form-error" style="display:none"></p>
+                </div>
+
+                <!-- Lista empleados -->
+                <div class="emp-lista-header">
+                    <h2>Empleados activos</h2>
+                    <button class="btn-refresh" onclick="cargarEmpleados()">↻ Actualizar</button>
+                </div>
+                <div id="lista-empleados" class="lista-empleados">
+                    <div class="loading-calendario">Cargando empleados...</div>
+                </div>
+            </section>
+
+            <!-- TAB: Estadísticas -->
+            <section id="tab-estadisticas" class="tab-content" style="display:none">
+                <div class="seccion-header">
+                    <div>
+                        <h1>Estadísticas</h1>
+                        <p class="seccion-sub">Resumen del negocio</p>
+                    </div>
+                </div>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-valor" id="stat-pedidos">—</div>
+                        <div class="stat-label">Pedidos totales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💶</div>
+                        <div class="stat-valor" id="stat-ingresos">—</div>
+                        <div class="stat-label">Ingresos (pagos online)</div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ── Toast ── -->
+    <div id="toast" class="toast"></div>
+
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

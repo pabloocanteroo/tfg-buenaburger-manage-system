@@ -3,9 +3,10 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/database');
+const { iniciarScheduler } = require('./services/bloqueScheduler');
 
 dotenv.config();
-connectDB();
+connectDB().then(() => iniciarScheduler());
 
 const app = express();
 

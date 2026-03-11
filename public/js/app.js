@@ -436,7 +436,17 @@ async function cargarBloquesFecha(fecha) {
     try {
         const data = await apiFetch(`/bloques?fecha=${fecha}`);
         bloques = data.bloques;
-        grid.innerHTML = bloques.map(b => {
+
+        const todoCerrado = bloques.length > 0 && bloques.every(b => b.cerrado);
+        if (todoCerrado) {
+            grid.innerHTML = `<p style="color:var(--rojo);grid-column:1/-1;padding:18px 0;text-align:center;font-weight:700;">
+                🔒 Este día está cerrado. No se admiten pedidos.
+            </p>`;
+            return;
+        }
+
+        const disponibles = bloques.filter(b => !b.cerrado);
+        grid.innerHTML = disponibles.map(b => {
             const lleno = b.hamburgesasOcupadas >= b.capacidadMax || b.cerrado;
             return `
                 <button class="bloque-btn${lleno ? '' : ''}"
@@ -600,8 +610,12 @@ async function loginCliente() {
         const nombre = data.cliente?.nombre || data.usuario?.nombre || 'Usuario';
         const rol = data.usuario?.rol || 'CLIENTE';
 
-        // Staff → panel de empleados
-        if (rol === 'ADMIN' || rol === 'EMPLEADO') {
+        // Staff → cada rol a su panel
+        if (rol === 'ADMIN') {
+            window.location.href = '/admin.html';
+            return;
+        }
+        if (rol === 'EMPLEADO') {
             window.location.href = '/empleados.html';
             return;
         }

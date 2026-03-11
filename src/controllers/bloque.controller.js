@@ -10,27 +10,44 @@ exports.getBloques = async (req, res) => {
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
-// POST /api/bloques/generar  — genera bloques de un día (admin)
-exports.generarBloques = async (req, res) => {
+// GET /api/bloques/dias-operativos?meses=2
+// Devuelve un resumen por día de los próximos N meses (solo vie/sáb/dom)
+exports.getDiasOperativos = async (req, res) => {
     try {
-        const { fecha, horaInicio = '20:30', horaFin = '23:00', intervaloMin = 5, capacidadMax = 10 } = req.body;
-        if (!fecha) return res.status(400).json({ ok: false, mensaje: 'Campo fecha requerido' });
+        const meses = parseInt(req.query.meses) || 2;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fin = new Date(hoy);
+        fin.setDate(hoy.getDate() + meses * 30);
 
-        const bloques = [];
-        let [h, m] = horaInicio.split(':').map(Number);
-        const [hFin, mFin] = horaFin.split(':').map(Number);
+        const fechaInicio = hoy.toISOString().slice(0, 10);
+        const fechaFin = fin.toISOString().slice(0, 10);
 
-        while (h * 60 + m < hFin * 60 + mFin) {
-            const ini = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            m += intervaloMin;
-            if (m >= 60) { h++; m -= 60; }
-            const fin = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-            bloques.push({ fecha, horaInicio: ini, horaFin: fin, capacidadMax });
+        // Obtener todos los bloques en el rango
+        const bloques = await BloqueProduccion.find({
+            fecha: { $gte: fechaInicio, $lte: fechaFin }
+        }).select('fecha cerrado');
+
+        // Agrupar por fecha
+        const mapaFechas = {};
+        for (const b of bloques) {
+            if (!mapaFechas[b.fecha]) {
+                mapaFechas[b.fecha] = { total: 0, cerrados: 0 };
+            }
+            mapaFechas[b.fecha].total++;
+            if (b.cerrado) mapaFechas[b.fecha].cerrados++;
         }
 
-        // insertMany con ordered:false para saltar duplicados
-        const resultado = await BloqueProduccion.insertMany(bloques, { ordered: false }).catch(e => e);
-        res.status(201).json({ ok: true, mensaje: `Bloques generados para ${fecha}`, total: bloques.length });
+        const dias = Object.entries(mapaFechas)
+            .map(([fecha, info]) => ({
+                fecha,
+                totalBloques: info.total,
+                bloquesCerrados: info.cerrados,
+                diaCerrado: info.cerrados === info.total && info.total > 0
+            }))
+            .sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+        res.json({ ok: true, total: dias.length, dias });
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
@@ -47,7 +64,18 @@ exports.cerrarBloque = async (req, res) => {
 exports.cerrarDia = async (req, res) => {
     try {
         const { fecha } = req.body;
-        await BloqueProduccion.updateMany({ fecha, cerrado: false }, { cerrado: true });
-        res.json({ ok: true, mensaje: `Todos los bloques de ${fecha} cerrados` });
+        if (!fecha) return res.status(400).json({ ok: false, mensaje: 'Campo fecha requerido' });
+        const resultado = await BloqueProduccion.updateMany({ fecha }, { cerrado: true });
+        res.json({ ok: true, mensaje: `Todos los bloques de ${fecha} cerrados`, modificados: resultado.modifiedCount });
+    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+};
+
+// POST /api/bloques/abrir-dia
+exports.abrirDia = async (req, res) => {
+    try {
+        const { fecha } = req.body;
+        if (!fecha) return res.status(400).json({ ok: false, mensaje: 'Campo fecha requerido' });
+        const resultado = await BloqueProduccion.updateMany({ fecha }, { cerrado: false });
+        res.json({ ok: true, mensaje: `Todos los bloques de ${fecha} abiertos`, modificados: resultado.modifiedCount });
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
