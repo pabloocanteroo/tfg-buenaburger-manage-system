@@ -18,6 +18,8 @@ const contarHamburguesas = (lineas, productos) => {
  * Si algo falla ANTES de actualizar los bloques, lanza error sin efectos secundarios.
  */
 const reservarBloques = async (bloqueInicialId, numHamburguesas, forzar = false) => {
+    if (numHamburguesas <= 0) return [];
+
     const bloqueInicial = await BloqueProduccion.findById(bloqueInicialId);
     if (!bloqueInicial) throw new Error('Bloque no encontrado');
 
@@ -31,6 +33,7 @@ const reservarBloques = async (bloqueInicialId, numHamburguesas, forzar = false)
     const seleccionados = bloquesDelDia.slice(idx, idx + bloquesNecesarios);
     if (seleccionados.length < bloquesNecesarios) throw new Error('No hay suficientes bloques consecutivos disponibles');
 
+    // Si NO se fuerza, verificar que haya hueco en cada bloque seleccionado
     if (!forzar) {
         for (const b of seleccionados) {
             if (b.hamburgesasOcupadas >= b.capacidadMax)
@@ -38,19 +41,20 @@ const reservarBloques = async (bloqueInicialId, numHamburguesas, forzar = false)
         }
     }
 
-    // Actualizar bloques y guardar cuánto se añadió a cada uno (para rollback)
+    // Distribuir hamburguesas entre los bloques seleccionados
     let restantes = numHamburguesas;
     const reservas = [];
     for (const b of seleccionados) {
-        const huecos = b.capacidadMax - b.hamburgesasOcupadas;
-        const cantidad = forzar ? restantes : Math.min(restantes, huecos);
+        if (restantes <= 0) break;
+        // Cuánto cabe en este bloque (si forzamos, ignoramos el límite superior)
+        const espacioDisponible = forzar ? b.capacidadMax : (b.capacidadMax - b.hamburgesasOcupadas);
+        const cantidad = Math.min(restantes, espacioDisponible > 0 ? espacioDisponible : b.capacidadMax);
         await BloqueProduccion.findByIdAndUpdate(b._id, { $inc: { hamburgesasOcupadas: cantidad } });
         reservas.push({ id: b._id, cantidad });
         restantes -= cantidad;
-        if (restantes <= 0) break;
     }
 
-    return reservas; // [{ id, cantidad }, ...]
+    return reservas;
 };
 
 /**
@@ -123,7 +127,8 @@ exports.modificarPedido = async (req, res) => {
     try {
         const pedido = await Pedido.findById(req.params.id);
         if (!pedido) return res.status(404).json({ ok: false, mensaje: 'Pedido no encontrado' });
-        if (!pedido.modificable) return res.status(400).json({ ok: false, mensaje: 'Solo se puede modificar en los primeros 15 minutos' });
+        const esStaff = ['ADMIN', 'EMPLEADO'].includes(req.rol);
+        if (!esStaff && !pedido.modificable) return res.status(400).json({ ok: false, mensaje: 'Solo se puede modificar en los primeros 15 minutos' });
 
         const totalAnterior = pedido.total;
         if (req.body.lineas) pedido.lineas = req.body.lineas;
@@ -140,7 +145,8 @@ exports.cancelarPedido = async (req, res) => {
     try {
         const pedido = await Pedido.findById(req.params.id);
         if (!pedido) return res.status(404).json({ ok: false, mensaje: 'Pedido no encontrado' });
-        if (!pedido.cancelable) return res.status(400).json({ ok: false, mensaje: 'Solo se puede cancelar en los primeros 15 minutos' });
+        const esStaff = ['ADMIN', 'EMPLEADO'].includes(req.rol);
+        if (!esStaff && !pedido.cancelable) return res.status(400).json({ ok: false, mensaje: 'Solo se puede cancelar en los primeros 15 minutos' });
 
         // Calcular hamburguesas del pedido para liberarlas correctamente
         const Producto = require('../models/producto.model');
@@ -181,7 +187,7 @@ exports.rehacerPedido = async (req, res) => {
 exports.crearPedidoTelefonico = async (req, res) => {
     let reservas = [];
     try {
-        const { nombre, telefono, lineas, bloqueId, forzar = false } = req.body;
+        const { nombre, telefono, lineas, bloqueId, forzarBloque: forzar = false } = req.body;
         const Producto = require('../models/producto.model');
         const productos = await Producto.find({ _id: { $in: lineas.map(l => l.producto) } });
         const numHamburguesas = contarHamburguesas(lineas, productos);
@@ -210,5 +216,26 @@ exports.crearPedidoTelefonico = async (req, res) => {
     } catch (err) {
         if (reservas.length > 0) await liberarBloques(reservas);
         res.status(400).json({ ok: false, mensaje: err.message });
+    }
+};
+
+// ── GET /api/pedidos/todos?fecha= ─────────────────────────────────────────────
+exports.getTodosPedidos = async (req, res) => {
+    try {
+        const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
+        const bloques = await BloqueProduccion.find({ fecha }).sort('horaInicio');
+        const bloqueIds = bloques.map(b => b._id);
+
+        const pedidos = await Pedido.find({
+            bloques: { $in: bloqueIds },
+            estado: { $ne: 'CANCELADO' }
+        })
+            .sort('fechaCreacion')
+            .populate('bloques', 'horaInicio horaFin capacidadMax hamburgesasOcupadas')
+            .lean();
+
+        res.json({ ok: true, bloques, pedidos });
+    } catch (err) {
+        res.status(500).json({ ok: false, mensaje: err.message });
     }
 };

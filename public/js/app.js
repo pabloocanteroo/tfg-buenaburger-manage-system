@@ -86,6 +86,8 @@ function actualizarBotonesAuth() {
 function cerrarSesion() {
     tokenActual = null; usuarioActual = null;
     localStorage.removeItem('bb_token');
+    localStorage.removeItem('bb_rol');
+    localStorage.removeItem('bb_nombre');
     actualizarBotonesAuth();
     mostrarToast('Sesión cerrada', 'success');
 }
@@ -584,9 +586,26 @@ async function loginCliente() {
         }
         tokenActual = data.token;
         localStorage.setItem('bb_token', tokenActual);
+
+        if (data.usuario) {
+            localStorage.setItem('bb_rol', data.usuario.rol);
+            localStorage.setItem('bb_nombre', data.usuario.nombre);
+        } else {
+            localStorage.setItem('bb_rol', 'CLIENTE');
+            localStorage.setItem('bb_nombre', data.cliente.nombre);
+        }
+
         verificarSesion();
         cerrarModal('modal-auth');
         const nombre = data.cliente?.nombre || data.usuario?.nombre || 'Usuario';
+        const rol = data.usuario?.rol || 'CLIENTE';
+
+        // Staff → panel de empleados
+        if (rol === 'ADMIN' || rol === 'EMPLEADO') {
+            window.location.href = '/empleados.html';
+            return;
+        }
+
         mostrarToast(`✅ ¡Bienvenido, ${nombre}!`, 'success');
     } catch { mostrarToast('Credenciales incorrectas', 'error'); }
 }
@@ -600,6 +619,9 @@ async function registroCliente() {
         const data = await apiFetch('/auth/registro', { method: 'POST', body: JSON.stringify({ nombre, telefono, email, password }) });
         tokenActual = data.token;
         localStorage.setItem('bb_token', tokenActual);
+        localStorage.setItem('bb_rol', 'CLIENTE');
+        localStorage.setItem('bb_nombre', data.cliente.nombre);
+
         verificarSesion();
         cerrarModal('modal-auth');
         mostrarToast('✅ Cuenta creada. ¡Bienvenido!', 'success');

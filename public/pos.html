@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>POS | Buena Burger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/pos.css">
+</head>
+
+<body>
+    <div id="pos-container">
+
+        <!-- ── Header ── -->
+        <header class="pos-header">
+            <div class="pos-header-left">
+                <img src="images/logo_clean.png" alt="Buena Burger" class="pos-logo">
+                <span class="pos-title">SISTEMA TPV</span>
+            </div>
+            <div class="pos-header-right">
+                <span id="pos-empleado-nombre">Empleado: Cargando...</span>
+                <span id="pos-hora-actual">00:00:00</span>
+                <button class="btn-salir" onclick="cerrarSesionPOS()">SALIR</button>
+            </div>
+        </header>
+
+        <div class="pos-body">
+
+            <!-- ── Zona Izquierda: Multiplicador + Productos ── -->
+            <main class="pos-main">
+                <!-- Multiplicadores -->
+                <div class="pos-multipliers">
+                    <button class="btn-multi active" data-val="1">1</button>
+                    <button class="btn-multi" data-val="2">2</button>
+                    <button class="btn-multi" data-val="3">3</button>
+                    <button class="btn-multi" data-val="4">4</button>
+                    <button class="btn-multi" data-val="5">5</button>
+                    <button class="btn-multi" data-val="6">6</button>
+                    <button class="btn-multi" data-val="7">7</button>
+                    <button class="btn-multi" data-val="8">8</button>
+                    <button class="btn-multi" data-val="9">9</button>
+                    <button class="btn-multi btn-reset-multi" onclick="resetMulti()">✕</button>
+                </div>
+
+                <!-- Grid de Productos -->
+                <div class="pos-grid" id="pos-grid">
+                    <div class="pos-loading">Cargando catálogo...</div>
+                </div>
+            </main>
+
+            <!-- ── Zona Derecha: Ticket ── -->
+            <aside class="pos-sidebar">
+
+                <div class="ticket-header">
+                    <h3>🧾 TICKET ACTUAL</h3>
+                </div>
+
+                <div class="ticket-items" id="ticket-items">
+                    <div class="ticket-empty">El ticket está vacío</div>
+                </div>
+
+                <div class="ticket-subtotal">
+                    <span>TOTAL</span>
+                    <span id="ticket-total">0.00€</span>
+                </div>
+
+                <div class="ticket-cliente">
+                    <input type="text" id="cliente-nombre" placeholder="👤 Nombre del cliente" autocomplete="off">
+                    <input type="tel" id="cliente-telefono" placeholder="📞 Teléfono" autocomplete="off">
+                </div>
+
+                <div class="ticket-bloques" id="ticket-bloques">
+                    <p style="grid-column:1/-1;color:#556;font-size:0.8rem;text-align:center;padding:8px;">Cargando
+                        horas...</p>
+                </div>
+
+                <div class="ticket-actions">
+                    <label class="check-forzar">
+                        <input type="checkbox" id="check-forzar">
+                        ⚡ FORZAR HUECO LLENO
+                    </label>
+                    <button class="btn-cobrar" id="btn-cobrar" onclick="cobrarPedido()">
+                        ENVIAR PEDIDO
+                    </button>
+                </div>
+
+            </aside>
+        </div>
+    </div>
+
+    <!-- Modal Personalización -->
+    <div id="modal-personalizacion" class="pos-modal-overlay" style="display:none">
+        <div class="pos-modal">
+            <h2 id="modal-p-titulo">Personalizar Item</h2>
+            <div id="modal-p-remover">
+                <h3>Quitar ingredientes</h3>
+                <div class="chips-container" id="chips-quitar"></div>
+            </div>
+            <div id="modal-p-extras">
+                <h3>Añadir extras</h3>
+                <div class="extras-grid" id="grid-extras"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-rojo" onclick="cerrarModalesPOS()">Cancelar</button>
+                <button class="btn-verde" id="btn-guardar-personalizacion">✔ Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pos-toast" class="pos-toast"></div>
+    <script src="js/pos.js"></script>
+</body>
+
+</html>
