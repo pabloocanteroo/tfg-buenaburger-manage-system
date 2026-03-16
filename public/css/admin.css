@@ -43,14 +43,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--blanco);
-    border-bottom: 3px solid var(--rojo);
+    background: var(--rojo);
+    border-bottom: none;
     padding: 0 24px;
     height: 64px;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: var(--sombra);
+    box-shadow: 0 3px 10px rgba(220, 18, 17, 0.35);
 }
 
 .adm-header-left {
@@ -69,7 +69,7 @@ body {
     font-size: 1.2rem;
     font-weight: 900;
     letter-spacing: 1px;
-    color: var(--rojo);
+    color: var(--blanco);
     text-transform: uppercase;
 }
 
@@ -79,10 +79,11 @@ body {
     gap: 12px;
     font-size: .9rem;
     font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .badge-rol {
-    background: var(--rojo);
+    background: rgba(255, 255, 255, 0.2);
     color: var(--blanco);
     font-family: var(--font-cond);
     font-weight: 700;
@@ -94,25 +95,25 @@ body {
 
 .btn-nav {
     text-decoration: none;
-    background: var(--gris-bg);
-    color: #333;
-    border: 1.5px solid var(--gris-borde);
+    background: var(--blanco);
+    color: var(--rojo);
+    border: none;
     padding: 6px 14px;
     border-radius: 8px;
     font-size: .85rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all .2s;
 }
 
 .btn-nav:hover {
-    background: #eee;
+    background: #fff5f5;
 }
 
 .btn-salir {
-    background: var(--rojo);
+    background: transparent;
     color: var(--blanco);
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.5);
     padding: 6px 16px;
     border-radius: 8px;
     font-family: var(--font-cond);
@@ -120,11 +121,12 @@ body {
     font-size: .9rem;
     letter-spacing: 1px;
     cursor: pointer;
-    transition: background .2s;
+    transition: all .2s;
 }
 
 .btn-salir:hover {
-    background: var(--rojo-dark);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: var(--blanco);
 }
 
 /* ── Layout ─────────────────────────────────── */
@@ -170,8 +172,8 @@ body {
 }
 
 .nav-btn.active {
-    background: var(--rojo-bg);
-    color: var(--rojo);
+    background: var(--rojo);
+    color: var(--blanco);
 }
 
 .nav-icon {
