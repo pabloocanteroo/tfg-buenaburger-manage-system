@@ -302,7 +302,7 @@ function abrirModalPersonalizacion(index) {
 
     // ── Render Extras de Pago y Salsas ─────────────────────────────────────
     const cExtras = document.getElementById('grid-extras');
-    if (prod.categoria === 'BEBIDA') {
+    if (prod.categoria === 'BEBIDA' || prod.categoria === 'POSTRE') {
         cExtras.innerHTML = '<i>- No aplicable -</i>';
     } else {
         cExtras.innerHTML = extras.map((e, i) => {

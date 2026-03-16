@@ -173,7 +173,7 @@ function abrirModalProducto(productoId) {
             </div>
         </div>` : ''}
 
-        ${prod.categoria !== 'BEBIDA' ? `
+        ${prod.categoria !== 'BEBIDA' && prod.categoria !== 'POSTRE' ? `
         <div class="opcion-grupo">
             <span class="opcion-label">✅ Añadir salsas</span>
             <div class="opcion-chips">
