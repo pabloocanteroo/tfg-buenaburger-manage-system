@@ -646,3 +646,73 @@ body {
     background: var(--rojo);
     color: var(--blanco);
 }
+
+/* ── Sección pedidos ─────────────────────────── */
+.input-fecha-pedidos {
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: .9rem;
+    font-family: var(--font);
+    outline: none;
+    transition: border .2s;
+}
+
+.input-fecha-pedidos:focus {
+    border-color: var(--rojo);
+}
+
+.lista-pedidos-admin {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.pedido-admin-card {
+    background: var(--blanco);
+    border: 1.5px solid var(--gris-borde);
+    border-left: 4px solid var(--rojo);
+    border-radius: var(--radio);
+    padding: 14px 18px;
+    box-shadow: var(--sombra);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform .12s, box-shadow .12s;
+}
+
+.pedido-admin-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,.1);
+}
+
+.pedido-admin-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.pedido-admin-num {
+    font-family: var(--font-cond);
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--rojo);
+}
+
+.pedido-admin-hora {
+    font-size: .78rem;
+    color: var(--gris-texto);
+    margin-top: 2px;
+}
+
+.pedido-admin-cliente {
+    font-size: .85rem;
+    color: #444;
+}
+
+.pedido-admin-lineas {
+    font-size: .82rem;
+    color: var(--gris-texto);
+    font-style: italic;
+}

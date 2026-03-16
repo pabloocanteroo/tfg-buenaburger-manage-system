@@ -42,6 +42,60 @@ function cambiarTab(tab) {
     document.getElementById(`btn-tab-${tab}`).classList.add('active');
     if (tab === 'estadisticas') cargarEstadisticas();
     if (tab === 'empleados') cargarEmpleados();
+    if (tab === 'pedidos') {
+        // Poner fecha de hoy por defecto si no hay ninguna
+        const inp = document.getElementById('pedidos-fecha');
+        if (!inp.value) {
+            const hoy = new Date();
+            const y = hoy.getFullYear();
+            const m = String(hoy.getMonth() + 1).padStart(2, '0');
+            const d = String(hoy.getDate()).padStart(2, '0');
+            inp.value = `${y}-${m}-${d}`;
+        }
+        cargarPedidosAdmin();
+    }
+}
+
+// ── Pedidos ──────────────────────────────────────────────────────
+async function cargarPedidosAdmin() {
+    const fecha = document.getElementById('pedidos-fecha').value;
+    const cont = document.getElementById('lista-pedidos-admin');
+    if (!fecha) { cont.innerHTML = '<p style="color:#888;padding:20px">Selecciona una fecha.</p>'; return; }
+    cont.innerHTML = '<div class="loading-calendario">Cargando pedidos...</div>';
+    try {
+        const res = await fetch(`${API}/api/pedidos/todos?fecha=${fecha}`, {
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.mensaje);
+        const { pedidos } = data;
+        if (!pedidos.length) {
+            cont.innerHTML = '<p style="color:#888;padding:20px">No hay pedidos para esta fecha.</p>';
+            return;
+        }
+        cont.innerHTML = pedidos.map(p => {
+            const hora = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const lineas = p.lineas.map(l => `${l.cantidad}× ${l.nombreProducto || 'Producto'}`).join(', ');
+            const estadoColor = p.estado === 'CANCELADO' ? '#e74c3c' : p.estado === 'CONFIRMADO' ? '#27ae60' : '#f39c12';
+            return `
+            <div class="pedido-admin-card">
+                <div class="pedido-admin-top">
+                    <div>
+                        <div class="pedido-admin-num">${p.numero || p._id.slice(-6).toUpperCase()}</div>
+                        <div class="pedido-admin-hora">${hora} · ${p.canal || '—'}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                        <span style="font-weight:900;font-size:1.1rem;color:#1a1a1a">${p.total?.toFixed(2)}€</span>
+                        <span style="font-size:.75rem;font-weight:700;color:${estadoColor}">${p.estado}</span>
+                    </div>
+                </div>
+                <div class="pedido-admin-cliente">👤 ${p.nombreCliente || '—'} &nbsp;·&nbsp; 📞 ${p.telefonoCliente || '—'}</div>
+                <div class="pedido-admin-lineas">${lineas}</div>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        cont.innerHTML = `<p style="color:red;padding:20px">Error: ${err.message}</p>`;
+    }
 }
 
 // ── Empleados ────────────────────────────────────────────────────

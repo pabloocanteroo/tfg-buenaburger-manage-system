@@ -19,11 +19,11 @@
         <div class="adm-header-left">
             <img src="images/logo_clean.png" alt="Buena Burger" class="adm-logo">
             <span class="adm-title">PANEL DE ADMINISTRACIÓN</span>
+            <a href="/pos.html" class="btn-nav">🧾 IR AL TPV</a>
         </div>
         <div class="adm-header-right">
             <span id="adm-nombre">Cargando...</span>
             <span class="badge-rol">ADMIN</span>
-            <a href="/empleados.html" class="btn-nav">👥 Empleados</a>
             <button class="btn-salir" onclick="cerrarSesion()">SALIR</button>
         </div>
     </header>
@@ -35,6 +35,10 @@
             <button class="nav-btn active" id="btn-tab-calendario" onclick="cambiarTab('calendario')">
                 <span class="nav-icon">📅</span>
                 <span>Calendario</span>
+            </button>
+            <button class="nav-btn" id="btn-tab-pedidos" onclick="cambiarTab('pedidos')">
+                <span class="nav-icon">📋</span>
+                <span>Pedidos</span>
             </button>
             <button class="nav-btn" id="btn-tab-empleados" onclick="cambiarTab('empleados')">
                 <span class="nav-icon">👥</span>
@@ -75,6 +79,23 @@
                     <div class="loading-calendario">Cargando calendario...</div>
                 </div>
 
+            </section>
+
+            <!-- TAB: Pedidos -->
+            <section id="tab-pedidos" class="tab-content" style="display:none">
+                <div class="seccion-header">
+                    <div>
+                        <h1>Pedidos</h1>
+                        <p class="seccion-sub">Historial de todos los pedidos del sistema</p>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center">
+                        <input type="date" id="pedidos-fecha" class="input-fecha-pedidos">
+                        <button class="btn-refresh" onclick="cargarPedidosAdmin()">↻ Buscar</button>
+                    </div>
+                </div>
+                <div id="lista-pedidos-admin" class="lista-pedidos-admin">
+                    <p style="color:#888;padding:20px">Selecciona una fecha y pulsa Buscar.</p>
+                </div>
             </section>
 
             <!-- TAB: Empleados -->

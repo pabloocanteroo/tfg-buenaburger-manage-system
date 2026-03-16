@@ -6,6 +6,7 @@ let ticket = [];
 let currentCategory = 'HAMBURGUESA';
 let currentMultiplier = 1;
 let itemEditandoIndex = -1;
+let splitCantidad = 1; // Cuántas unidades personalizar en el modal
 
 // ══ Inicialización ═════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
@@ -48,6 +49,11 @@ function showPosToast(msg, type = 'success') {
     t.textContent = msg;
     t.className = `pos-toast show ${type}`;
     setTimeout(() => { t.className = 'pos-toast'; }, 3000);
+}
+
+function volverAlPanel() {
+    const rol = localStorage.getItem('bb_rol');
+    window.location.href = rol === 'ADMIN' ? '/admin.html' : '/empleados.html';
 }
 
 function cerrarSesionPOS() {
@@ -137,22 +143,38 @@ function addToTicket(prodId) {
     const prod = productos.find(p => p._id === prodId);
     if (!prod) return;
 
-    const item = {
-        _id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-        producto: prod,
-        cantidad: currentMultiplier,
-        excluidos: [],
-        anadidos: [],
-        extras: [],
-        precioBase: prod.precio,
-        precioExtraUnitario: 0,
-        precioTotalItem: prod.precio * currentMultiplier
-    };
+    // Buscar si ya existe una línea con el mismo producto y SIN personalización
+    // (si se personalizó antes, mantenemos líneas separadas para no mezclar modificaciones)
+    const existente = ticket.find(it =>
+        it.producto._id === prodId &&
+        it.excluidos.length === 0 &&
+        it.anadidos.length === 0 &&
+        it.extras.length === 0
+    );
 
-    ticket.push(item);
-    resetMulti(); // Después de añadir, el multiplicador siempre vuelve a 1
+    if (existente) {
+        // Agrupa: suma la cantidad al item existente
+        existente.cantidad += currentMultiplier;
+        existente.precioTotalItem = existente.precioBase * existente.cantidad;
+    } else {
+        // Nueva línea
+        ticket.push({
+            _id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            producto: prod,
+            cantidad: currentMultiplier,
+            excluidos: [],
+            anadidos: [],
+            extras: [],
+            precioBase: prod.precio,
+            precioExtraUnitario: 0,
+            precioTotalItem: prod.precio * currentMultiplier
+        });
+    }
+
+    resetMulti();
     renderTicket();
 }
+
 
 function removeFromTicket(itemIndex, event) {
     event.stopPropagation(); // Evitar abrir modal
@@ -245,55 +267,147 @@ function abrirModalPersonalizacion(index) {
 
     document.getElementById('modal-p-titulo').textContent = `Pers: ${prod.nombre} (${item.cantidad}x)`;
 
-    // Render Quitar
+    // ── Stepper de split ───────────────────────────────────────────────────
+    const splitWrap = document.getElementById('modal-split-wrap');
+    if (item.cantidad > 1) {
+        splitCantidad = 1;
+        document.getElementById('modal-split-qty').textContent = splitCantidad;
+        document.getElementById('modal-split-info').textContent = `de ${item.cantidad} unidades`;
+        splitWrap.style.display = 'block';
+    } else {
+        splitCantidad = 1;
+        splitWrap.style.display = 'none';
+    }
+
+    // ── Render Quitar ingredientes ──────────────────────────────────────────
     const cQuitar = document.getElementById('chips-quitar');
     if (!prod.ingredientesPorDefecto || prod.ingredientesPorDefecto.length === 0) {
         cQuitar.innerHTML = '<i>- No modificable -</i>';
     } else {
-        cQuitar.innerHTML = prod.ingredientesPorDefecto.map(ing => {
-            const act = item.excluidos.includes(ing) ? 'active' : '';
-            return `<div class="chip-t ${act}" onclick="toggleMod('quitar', '${ing}', this)">${ing}</div>`;
-        }).join('');
+        cQuitar.innerHTML = prod.ingredientesPorDefecto.map((ing, i) =>
+            `<div class="chip-t${item.excluidos.includes(ing) ? ' active' : ''}" data-idx="${i}">${ing}</div>`
+        ).join('');
+        // addEventListener evita problemas con this y strings en atributos HTML
+        cQuitar.querySelectorAll('.chip-t').forEach(el => {
+            const ing = prod.ingredientesPorDefecto[+el.dataset.idx];
+            el.addEventListener('click', () => {
+                if (itemEditandoIndex === -1) return;
+                const itm = ticket[itemEditandoIndex];
+                el.classList.toggle('active');
+                if (el.classList.contains('active')) itm.excluidos.push(ing);
+                else itm.excluidos = itm.excluidos.filter(x => x !== ing);
+            });
+        });
     }
 
-    // Render Extras de Pago y Salsas
+    // ── Render Extras de Pago y Salsas ─────────────────────────────────────
     const cExtras = document.getElementById('grid-extras');
     if (prod.categoria === 'BEBIDA') {
         cExtras.innerHTML = '<i>- No aplicable -</i>';
     } else {
-        cExtras.innerHTML = extras.map(e => {
+        cExtras.innerHTML = extras.map((e, i) => {
             const objExtra = item.extras.find(ex => ex.extra === e._id);
-            const isGratis = e.precio === 0;
-            // Para salsas gratis usamos la logica de 'anadidos', para pago usamos 'extras' con array de objetos
-            if (isGratis) {
-                const act = item.anadidos.includes(e.nombre) ? 'active' : '';
-                return `<div class="extra-t ${act}" onclick="toggleMod('anadir', '${e.nombre}', this, '${e._id}')">
+            if (e.precio === 0) {
+                const act = item.anadidos.includes(e.nombre) ? ' active' : '';
+                return `<div class="extra-t${act}" data-extra-idx="${i}">
                             <span>Salsa: <b>${e.nombre}</b></span>
                             <span>Gratis</span>
                         </div>`;
             } else {
                 const qty = objExtra ? objExtra.cantidad : 0;
-                const act = qty > 0 ? 'active' : '';
-                return `<div class="extra-t ${act}">
+                return `<div class="extra-t${qty > 0 ? ' active' : ''}" data-extra-idx="${i}">
                             <span>${e.nombre}</span>
                             <span>+${e.precio.toFixed(2)}€</span>
-                            <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:5px;">
-                                <button class="btn-rojo" style="padding:2px 10px; border-radius:50%" onclick="adjustModalExtra('${e._id}', '${e.nombre}', ${e.precio}, -1)">-</button>
-                                <span style="font-weight:900" id="m-ext-qty-${e._id}">${qty}</span>
-                                <button class="btn-rojo" style="padding:2px 10px; border-radius:50%" onclick="adjustModalExtra('${e._id}', '${e.nombre}', ${e.precio}, 1)">+</button>
+                            <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:5px;">
+                                <button class="btn-rojo btn-ext-menos" style="padding:2px 10px;border-radius:50%">-</button>
+                                <span class="ext-qty" style="font-weight:900">${qty}</span>
+                                <button class="btn-rojo btn-ext-mas" style="padding:2px 10px;border-radius:50%">+</button>
                             </div>
                         </div>`;
             }
         }).join('');
+
+        cExtras.querySelectorAll('.extra-t').forEach(el => {
+            const ext = extras[+el.dataset.extraIdx];
+            if (!ext) return;
+            if (ext.precio === 0) {
+                // Salsa gratis: toggle
+                el.addEventListener('click', () => {
+                    if (itemEditandoIndex === -1) return;
+                    const itm = ticket[itemEditandoIndex];
+                    el.classList.toggle('active');
+                    if (el.classList.contains('active')) itm.anadidos.push(ext.nombre);
+                    else itm.anadidos = itm.anadidos.filter(x => x !== ext.nombre);
+                });
+            } else {
+                // Extra de pago: botones +/-
+                const qtyEl = el.querySelector('.ext-qty');
+                const ajustar = (delta, ev) => {
+                    ev.stopPropagation();
+                    if (itemEditandoIndex === -1) return;
+                    const itm = ticket[itemEditandoIndex];
+                    let obj = itm.extras.find(e => e.extra === ext._id);
+                    if (!obj) {
+                        if (delta < 0) return;
+                        obj = { extra: ext._id, nombre: ext.nombre, precio: ext.precio, cantidad: 0 };
+                        itm.extras.push(obj);
+                    }
+                    obj.cantidad = Math.max(0, Math.min(10, obj.cantidad + delta));
+                    qtyEl.textContent = obj.cantidad;
+                    if (obj.cantidad > 0) el.classList.add('active');
+                    else el.classList.remove('active');
+                    itm.extras = itm.extras.filter(e => e.cantidad > 0);
+                };
+                el.querySelector('.btn-ext-menos').addEventListener('click', ev => ajustar(-1, ev));
+                el.querySelector('.btn-ext-mas').addEventListener('click', ev => ajustar(1, ev));
+            }
+        });
     }
 
     document.getElementById('modal-personalizacion').style.display = 'flex';
 }
 
-function cerrarModalesPOS() {
+
+function ajustarSplit(delta) {
+    if (itemEditandoIndex === -1) return;
+    const max = ticket[itemEditandoIndex].cantidad;
+    splitCantidad = Math.max(1, Math.min(max, splitCantidad + delta));
+    document.getElementById('modal-split-qty').textContent = splitCantidad;
+    document.getElementById('modal-split-info').textContent = `de ${max} unidades`;
+}
+
+function cerrarModalesPOS(guardar = false) {
+    if (guardar && itemEditandoIndex !== -1) {
+        const item = ticket[itemEditandoIndex];
+        // Split: si personalizamos solo N de M unidades, creamos una línea nueva
+        if (item.cantidad > 1 && splitCantidad < item.cantidad) {
+            const restantes = item.cantidad - splitCantidad;
+            // Reducir la línea original
+            item.cantidad = restantes;
+            item.precioTotalItem = (item.precioBase + item.precioExtraUnitario) * restantes;
+            // Clonar con las personalizaciones aplicadas en el modal en nueva línea
+            const nuevaLinea = {
+                _id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                producto: item.producto,
+                cantidad: splitCantidad,
+                excluidos: [...item.excluidos],
+                anadidos: [...item.anadidos],
+                extras: item.extras.map(e => ({ ...e })),
+                precioBase: item.precioBase,
+                precioExtraUnitario: item.precioExtraUnitario,
+                precioTotalItem: (item.precioBase + item.precioExtraUnitario) * splitCantidad
+            };
+            // La línea original queda limpia (sin las personalizaciones del modal)
+            item.excluidos = [];
+            item.anadidos = [];
+            item.extras = [];
+            ticket.splice(itemEditandoIndex + 1, 0, nuevaLinea);
+        }
+    }
     document.getElementById('modal-personalizacion').style.display = 'none';
     itemEditandoIndex = -1;
-    renderTicket(); // Por si modificaron algo
+    splitCantidad = 1;
+    renderTicket();
 }
 
 function toggleMod(tipo, valor, el, idExtraContext) {

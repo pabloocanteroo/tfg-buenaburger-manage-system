@@ -24,15 +24,15 @@
             <div class="pos-header-right">
                 <span id="pos-empleado-nombre">Empleado: Cargando...</span>
                 <span id="pos-hora-actual">00:00:00</span>
+                <button class="btn-panel" onclick="volverAlPanel()">← PANEL</button>
                 <button class="btn-salir" onclick="cerrarSesionPOS()">SALIR</button>
             </div>
         </header>
 
         <div class="pos-body">
 
-            <!-- ── Zona Izquierda: Multiplicador + Productos ── -->
+            <!-- ── COL 1: Multiplicadores + Productos + Form abajo ── -->
             <main class="pos-main">
-                <!-- Multiplicadores -->
                 <div class="pos-multipliers">
                     <button class="btn-multi active" data-val="1">1</button>
                     <button class="btn-multi" data-val="2">2</button>
@@ -45,50 +45,47 @@
                     <button class="btn-multi" data-val="9">9</button>
                     <button class="btn-multi btn-reset-multi" onclick="resetMulti()">✕</button>
                 </div>
-
-                <!-- Grid de Productos -->
                 <div class="pos-grid" id="pos-grid">
                     <div class="pos-loading">Cargando catálogo...</div>
                 </div>
+                <!-- Form compacto en la parte baja de la columna izquierda -->
+                <div class="pos-form-bottom">
+                    <div class="pos-form-total">
+                        <span class="form-total-label">TOTAL</span>
+                        <span class="form-total-valor" id="ticket-total">0.00€</span>
+                    </div>
+                    <div class="pos-form-inputs">
+                        <input type="text" id="cliente-nombre" placeholder="👤 Nombre" autocomplete="off">
+                        <input type="tel"  id="cliente-telefono" placeholder="📞 Teléfono" autocomplete="off">
+                    </div>
+                    <div class="pos-form-actions">
+                        <label class="check-forzar">
+                            <input type="checkbox" id="check-forzar">
+                            ⚡ FORZAR
+                        </label>
+                        <button class="btn-cobrar" id="btn-cobrar" onclick="cobrarPedido()">ENVIAR PEDIDO</button>
+                    </div>
+                </div>
             </main>
 
-            <!-- ── Zona Derecha: Ticket ── -->
-            <aside class="pos-sidebar">
-
-                <div class="ticket-header">
-                    <h3>🧾 TICKET ACTUAL</h3>
+            <!-- ── COL 2: Bloques horarios (espacio central grande) ── -->
+            <section class="pos-bloques-col">
+                <div class="bloques-col-header">🕐 HORA DE RECOGIDA</div>
+                <div class="ticket-bloques" id="ticket-bloques">
+                    <p style="color:#888;padding:14px;grid-column:1/-1;text-align:center">Cargando horas...</p>
                 </div>
+            </section>
 
+            <!-- ── COL 3: Ticket (barra derecha fina) ── -->
+            <aside class="pos-sidebar">
+                <div class="ticket-header">
+                    <h3>🧾 TICKET</h3>
+                </div>
                 <div class="ticket-items" id="ticket-items">
                     <div class="ticket-empty">El ticket está vacío</div>
                 </div>
-
-                <div class="ticket-subtotal">
-                    <span>TOTAL</span>
-                    <span id="ticket-total">0.00€</span>
-                </div>
-
-                <div class="ticket-cliente">
-                    <input type="text" id="cliente-nombre" placeholder="👤 Nombre del cliente" autocomplete="off">
-                    <input type="tel" id="cliente-telefono" placeholder="📞 Teléfono" autocomplete="off">
-                </div>
-
-                <div class="ticket-bloques" id="ticket-bloques">
-                    <p style="grid-column:1/-1;color:#556;font-size:0.8rem;text-align:center;padding:8px;">Cargando
-                        horas...</p>
-                </div>
-
-                <div class="ticket-actions">
-                    <label class="check-forzar">
-                        <input type="checkbox" id="check-forzar">
-                        ⚡ FORZAR HUECO LLENO
-                    </label>
-                    <button class="btn-cobrar" id="btn-cobrar" onclick="cobrarPedido()">
-                        ENVIAR PEDIDO
-                    </button>
-                </div>
-
             </aside>
+
         </div>
     </div>
 
@@ -96,6 +93,18 @@
     <div id="modal-personalizacion" class="pos-modal-overlay" style="display:none">
         <div class="pos-modal">
             <h2 id="modal-p-titulo">Personalizar Item</h2>
+
+            <!-- Stepper de cuántas unidades personalizar (solo visible si cantidad > 1) -->
+            <div id="modal-split-wrap" style="display:none; margin-bottom:12px; padding:10px 0; border-bottom:1px solid #eee;">
+                <h3 style="margin-bottom:8px;">¿Cuántas personalizar?</h3>
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <button class="btn-rojo" style="padding:4px 14px;border-radius:8px;font-size:1.1rem;" onclick="ajustarSplit(-1)">−</button>
+                    <span id="modal-split-qty" style="font-family:var(--font);font-size:1.6rem;font-weight:900;min-width:28px;text-align:center;">1</span>
+                    <button class="btn-rojo" style="padding:4px 14px;border-radius:8px;font-size:1.1rem;" onclick="ajustarSplit(1)">+</button>
+                    <span id="modal-split-info" style="font-size:.82rem;color:#888;"></span>
+                </div>
+            </div>
+
             <div id="modal-p-remover">
                 <h3>Quitar ingredientes</h3>
                 <div class="chips-container" id="chips-quitar"></div>
@@ -105,11 +114,12 @@
                 <div class="extras-grid" id="grid-extras"></div>
             </div>
             <div class="modal-actions">
-                <button class="btn-rojo" onclick="cerrarModalesPOS()">Cancelar</button>
-                <button class="btn-verde" id="btn-guardar-personalizacion">✔ Guardar</button>
+                <button class="btn-rojo" onclick="cerrarModalesPOS(false)">Cancelar</button>
+                <button class="btn-verde" id="btn-guardar-personalizacion" onclick="cerrarModalesPOS(true)">✔ Guardar</button>
             </div>
         </div>
     </div>
+
 
     <div id="pos-toast" class="pos-toast"></div>
     <script src="js/pos.js"></script>

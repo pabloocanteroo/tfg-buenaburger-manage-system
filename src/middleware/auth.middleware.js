@@ -21,6 +21,9 @@ const protect = async (req, res, next) => {
         // Buscar primero en usuarios (staff), luego en clientes
         let usuario = await Usuario.findById(decoded.id).select('-passwordHash');
         if (usuario) {
+            if (!usuario.activo) {
+                return res.status(401).json({ ok: false, mensaje: 'Cuenta desactivada — contacta con el administrador' });
+            }
             req.usuario = usuario;
             req.rol = usuario.rol;
             return next();
