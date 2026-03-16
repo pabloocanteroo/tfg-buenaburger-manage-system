@@ -3,8 +3,12 @@ const token = localStorage.getItem('bb_token');
 const rol = localStorage.getItem('bb_rol');
 const nombre = localStorage.getItem('bb_nombre');
 
-if (!token || !['ADMIN', 'EMPLEADO'].includes(rol)) {
-    window.location.href = '/index.html';
+if (!token || rol !== 'EMPLEADO') {
+    if (rol === 'ADMIN') {
+        window.location.href = '/admin.html';
+    } else {
+        window.location.href = '/index.html';
+    }
 }
 
 document.getElementById('emp-nombre').textContent = nombre || 'Empleado';
