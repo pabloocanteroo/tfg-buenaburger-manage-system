@@ -49,3 +49,39 @@ exports.loginStaff = async (req, res) => {
         res.status(500).json({ ok: false, mensaje: err.message });
     }
 };
+
+// GET /api/auth/me
+exports.getPerfilCliente = async (req, res) => {
+    try {
+        const cliente = await ClienteRegistrado.findById(req.usuario._id).select('-passwordHash');
+        if (!cliente) return res.status(404).json({ ok: false, mensaje: 'Cliente no encontrado' });
+        res.json({ ok: true, cliente });
+    } catch (err) {
+        res.status(500).json({ ok: false, mensaje: err.message });
+    }
+};
+
+// PUT /api/auth/perfil
+exports.actualizarPerfilCliente = async (req, res) => {
+    try {
+        const { nombre, telefono, password } = req.body;
+        const cliente = await ClienteRegistrado.findById(req.usuario._id);
+        if (!cliente) return res.status(404).json({ ok: false, mensaje: 'Cliente no encontrado' });
+
+        if (nombre) cliente.nombre = nombre;
+        if (telefono) cliente.telefono = telefono;
+        if (password) {
+            cliente.passwordHash = password; // El pre('save') del modelo ya encripta automáticamente si detecta un hash en un doc instanciado (a menos que no funcione igual para updates manuales)
+            // Para asegurar el hash manual si el pre no salta
+            const bcrypt = require('bcryptjs');
+            const salt = await bcrypt.genSalt(10);
+            cliente.passwordHash = await bcrypt.hash(password, salt);
+        }
+
+        await cliente.save();
+        
+        res.json({ ok: true, mensaje: 'Perfil actualizado con éxito', cliente: { nombre: cliente.nombre, telefono: cliente.telefono, email: cliente.email }});
+    } catch (err) {
+        res.status(500).json({ ok: false, mensaje: err.message });
+    }
+};

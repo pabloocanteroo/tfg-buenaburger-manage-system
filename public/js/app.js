@@ -59,28 +59,42 @@ function navegarA(pageId) {
 
 // ── Sesión ────────────────────────────────────────────────────────────────────
 function verificarSesion() {
-    if (!tokenActual) return actualizarBotonesAuth();
-    try {
-        const payload = JSON.parse(atob(tokenActual.split('.')[1]));
-        if (payload.exp * 1000 < Date.now()) { cerrarSesion(); return; }
-        usuarioActual = payload;
-    } catch { cerrarSesion(); return; }
-    actualizarBotonesAuth();
+    const token = localStorage.getItem('bb_token');
+    const rol = localStorage.getItem('bb_rol');
+    
+    // Check expiration if we have token
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.exp * 1000 < Date.now()) { cerrarSesion(); return; }
+            usuarioActual = payload;
+        } catch { cerrarSesion(); return; }
+    } else {
+        usuarioActual = null;
+    }
+
+    const text = token ? (rol === 'CLIENTE' ? 'MI PERFIL' : 'PANEL STAFF') : 'ACCEDER';
+    const action = token ? irAlPanelCorrespondiente : abrirAuth;
+
+    const btnL = document.getElementById('btn-auth-landing');
+    if (btnL) {
+        btnL.textContent = text;
+        btnL.onclick = action;
+    }
+
+    document.querySelectorAll('.sh-action-btn').forEach(btn => {
+        btn.textContent = text;
+        btn.onclick = action;
+    });
+    
+    actualizarContadorCarrito();
 }
 
-function actualizarBotonesAuth() {
-    const label = usuarioActual ? 'MI CUENTA' : 'ACCEDER';
-    const fn = usuarioActual ? 'abrirMiCuenta(event)' : 'abrirAuth(event)';
-    ['btn-auth-landing', 'btn-auth-header'].forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) { btn.textContent = label; btn.setAttribute('onclick', fn); }
-    });
-    // También botones inyectados en headers de páginas
-    document.querySelectorAll('.sh-action-btn').forEach(btn => {
-        btn.textContent = label;
-        btn.setAttribute('onclick', fn);
-    });
-    actualizarContadorCarrito();
+function irAlPanelCorrespondiente() {
+    const rol = localStorage.getItem('bb_rol');
+    if (rol === 'ADMIN') window.location.href = '/admin.html';
+    else if (rol === 'EMPLEADO') window.location.href = '/empleados.html';
+    else window.location.href = '/cliente.html';
 }
 
 function cerrarSesion() {
@@ -88,7 +102,7 @@ function cerrarSesion() {
     localStorage.removeItem('bb_token');
     localStorage.removeItem('bb_rol');
     localStorage.removeItem('bb_nombre');
-    actualizarBotonesAuth();
+    verificarSesion();
     mostrarToast('Sesión cerrada', 'success');
 }
 
@@ -584,6 +598,8 @@ function renderAuthRegistro() {
     `;
 }
 
+
+
 async function loginCliente() {
     const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-pass').value;
@@ -638,19 +654,11 @@ async function registroCliente() {
 
         verificarSesion();
         cerrarModal('modal-auth');
-        mostrarToast('✅ Cuenta creada. ¡Bienvenido!', 'success');
+        window.location.href = '/cliente.html';
     } catch (e) { mostrarToast(e.message, 'error'); }
 }
 
-function abrirMiCuenta(e) {
-    if (e) e.preventDefault();
-    document.getElementById('auth-content').innerHTML = `
-        <h2 class="modal-title">Mi cuenta</h2>
-        <p style="margin-bottom:20px;color:#666;">Sesión iniciada correctamente.</p>
-        <button class="btn-siguiente" onclick="cerrarSesion();cerrarModal('modal-auth')">CERRAR SESIÓN</button>
-    `;
-    abrirModal('modal-auth');
-}
+
 
 // ── Modales ───────────────────────────────────────────────────────────────────
 function abrirModal(id) {
