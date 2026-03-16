@@ -33,3 +33,36 @@ exports.eliminarEmpleado = async (req, res) => {
         res.json({ ok: true, mensaje: 'Empleado dado de baja' });
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
+
+const Producto = require('../models/producto.model');
+const Extra = require('../models/extra.model');
+
+exports.getProductosAll = async (req, res) => {
+    try {
+        const productos = await Producto.find().sort('categoria nombre');
+        res.json({ ok: true, total: productos.length, productos });
+    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+};
+
+exports.getExtrasAll = async (req, res) => {
+    try {
+        const extras = await Extra.find().sort('nombre');
+        res.json({ ok: true, total: extras.length, extras });
+    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+};
+
+exports.eliminarProductoFisico = async (req, res) => {
+    try {
+        const producto = await Producto.findByIdAndDelete(req.params.id);
+        if (!producto) return res.status(404).json({ ok: false, mensaje: 'Producto no encontrado' });
+        res.json({ ok: true, mensaje: 'Producto eliminado definitivamente' });
+    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+};
+
+exports.eliminarExtraFisico = async (req, res) => {
+    try {
+        const extra = await Extra.findByIdAndDelete(req.params.id);
+        if (!extra) return res.status(404).json({ ok: false, mensaje: 'Extra no encontrado' });
+        res.json({ ok: true, mensaje: 'Extra eliminado definitivamente' });
+    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+};

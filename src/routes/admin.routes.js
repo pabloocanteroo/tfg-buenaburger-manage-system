@@ -11,4 +11,10 @@ router.get('/empleados', getEmpleados);
 router.post('/empleados', validarCrearEmpleado, crearEmpleado);
 router.delete('/empleados/:id', eliminarEmpleado);
 
+router.get('/productos', require('../controllers/admin.controller').getProductosAll);
+router.delete('/productos/:id', require('../controllers/admin.controller').eliminarProductoFisico);
+
+router.get('/extras', require('../controllers/admin.controller').getExtrasAll);
+router.delete('/extras/:id', require('../controllers/admin.controller').eliminarExtraFisico);
+
 module.exports = router;

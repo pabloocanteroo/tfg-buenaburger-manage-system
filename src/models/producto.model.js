@@ -6,7 +6,7 @@ const ProductoSchema = new mongoose.Schema({
     precio: { type: Number, required: true, min: 0 },
     categoria: {
         type: String,
-        enum: ['HAMBURGUESA', 'PATATAS', 'BEBIDA'],
+        enum: ['HAMBURGUESA', 'PATATAS', 'BEBIDA', 'POSTRE'],
         required: true
     },
     ingredientesPorDefecto: [{ type: String, trim: true }],  // ['bacon', 'queso', 'pepinillos'...]

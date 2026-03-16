@@ -35,8 +35,8 @@ const validarProducto = [
     body('nombre').trim().notEmpty().withMessage('El nombre es obligatorio'),
     body('precio').isFloat({ min: 0 }).withMessage('El precio debe ser un número positivo'),
     body('categoria')
-        .isIn(['HAMBURGUESA', 'PATATAS', 'BEBIDA'])
-        .withMessage('Categoría inválida. Valores: HAMBURGUESA, PATATAS, BEBIDA'),
+        .isIn(['HAMBURGUESA', 'PATATAS', 'BEBIDA', 'POSTRE'])
+        .withMessage('Categoría inválida. Valores: HAMBURGUESA, PATATAS, BEBIDA, POSTRE'),
     validar
 ];
 

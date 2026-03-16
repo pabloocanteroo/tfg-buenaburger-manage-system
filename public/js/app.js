@@ -128,7 +128,7 @@ function filtrarCategoria(cat, tabEl) {
 }
 
 function emojiCategoria(cat) {
-    return cat === 'HAMBURGUESA' ? '🍔' : cat === 'PATATAS' ? '🍟' : '🥤';
+    return cat === 'HAMBURGUESA' ? '🍔' : cat === 'PATATAS' ? '🍟' : cat === 'POSTRE' ? '🍰' : '🥤';
 }
 
 function renderProductos(lista) {
