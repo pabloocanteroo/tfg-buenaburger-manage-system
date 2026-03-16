@@ -109,7 +109,8 @@ function cerrarSesion() {
 // ── API helpers ───────────────────────────────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
     const headers = { 'Content-Type': 'application/json', ...options.headers };
-    if (tokenActual) headers['Authorization'] = `Bearer ${tokenActual}`;
+    const localToken = localStorage.getItem('bb_token');
+    if (localToken) headers['Authorization'] = `Bearer ${localToken}`;
     const res = await fetch(API + endpoint, { ...options, headers });
     const data = await res.json();
     if (!res.ok) throw new Error(data.mensaje || 'Error en el servidor');
@@ -346,13 +347,52 @@ function eliminarDelCarrito(id) {
 }
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
-function iniciarCheckout() {
+async function iniciarCheckout() {
     cerrarModal('modal-carrito');
+    
+    // Si es cliente, intentamos recuperar sus datos completos para saltar el paso 1
+    const token = localStorage.getItem('bb_token');
+    const rol = localStorage.getItem('bb_rol');
+    
+    if (token && rol === 'CLIENTE') {
+        const btn = document.querySelector('.btn-checkout');
+        const textBtn = btn ? btn.textContent : '';
+        if (btn) btn.textContent = 'CARGANDO...';
+        
+        try {
+            const data = await apiFetch('/auth/me');
+            if (data && data.cliente) {
+                window._checkoutDatos = {
+                    nombre: data.cliente.nombre || '',
+                    telefono: data.cliente.telefono || '',
+                    email: data.cliente.email || ''
+                };
+                
+                // Si ya tenemos el teléfono (requisito mínimo), saltamos el Paso 1
+                if (data.cliente.telefono) {
+                    if (btn) btn.textContent = textBtn;
+                    abrirModal('modal-checkout');
+                    await renderPaso2Directo();
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error('Error precargando perfil:', e);
+            mostrarToast('Error interno validando la cuenta: ' + e.message, 'error');
+        } finally {
+            if (btn) btn.textContent = textBtn;
+        }
+    }
+
     renderCheckoutPaso1();
     abrirModal('modal-checkout');
 }
 
 function renderCheckoutPaso1() {
+    const dNombre = window._checkoutDatos?.nombre || usuarioActual?.nombre || '';
+    const dTel = window._checkoutDatos?.telefono || '';
+    const dEmail = window._checkoutDatos?.email || '';
+
     document.getElementById('checkout-content').innerHTML = `
         <div class="checkout-steps">
             <div class="checkout-step active">1. Datos</div>
@@ -366,16 +406,16 @@ function renderCheckoutPaso1() {
         <div class="form-row">
             <div class="form-group">
                 <label>Nombre *</label>
-                <input type="text" id="co-nombre" placeholder="Tu nombre" value="${usuarioActual?.nombre || ''}">
+                <input type="text" id="co-nombre" placeholder="Tu nombre" value="${dNombre}">
             </div>
             <div class="form-group">
                 <label>Teléfono *</label>
-                <input type="tel" id="co-telefono" placeholder="612 345 678">
+                <input type="tel" id="co-telefono" placeholder="612 345 678" value="${dTel}">
             </div>
         </div>
         <div class="form-group">
             <label>Email (para confirmación)</label>
-            <input type="email" id="co-email" placeholder="tu@email.com">
+            <input type="email" id="co-email" placeholder="tu@email.com" value="${dEmail}">
         </div>
         <div style="margin-top:10px;padding-top:14px;border-top:1px solid #f0f0f0;">
             <div style="font-weight:700;font-size:0.8rem;color:#555;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">Resumen</div>
