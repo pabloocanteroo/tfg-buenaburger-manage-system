@@ -5,6 +5,42 @@
 
 const API = '';
 
+// ── Cola de impresión ───────────────────────────────────────────
+function actualizarBotónCola(cantidad) {
+    const count = document.getElementById('cola-count');
+    if (count) count.textContent = cantidad;
+    const btn = document.getElementById('btn-cola');
+    if (btn) btn.style.opacity = cantidad > 0 ? '1' : '0.55';
+}
+
+async function imprimirCola() {
+    if (!BB_PRINT?.characteristic) {
+        alert('Conecta la impresora primero antes de imprimir la cola.');
+        return;
+    }
+    try {
+        const res = await fetch(`${API}/api/admin/cola-impresion/imprimir`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.mensaje);
+        mostrarToast(`✅ ${data.enviados} pedido(s) enviados a la impresora`, 'verde');
+        actualizarBotónCola(0);
+    } catch (err) {
+        mostrarToast(`Error: ${err.message}`, 'rojo');
+    }
+}
+
+// Escuchar el evento de cola pendiente usando el socket ya creado por print.js
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (typeof BB_PRINT !== 'undefined' && BB_PRINT.socket) {
+            BB_PRINT.socket.on('cola-pendiente', ({ cantidad }) => actualizarBotónCola(cantidad));
+        }
+    }, 100);
+});
+
 // ── Auth ────────────────────────────────────────────────────────
 function getToken() { return localStorage.getItem('bb_token'); }
 
@@ -57,6 +93,8 @@ function cambiarTab(tab) {
 }
 
 // ── Pedidos ──────────────────────────────────────────────────────
+let _pedidosCache = [];
+
 async function cargarPedidosAdmin() {
     const fecha = document.getElementById('pedidos-fecha').value;
     const cont = document.getElementById('lista-pedidos-admin');
@@ -69,16 +107,18 @@ async function cargarPedidosAdmin() {
         const data = await res.json();
         if (!data.ok) throw new Error(data.mensaje);
         const { pedidos } = data;
+        _pedidosCache = pedidos;
         if (!pedidos.length) {
             cont.innerHTML = '<p style="color:#888;padding:20px">No hay pedidos para esta fecha.</p>';
             return;
         }
-        cont.innerHTML = pedidos.map(p => {
+        cont.innerHTML = pedidos.map((p, idx) => {
             const hora = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            const lineas = p.lineas.map(l => `${l.cantidad}× ${l.nombreProducto || 'Producto'}`).join(', ');
+            const lineas = p.lineas.map(l => `${l.cantidad}× ${l.producto?.nombre || l.nombre || '?'}`).join(', ');
             const estadoColor = p.estado === 'CANCELADO' ? '#e74c3c' : p.estado === 'CONFIRMADO' ? '#27ae60' : '#f39c12';
+            const cancelado = p.estado === 'CANCELADO';
             return `
-            <div class="pedido-admin-card">
+            <div class="pedido-admin-card ${cancelado ? 'pedido-cancelado' : ''}">
                 <div class="pedido-admin-top">
                     <div>
                         <div class="pedido-admin-num">${p.numero || p._id.slice(-6).toUpperCase()}</div>
@@ -91,10 +131,49 @@ async function cargarPedidosAdmin() {
                 </div>
                 <div class="pedido-admin-cliente">👤 ${p.nombreCliente || '—'} &nbsp;·&nbsp; 📞 ${p.telefonoCliente || '—'}</div>
                 <div class="pedido-admin-lineas">${lineas}</div>
+                <div class="pedido-admin-acciones">
+                    <button class="btn-reimprimir" onclick="reimprimirTicket('${p._id}', 'cliente')" title="Reimprimir ticket cliente">🖨 Cliente</button>
+                    <button class="btn-reimprimir" onclick="reimprimirTicket('${p._id}', 'cocina')" title="Reimprimir ticket cocina">🖨 Cocina</button>
+                    ${!cancelado ? `
+                    <button class="btn-modificar-pedido" onclick="modificarPedidoAdmin(${idx})">✏️ Modificar</button>
+                    <button class="btn-eliminar-pedido" onclick="eliminarPedidoAdmin('${p._id}', '${p.numero || p._id.slice(-6).toUpperCase()}')">🗑 Eliminar</button>
+                    ` : ''}
+                </div>
             </div>`;
         }).join('');
     } catch (err) {
         cont.innerHTML = `<p style="color:red;padding:20px">Error: ${err.message}</p>`;
+    }
+}
+
+function modificarPedidoAdmin(idx) {
+    const p = _pedidosCache[idx];
+    if (!p) return;
+    const bloqueId = p.bloques?.[0]?._id || p.bloques?.[0] || null;
+    localStorage.setItem('bb_editar_pedido', JSON.stringify({
+        pedidoId:      p._id,
+        numero:        p.numero || p._id.slice(-6).toUpperCase(),
+        nombreCliente: p.nombreCliente || '',
+        telefonoCliente: p.telefonoCliente || '',
+        bloqueId:      bloqueId ? bloqueId.toString() : null,
+        lineas:        p.lineas
+    }));
+    window.location.href = '/pos.html';
+}
+
+async function eliminarPedidoAdmin(id, numero) {
+    if (!confirm(`¿Cancelar el pedido ${numero}?\nSe liberarán los bloques reservados.`)) return;
+    try {
+        const res = await fetch(`${API}/api/pedidos/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.mensaje);
+        mostrarToast(`Pedido ${numero} cancelado`, 'verde');
+        cargarPedidosAdmin();
+    } catch (err) {
+        mostrarToast(`Error: ${err.message}`, 'rojo');
     }
 }
 
@@ -320,18 +399,88 @@ async function abrirDia(fecha) {
 
 // ── Estadísticas ─────────────────────────────────────────────────
 async function cargarEstadisticas() {
+    // Establecer fecha por defecto a hoy si no hay ninguna
+    const inputFecha = document.getElementById('stat-fecha');
+    if (!inputFecha.value) {
+        const hoy = new Date();
+        inputFecha.value = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+    }
+    const fecha = inputFecha.value;
+
     try {
-        const res = await fetch(`${API}/api/admin/estadisticas`, {
+        const res = await fetch(`${API}/api/admin/estadisticas?fecha=${fecha}`, {
             headers: { Authorization: `Bearer ${getToken()}` }
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.mensaje);
-        document.getElementById('stat-pedidos').textContent = data.totalPedidos ?? '—';
-        document.getElementById('stat-ingresos').textContent =
-            data.ingresosPagados != null ? `${data.ingresosPagados.toFixed(2)} €` : '—';
+
+        const { hoy, global: g, topProductos, ultimosDias } = data;
+
+        // ── Título dinámico del día ───────────────────────────────
+        const hoyReal = new Date();
+        const hoyStr = `${hoyReal.getFullYear()}-${String(hoyReal.getMonth()+1).padStart(2,'0')}-${String(hoyReal.getDate()).padStart(2,'0')}`;
+        const fechaLabel = fecha === hoyStr
+            ? 'HOY'
+            : new Date(fecha + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+        document.getElementById('stat-titulo-dia').textContent = fechaLabel;
+
+        // ── Hoy ──────────────────────────────────────────────────
+        document.getElementById('stat-hoy-pedidos').textContent = hoy.pedidos;
+        document.getElementById('stat-hoy-ingresos').textContent = `${hoy.ingresos.toFixed(2)} €`;
+        document.getElementById('stat-hoy-hamburguesas').textContent = hoy.hamburguesas;
+        document.getElementById('stat-hoy-canal').textContent = hoy.canal;
+
+        // ── Global ───────────────────────────────────────────────
+        document.getElementById('stat-total-pedidos').textContent = g.totalPedidos;
+        document.getElementById('stat-total-ingresos').textContent = `${g.ingresosTotales.toFixed(2)} €`;
+        document.getElementById('stat-media-pedido').textContent = `${g.mediaPedido.toFixed(2)} €`;
+
+        // ── Canales ──────────────────────────────────────────────
+        const canalesIconos = { TELEFONO: '📞', WEB: '🌐', WHATSAPP: '💬' };
+        const totalCanal = Object.values(g.porCanal).reduce((s, v) => s + v, 0) || 1;
+        document.getElementById('stat-canales').innerHTML = Object.entries(g.porCanal)
+            .sort((a, b) => b[1] - a[1])
+            .map(([canal, count]) => {
+                const pct = Math.round((count / totalCanal) * 100);
+                return `<div class="canal-row">
+                    <span class="canal-nombre">${canalesIconos[canal] || '—'} ${canal}</span>
+                    <div class="canal-barra-wrap">
+                        <div class="canal-barra" style="width:${pct}%"></div>
+                    </div>
+                    <span class="canal-count">${count} (${pct}%)</span>
+                </div>`;
+            }).join('') || '<p style="color:#888;font-size:.85rem">Sin datos</p>';
+
+        // ── Top productos ────────────────────────────────────────
+        const maxUnidades = topProductos[0]?.unidades || 1;
+        document.getElementById('stat-top-productos').innerHTML = topProductos.length
+            ? topProductos.map((p, i) => {
+                const pct = Math.round((p.unidades / maxUnidades) * 100);
+                return `<div class="top-prod-row">
+                    <span class="top-prod-pos">${i + 1}</span>
+                    <span class="top-prod-nombre">${p.nombre}</span>
+                    <div class="canal-barra-wrap">
+                        <div class="canal-barra" style="width:${pct}%;background:#e74c3c"></div>
+                    </div>
+                    <span class="canal-count">${p.unidades} ud.</span>
+                </div>`;
+            }).join('')
+            : '<p style="color:#888;font-size:.85rem">Sin datos</p>';
+
+        // ── Últimos días ─────────────────────────────────────────
+        document.getElementById('stat-tabla-body').innerHTML = ultimosDias.length
+            ? ultimosDias.map(d => {
+                const fecha = new Date(d._id + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                return `<tr>
+                    <td>${fecha}</td>
+                    <td style="text-align:center">${d.pedidos}</td>
+                    <td style="text-align:right;font-weight:700">${d.ingresos.toFixed(2)} €</td>
+                </tr>`;
+            }).join('')
+            : '<tr><td colspan="3" style="color:#888;text-align:center;padding:16px">Sin actividad reciente</td></tr>';
+
     } catch (err) {
-        document.getElementById('stat-pedidos').textContent = '—';
-        document.getElementById('stat-ingresos').textContent = '—';
+        console.error('Error cargando estadísticas:', err);
     }
 }
 

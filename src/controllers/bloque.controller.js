@@ -20,8 +20,9 @@ exports.getDiasOperativos = async (req, res) => {
         const fin = new Date(hoy);
         fin.setDate(hoy.getDate() + meses * 30);
 
-        const fechaInicio = hoy.toISOString().slice(0, 10);
-        const fechaFin = fin.toISOString().slice(0, 10);
+        const toLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const fechaInicio = toLocal(hoy);
+        const fechaFin = toLocal(fin);
 
         // Obtener todos los bloques en el rango
         const bloques = await BloqueProduccion.find({

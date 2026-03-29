@@ -7,6 +7,18 @@ const { getEstadisticas, getEmpleados, crearEmpleado, eliminarEmpleado } = requi
 router.use(protect, authorize('ADMIN'));
 
 router.get('/estadisticas', getEstadisticas);
+router.get('/cola-impresion', (req, res) => {
+    const socketService = require('../services/socket');
+    res.json({ ok: true, cantidad: socketService.getCola().length });
+});
+router.post('/cola-impresion/imprimir', (req, res) => {
+    const socketService = require('../services/socket');
+    const io = socketService.getIo();
+    const pedidos = socketService.vaciarCola();
+    if (pedidos.length === 0) return res.json({ ok: true, enviados: 0 });
+    pedidos.forEach(p => io.emit('imprimir-pedido', p));
+    res.json({ ok: true, enviados: pedidos.length });
+});
 router.get('/empleados', getEmpleados);
 router.post('/empleados', validarCrearEmpleado, crearEmpleado);
 router.delete('/empleados/:id', eliminarEmpleado);

@@ -1,14 +1,27 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/database');
 const { iniciarScheduler } = require('./services/bloqueScheduler');
+const socketService = require('./services/socket');
 
 dotenv.config();
 connectDB().then(() => iniciarScheduler());
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+socketService.init(io);
+
+io.on('connection', (socket) => {
+    // Al conectarse, informar cuántos pedidos hay en cola
+    const cola = socketService.getCola();
+    socket.emit('cola-pendiente', { cantidad: cola.length });
+    socket.on('disconnect', () => {});
+});
 
 // ── Ficheros estáticos (frontend) ─────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '../public')));
@@ -41,6 +54,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(` Servidor corriendo en http://localhost:${PORT}`);
 });

@@ -24,6 +24,8 @@
             <div class="pos-header-right">
                 <span id="pos-empleado-nombre">Empleado: Cargando...</span>
                 <span id="pos-hora-actual">00:00:00</span>
+                <span id="printer-status" style="font-size:.8rem;color:#e74c3c">🔴 Impresora desconectada</span>
+                <button class="btn-panel" onclick="conectarImpresora()">🖨 Conectar</button>
                 <button class="btn-panel" onclick="volverAlPanel()">← PANEL</button>
                 <button class="btn-salir" onclick="cerrarSesionPOS()">SALIR</button>
             </div>
@@ -121,7 +123,15 @@
     </div>
 
 
+    <!-- Banner modo edición -->
+    <div id="banner-edicion" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:#e67e22;color:#fff;text-align:center;padding:10px 16px;font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:.05em">
+        ✏️ EDITANDO PEDIDO <span id="banner-num"></span> — Al enviar, el pedido original será cancelado y se creará uno nuevo
+        <button onclick="cancelarEdicion()" style="margin-left:20px;background:rgba(0,0,0,.2);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-weight:700">✕ Cancelar edición</button>
+    </div>
+
     <div id="pos-toast" class="pos-toast"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/print.js"></script>
     <script src="js/pos.js"></script>
 </body>
 

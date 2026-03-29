@@ -147,6 +147,7 @@ html {
     background: var(--bg);
     overflow: hidden;
 }
+
 /* ── Form compacto en la parte inferior de la columna izquierda ──────────── */
 .pos-form-bottom {
     flex-shrink: 0;
@@ -204,8 +205,13 @@ html {
     outline: none;
 }
 
-.pos-form-inputs input::placeholder { color: #aaa; }
-.pos-form-inputs input:focus { border-color: var(--rojo); }
+.pos-form-inputs input::placeholder {
+    color: #aaa;
+}
+
+.pos-form-inputs input:focus {
+    border-color: var(--rojo);
+}
 
 .pos-form-actions {
     display: flex;
@@ -276,7 +282,7 @@ html {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: -4px 0 14px rgba(0,0,0,.07);
+    box-shadow: -4px 0 14px rgba(0, 0, 0, .07);
 }
 
 .ticket-header {
@@ -324,9 +330,14 @@ html {
     transition: border-color .15s;
 }
 
-.t-item:hover { border-color: var(--rojo); }
+.t-item:hover {
+    border-color: var(--rojo);
+}
 
-.t-item-info { flex: 1; min-width: 0; }
+.t-item-info {
+    flex: 1;
+    min-width: 0;
+}
 
 .t-item-qty {
     font-family: var(--font);
@@ -693,11 +704,12 @@ html {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 6px;
-    max-height: 140px;
+    max-height: none;
     overflow-y: auto;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
     background: var(--bg);
+    margin-top: auto;
 }
 
 .ticket-bloques::-webkit-scrollbar {

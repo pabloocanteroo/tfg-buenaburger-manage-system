@@ -36,6 +36,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupMultipliers();
     setupCategoryTabs();
     if (productos.length > 0) renderGrid();
+
+    // 4. Modo edición: restaurar pedido si viene del admin
+    const editRaw = localStorage.getItem('bb_editar_pedido');
+    if (editRaw) {
+        try {
+            const edit = JSON.parse(editRaw);
+            cargarModoEdicion(edit);
+        } catch (e) {
+            localStorage.removeItem('bb_editar_pedido');
+        }
+    }
 });
 
 // ══ UI Helpers ═════════════════════════════════════════════════════════════
@@ -82,7 +93,8 @@ async function cargarExtras() {
 
 async function cargarBloques() {
     try {
-        const date = new Date().toISOString().split('T')[0];
+        const hoy = new Date();
+        const date = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
         const res = await fetch(`/api/bloques?fecha=${date}`);
         const data = await res.json();
         bloques = data.bloques || [];
@@ -507,6 +519,20 @@ async function cobrarPedido() {
             return showPosToast('Error: ' + errorMsg, 'error');
         }
 
+        // Si estamos en modo edición, cancelar el pedido original
+        const editRaw = localStorage.getItem('bb_editar_pedido');
+        if (editRaw) {
+            const edit = JSON.parse(editRaw);
+            await fetch(`/api/pedidos/${edit.pedidoId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${localStorage.getItem('bb_token')}` }
+            });
+            localStorage.removeItem('bb_editar_pedido');
+            showPosToast(`✅ Pedido actualizado con éxito`);
+            setTimeout(() => { window.location.href = '/admin.html'; }, 1200);
+            return;
+        }
+
         showPosToast(`✅ Pedido ${data.pedido._id.slice(-5).toUpperCase()} creado con éxito!`);
 
         // Reset ticket
@@ -527,4 +553,65 @@ async function cobrarPedido() {
         btn.textContent = 'ENVIAR PEDIDO';
         showPosToast('Error de red al procesar.', 'error');
     }
+}
+
+// ══ Modo Edición ══════════════════════════════════════════════════════════════
+function cargarModoEdicion(edit) {
+    // Mostrar banner
+    document.getElementById('banner-edicion').style.display = 'block';
+    document.getElementById('banner-num').textContent = edit.numero;
+
+    // Cambiar texto del botón
+    const btn = document.getElementById('btn-cobrar');
+    if (btn) { btn.textContent = 'ACTUALIZAR PEDIDO'; btn.style.background = '#e67e22'; }
+
+    // Pre-rellenar nombre y teléfono
+    const inpNombre = document.getElementById('cliente-nombre');
+    const inpTel    = document.getElementById('cliente-telefono');
+    if (inpNombre) inpNombre.value = edit.nombreCliente || '';
+    if (inpTel)    inpTel.value    = edit.telefonoCliente || '';
+
+    // Restaurar ticket desde las lineas guardadas
+    ticket = [];
+    for (const linea of (edit.lineas || [])) {
+        const prodId = linea.producto?.toString?.() || linea.producto;
+        const prod = productos.find(p => p._id === prodId || p._id.toString() === prodId);
+        if (!prod) continue;
+
+        const extrasLinea = (linea.extras || []).map(e => {
+            const extBase = extras.find(ex => ex._id === (e.extra?.toString?.() || e.extra));
+            return {
+                extra:    e.extra?.toString?.() || e.extra,
+                nombre:   e.nombre || extBase?.nombre || '',
+                precio:   e.precio ?? extBase?.precio ?? 0,
+                cantidad: e.cantidad
+            };
+        }).filter(e => e.cantidad > 0);
+
+        const precioExtras = extrasLinea.reduce((s, e) => s + e.precio * e.cantidad, 0);
+
+        ticket.push({
+            _id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            producto:          prod,
+            cantidad:          linea.cantidad,
+            excluidos:         linea.ingredientesExcluidos || linea.excluidos || [],
+            anadidos:          linea.ingredientesAnadidos  || linea.anadidos  || [],
+            extras:            extrasLinea,
+            precioBase:        linea.precioUnitario ?? prod.precio,
+            precioExtraUnitario: precioExtras,
+            precioTotalItem:   (linea.precioUnitario ?? prod.precio + precioExtras) * linea.cantidad
+        });
+    }
+    renderTicket();
+
+    // Pre-seleccionar bloque si existe en la lista de hoy
+    if (edit.bloqueId) {
+        const b = bloques.find(b => b._id === edit.bloqueId || b._id.toString() === edit.bloqueId);
+        if (b) { bloqueSeleccionado = b._id; renderBloques(); }
+    }
+}
+
+function cancelarEdicion() {
+    localStorage.removeItem('bb_editar_pedido');
+    window.location.href = '/admin.html';
 }

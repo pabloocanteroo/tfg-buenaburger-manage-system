@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Pedido = require('../models/pedido.model');
 const BloqueProduccion = require('../models/bloqueProduccion.model');
 const { ClienteInvitado } = require('../models/cliente.model');
+const socketService = require('../services/socket');
 
 // Calcula cuántas hamburguesas hay en las líneas del pedido
 const contarHamburguesas = (lineas, productos) => {
@@ -90,6 +91,8 @@ exports.crearPedido = async (req, res) => {
             clienteFinal = invitado._id;
         }
 
+        const estadoInicial = metodoPago === 'PAGO_EN_LOCAL' ? 'CONFIRMADO' : 'PENDIENTE_PAGO';
+
         const pedido = await Pedido.create({
             cliente: clienteFinal,
             nombreCliente: nombre,
@@ -100,8 +103,16 @@ exports.crearPedido = async (req, res) => {
             bloques: bloquesIds,
             lineas,
             total,
-            estado: metodoPago === 'PAGO_EN_LOCAL' ? 'CONFIRMADO' : 'PENDIENTE_PAGO'
+            estado: estadoInicial
         });
+
+        // Solo imprimir si el pedido queda confirmado (pago en local)
+        // Si es STRIPE, se imprimirá cuando Stripe confirme el pago
+        if (estadoInicial === 'CONFIRMADO') {
+            const pedidoPopulado = await Pedido.findById(pedido._id)
+                .populate('bloques', 'horaInicio fecha');
+            socketService.emitirOEncolar(pedidoPopulado.toObject());
+        }
 
         res.status(201).json({ ok: true, pedido });
 
@@ -211,6 +222,11 @@ exports.crearPedidoTelefonico = async (req, res) => {
             estado: 'CONFIRMADO'
         });
 
+        // Emitir o encolar según si hay tablet conectada
+        const pedidoPopulado = await Pedido.findById(pedido._id)
+            .populate('bloques', 'horaInicio fecha');
+        socketService.emitirOEncolar(pedidoPopulado.toObject());
+
         res.status(201).json({ ok: true, pedido });
 
     } catch (err) {
@@ -219,10 +235,22 @@ exports.crearPedidoTelefonico = async (req, res) => {
     }
 };
 
+// ── GET /api/pedidos/:id ──────────────────────────────────────────────────────
+exports.getPedidoPorId = async (req, res) => {
+    try {
+        const pedido = await Pedido.findById(req.params.id)
+            .populate('bloques', 'fecha horaInicio horaFin');
+        if (!pedido) return res.status(404).json({ ok: false, mensaje: 'Pedido no encontrado' });
+        res.json({ ok: true, pedido });
+    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+};
+
 // ── GET /api/pedidos/todos?fecha= ─────────────────────────────────────────────
 exports.getTodosPedidos = async (req, res) => {
     try {
-        const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
+        const hoy = new Date();
+        const fechaLocal = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+        const fecha = req.query.fecha || fechaLocal;
         const bloques = await BloqueProduccion.find({ fecha }).sort('horaInicio');
         const bloqueIds = bloques.map(b => b._id);
 
@@ -232,6 +260,7 @@ exports.getTodosPedidos = async (req, res) => {
         })
             .sort('fechaCreacion')
             .populate('bloques', 'horaInicio horaFin capacidadMax hamburgesasOcupadas')
+            .populate('lineas.producto', 'nombre precio categoria')
             .lean();
 
         res.json({ ok: true, bloques, pedidos });

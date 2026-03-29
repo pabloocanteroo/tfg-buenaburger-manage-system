@@ -2,11 +2,12 @@
   "name": "tfg-buenaburger-manage-system",
   "version": "1.0.0",
   "description": "La industria de la restauración ha experimentado en los últimos años una transformación profunda impulsada por la digitalización de sus procesos operativos. Sin embargo, una gran parte de los pequeños negocios de hostelería en España, especialmente aquellos basados en el modelo take away, continúan gestionando sus operaciones de manera manual, lo que genera ineficiencias que afectan directamente a la rentabilidad y calidad del servicio.",
-  "main": "index.js",
+  "main": "src/index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,9 +17,11 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
+    "express": "^4.21.2",
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.3"
   }
 }

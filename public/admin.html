@@ -24,7 +24,9 @@
         <div class="adm-header-right">
             <span id="adm-nombre">Cargando...</span>
             <span class="badge-rol">ADMIN</span>
-            <button class="btn-salir" onclick="cerrarSesion()">SALIR</button>
+            <span id="printer-status" style="font-size:.8rem;color:#e74c3c">🔴 Impresora desconectada</span>
+            <button class="btn-salir" style="background:#2980b9" onclick="conectarImpresora()">🖨 Conectar</button>
+<button class="btn-salir" onclick="cerrarSesion()">SALIR</button>
         </div>
     </header>
 
@@ -93,6 +95,11 @@
                         <p class="seccion-sub">Historial de todos los pedidos del sistema</p>
                     </div>
                     <div style="display:flex;gap:10px;align-items:center">
+                        <button id="btn-cola" class="btn-cola-print" onclick="imprimirCola()">
+                            <span class="btn-cola-icon">🖨</span>
+                            <span>Imprimir cola</span>
+                            <span class="btn-cola-badge" id="cola-count">0</span>
+                        </button>
                         <input type="date" id="pedidos-fecha" class="input-fecha-pedidos">
                         <button class="btn-refresh" onclick="cargarPedidosAdmin()">↻ Buscar</button>
                     </div>
@@ -183,18 +190,78 @@
                         <h1>Estadísticas</h1>
                         <p class="seccion-sub">Resumen del negocio</p>
                     </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="date" id="stat-fecha" class="input-fecha-stat" onchange="cargarEstadisticas()">
+                        <button class="btn-actualizar-stat" onclick="cargarEstadisticas()">↻ Actualizar</button>
+                    </div>
                 </div>
-                <div class="stats-grid" id="stats-grid">
-                    <div class="stat-card">
+
+                <!-- Día seleccionado -->
+                <div class="stat-seccion-titulo" id="stat-titulo-dia">HOY</div>
+                <div class="stats-grid stats-grid-4">
+                    <div class="stat-card stat-card-hoy">
                         <div class="stat-icon">📦</div>
-                        <div class="stat-valor" id="stat-pedidos">—</div>
+                        <div class="stat-valor" id="stat-hoy-pedidos">—</div>
+                        <div class="stat-label">Pedidos hoy</div>
+                    </div>
+                    <div class="stat-card stat-card-hoy">
+                        <div class="stat-icon">💶</div>
+                        <div class="stat-valor" id="stat-hoy-ingresos">—</div>
+                        <div class="stat-label">Ingresos hoy</div>
+                    </div>
+                    <div class="stat-card stat-card-hoy">
+                        <div class="stat-icon">🍔</div>
+                        <div class="stat-valor" id="stat-hoy-hamburguesas">—</div>
+                        <div class="stat-label">Unidades vendidas</div>
+                    </div>
+                    <div class="stat-card stat-card-hoy">
+                        <div class="stat-icon">📡</div>
+                        <div class="stat-valor" id="stat-hoy-canal">—</div>
+                        <div class="stat-label">Canal principal</div>
+                    </div>
+                </div>
+
+                <!-- Global -->
+                <div class="stat-seccion-titulo">HISTÓRICO</div>
+                <div class="stats-grid stats-grid-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-valor" id="stat-total-pedidos">—</div>
                         <div class="stat-label">Pedidos totales</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon">💶</div>
-                        <div class="stat-valor" id="stat-ingresos">—</div>
-                        <div class="stat-label">Ingresos (pagos online)</div>
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-valor" id="stat-total-ingresos">—</div>
+                        <div class="stat-label">Ingresos totales</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🧾</div>
+                        <div class="stat-valor" id="stat-media-pedido">—</div>
+                        <div class="stat-label">Ticket medio</div>
+                    </div>
+                </div>
+
+                <!-- Canales + Top Productos -->
+                <div class="stats-fila-2">
+                    <div class="stat-bloque">
+                        <div class="stat-seccion-titulo">PEDIDOS POR CANAL</div>
+                        <div id="stat-canales" class="stat-canales-cont"></div>
+                    </div>
+                    <div class="stat-bloque">
+                        <div class="stat-seccion-titulo">TOP 5 PRODUCTOS</div>
+                        <div id="stat-top-productos" class="stat-lista"></div>
+                    </div>
+                </div>
+
+                <!-- Últimos días -->
+                <div class="stat-seccion-titulo">ÚLTIMOS DÍAS CON ACTIVIDAD</div>
+                <div class="stat-tabla-wrap">
+                    <table class="stat-tabla" id="stat-tabla-dias">
+                        <thead>
+                            <tr><th>Fecha</th><th>Pedidos</th><th>Ingresos</th></tr>
+                        </thead>
+                        <tbody id="stat-tabla-body"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -289,6 +356,8 @@
     <!-- ── Toast ── -->
     <div id="toast" class="toast"></div>
 
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/print.js"></script>
     <script src="js/admin.js"></script>
 </body>
 

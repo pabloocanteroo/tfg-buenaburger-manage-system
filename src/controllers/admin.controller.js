@@ -3,13 +3,77 @@ const Usuario = require('../models/usuario.model');
 
 exports.getEstadisticas = async (req, res) => {
     try {
-        const totalPedidos = await Pedido.countDocuments({ estado: { $ne: 'CANCELADO' } });
-        const ingresosPagados = await Pedido.aggregate([
-            { $match: { stripePagado: true } },
-            { $group: { _id: null, total: { $sum: '$total' } } }
-        ]);
-        res.json({ ok: true, totalPedidos, ingresosPagados: ingresosPagados[0]?.total || 0 });
-    } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
+        const Producto = require('../models/producto.model');
+        const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+        const fechaStr = req.query.fecha || toStr(new Date());
+        const inicioHoy = new Date(`${fechaStr}T00:00:00`);
+        const finHoy   = new Date(`${fechaStr}T23:59:59.999`);
+
+        // Traer todos los pedidos no cancelados (para procesarlos en JS)
+        const todos = await Pedido.find({ estado: { $ne: 'CANCELADO' } }).lean();
+
+        // ── Resumen global ─────────────────────────────────────────
+        const totalPedidos    = todos.length;
+        const ingresosTotales = todos.reduce((s, p) => s + (p.total || 0), 0);
+        const mediaPedido     = totalPedidos > 0 ? ingresosTotales / totalPedidos : 0;
+
+        // Pedidos por canal global
+        const porCanal = {};
+        todos.forEach(p => { porCanal[p.canal] = (porCanal[p.canal] || 0) + 1; });
+
+        // ── Resumen del día seleccionado ───────────────────────────
+        const deldía = todos.filter(p => {
+            const fc = new Date(p.fechaCreacion);
+            return fc >= inicioHoy && fc <= finHoy;
+        });
+        const pedidosHoy     = deldía.length;
+        const ingresosHoy    = deldía.reduce((s, p) => s + (p.total || 0), 0);
+        const unidadesHoy    = deldía.reduce((s, p) =>
+            s + (p.lineas || []).reduce((ls, l) => ls + (l.cantidad || 0), 0), 0);
+        const canalesHoy     = {};
+        deldía.forEach(p => { canalesHoy[p.canal] = (canalesHoy[p.canal] || 0) + 1; });
+        const canalHoy       = Object.entries(canalesHoy).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+
+        // ── Top 5 productos ────────────────────────────────────────
+        const contProd = {};
+        todos.forEach(p => (p.lineas || []).forEach(l => {
+            const id = l.producto?.toString();
+            if (id) contProd[id] = (contProd[id] || 0) + (l.cantidad || 0);
+        }));
+        const topIds = Object.entries(contProd).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const productosDocs = await Producto.find({ _id: { $in: topIds.map(([id]) => id) } }).lean();
+        const topProductos = topIds.map(([id, unidades]) => {
+            const prod = productosDocs.find(p => p._id.toString() === id);
+            return { nombre: prod?.nombre || 'Desconocido', unidades };
+        });
+
+        // ── Últimos 10 días con actividad ──────────────────────────
+        const diasMap = {};
+        todos.forEach(p => {
+            const d = new Date(p.fechaCreacion);
+            const key = toStr(d);
+            if (!diasMap[key]) diasMap[key] = { pedidos: 0, ingresos: 0 };
+            diasMap[key].pedidos++;
+            diasMap[key].ingresos += p.total || 0;
+        });
+        const ultimosDias = Object.entries(diasMap)
+            .sort((a, b) => b[0].localeCompare(a[0]))
+            .slice(0, 10)
+            .reverse()
+            .map(([_id, v]) => ({ _id, ...v }));
+
+        res.json({
+            ok: true,
+            hoy: { pedidos: pedidosHoy, ingresos: ingresosHoy, hamburguesas: unidadesHoy, canal: canalHoy },
+            global: { totalPedidos, ingresosTotales, mediaPedido, porCanal },
+            topProductos,
+            ultimosDias
+        });
+    } catch (err) {
+        console.error('[Estadísticas]', err);
+        res.status(500).json({ ok: false, mensaje: err.message });
+    }
 };
 
 exports.getEmpleados = async (req, res) => {
