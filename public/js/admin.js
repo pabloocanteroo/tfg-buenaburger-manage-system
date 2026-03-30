@@ -14,10 +14,6 @@ function actualizarBotónCola(cantidad) {
 }
 
 async function imprimirCola() {
-    if (!BB_PRINT?.characteristic) {
-        alert('Conecta la impresora primero antes de imprimir la cola.');
-        return;
-    }
     try {
         const res = await fetch(`${API}/api/admin/cola-impresion/imprimir`, {
             method: 'POST',
@@ -25,21 +21,15 @@ async function imprimirCola() {
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.mensaje);
-        mostrarToast(`✅ ${data.enviados} pedido(s) enviados a la impresora`, 'verde');
-        actualizarBotónCola(0);
+        const msg = data.impresos > 0
+            ? `✅ ${data.impresos} pedido(s) impresos${data.fallidos > 0 ? ` (${data.fallidos} fallaron)` : ''}`
+            : 'No había pedidos en cola';
+        mostrarToast(msg, 'verde');
+        actualizarBotónCola(data.fallidos || 0);
     } catch (err) {
         mostrarToast(`Error: ${err.message}`, 'rojo');
     }
 }
-
-// Escuchar el evento de cola pendiente usando el socket ya creado por print.js
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        if (typeof BB_PRINT !== 'undefined' && BB_PRINT.socket) {
-            BB_PRINT.socket.on('cola-pendiente', ({ cantidad }) => actualizarBotónCola(cantidad));
-        }
-    }, 100);
-});
 
 // ── Auth ────────────────────────────────────────────────────────
 function getToken() { return localStorage.getItem('bb_token'); }

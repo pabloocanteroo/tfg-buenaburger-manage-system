@@ -17,9 +17,9 @@ const io = new Server(server);
 socketService.init(io);
 
 io.on('connection', (socket) => {
-    // Al conectarse, informar cuántos pedidos hay en cola
-    const cola = socketService.getCola();
-    socket.emit('cola-pendiente', { cantidad: cola.length });
+    // Informar cuántos pedidos hay pendientes en la cola de impresión
+    const printerService = require('./services/printer');
+    socket.emit('cola-pendiente', { cantidad: printerService.getCola().length });
     socket.on('disconnect', () => {});
 });
 

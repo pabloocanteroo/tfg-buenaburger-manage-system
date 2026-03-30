@@ -3,6 +3,7 @@ const Pedido = require('../models/pedido.model');
 const BloqueProduccion = require('../models/bloqueProduccion.model');
 const { ClienteInvitado } = require('../models/cliente.model');
 const socketService = require('../services/socket');
+const printerService = require('../services/printer');
 
 // Calcula cuántas hamburguesas hay en las líneas del pedido
 const contarHamburguesas = (lineas, productos) => {
@@ -110,8 +111,13 @@ exports.crearPedido = async (req, res) => {
         // Si es STRIPE, se imprimirá cuando Stripe confirme el pago
         if (estadoInicial === 'CONFIRMADO') {
             const pedidoPopulado = await Pedido.findById(pedido._id)
-                .populate('bloques', 'horaInicio fecha');
-            socketService.emitirOEncolar(pedidoPopulado.toObject());
+                .populate('bloques', 'horaInicio fecha')
+                .populate('lineas.producto', 'nombre precio');
+            const pedidoObj = pedidoPopulado.toObject();
+            // Alerta visual/sonora en iPad vía socket
+            socketService.notificarNuevoPedido(pedidoObj);
+            // Imprimir por WiFi (encola si la impresora no está disponible)
+            printerService.imprimirOEncolar(pedidoObj);
         }
 
         res.status(201).json({ ok: true, pedido });
@@ -222,10 +228,13 @@ exports.crearPedidoTelefonico = async (req, res) => {
             estado: 'CONFIRMADO'
         });
 
-        // Emitir o encolar según si hay tablet conectada
+        // Notificar al iPad y enviar a impresora WiFi
         const pedidoPopulado = await Pedido.findById(pedido._id)
-            .populate('bloques', 'horaInicio fecha');
-        socketService.emitirOEncolar(pedidoPopulado.toObject());
+            .populate('bloques', 'horaInicio fecha')
+            .populate('lineas.producto', 'nombre precio');
+        const pedidoObj = pedidoPopulado.toObject();
+        socketService.notificarNuevoPedido(pedidoObj);
+        printerService.imprimirOEncolar(pedidoObj);
 
         res.status(201).json({ ok: true, pedido });
 

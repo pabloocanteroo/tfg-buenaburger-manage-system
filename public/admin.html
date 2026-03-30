@@ -24,9 +24,9 @@
         <div class="adm-header-right">
             <span id="adm-nombre">Cargando...</span>
             <span class="badge-rol">ADMIN</span>
-            <span id="printer-status" style="font-size:.8rem;color:#e74c3c">🔴 Impresora desconectada</span>
-            <button class="btn-salir" style="background:#2980b9" onclick="conectarImpresora()">🖨 Conectar</button>
-<button class="btn-salir" onclick="cerrarSesion()">SALIR</button>
+            <span id="printer-status" style="font-size:.8rem;color:#e74c3c">🔴 Sin impresora</span>
+            <button class="btn-salir" style="background:#2980b9" onclick="abrirModalImpresora()">🖨 Impresora</button>
+            <button class="btn-salir" onclick="cerrarSesion()">SALIR</button>
         </div>
     </header>
 
@@ -349,6 +349,31 @@
                     <button class="btn-crear-emp" onclick="guardarExtra()" style="flex:1">💾 Guardar</button>
                     <button class="btn-baja" onclick="cerrarModalExtra()" style="flex:1">Cancelar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal Impresora WiFi ── -->
+    <div id="modal-impresora" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarModalImpresora()">
+        <div class="modal-content" style="max-width:360px">
+            <h2>🖨 Impresora WiFi</h2>
+            <p style="color:#888;font-size:.85rem;margin-bottom:16px">
+                Introduce la IP de la impresora en la red local.<br>
+                El servidor se conecta directamente por TCP (ESC/POS).
+            </p>
+            <div class="emp-form-grid" style="grid-template-columns:1fr;">
+                <div class="form-group">
+                    <label>IP de la impresora *</label>
+                    <input type="text" id="input-printer-ip" placeholder="Ej: 192.168.1.100" style="font-size:1.1rem">
+                </div>
+                <div class="form-group">
+                    <label>Puerto (por defecto 9100)</label>
+                    <input type="number" id="input-printer-puerto" value="9100">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+                <button class="btn-crear-emp" onclick="guardarConfigImpresora()" style="flex:1">💾 Guardar</button>
+                <button class="btn-baja" onclick="cerrarModalImpresora()" style="flex:1">Cancelar</button>
             </div>
         </div>
     </div>
