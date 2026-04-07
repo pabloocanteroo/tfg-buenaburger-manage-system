@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04 · realizarPedidoWeb() — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 04</span>
+    <h1>realizarPedidoWeb()</h1>
+  </div>
+
+  <div class="card">
+    <p class="desc">Flujo completo canal web: carta → personalización → selección de bloque(s) → pago → confirmación. Válido para cliente registrado e invitado, con Stripe o pago en local.</p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam defaultFontName Segoe UI
+title realizarPedidoWeb()
+
+|Cliente|
+start
+:Consulta la carta digital;
+:Selecciona productos y cantidades;
+note right
+  Hamburguesa: añade/quita ingredientes,
+  añade extras de pago
+  Patatas: añade extras de pago
+  Bebida: sin personalizacion
+end note
+
+if (Tiene cuenta?) then (si — Cliente Registrado)
+  :Datos precargados desde perfil;
+else (no — Cliente Invitado)
+  :Introduce nombre, telefono y email;
+endif
+
+:Selecciona fecha y bloque horario disponible;
+
+|Sistema|
+:Calcula numero de hamburguesas del pedido;
+
+if (Pedido > 10 hamburguesas?) then (si)
+  :Calcula cuantos bloques consecutivos son necesarios;
+  :Verifica que todos estan disponibles y sin cerrar;
+  if (Bloques consecutivos disponibles?) then (no)
+    :Devuelve error: no hay hueco suficiente en esa franja;
+    |Cliente|
+    :Selecciona otra franja horaria;
+    |Sistema|
+  endif
+  :Reserva todos los bloques consecutivos;
+else (no, 10 o menos)
+  :Verifica disponibilidad del bloque seleccionado;
+  if (Bloque disponible?) then (no)
+    :Devuelve error: bloque lleno;
+    |Cliente|
+    :Selecciona otro bloque;
+    |Sistema|
+  endif
+  :Reserva el bloque seleccionado;
+endif
+
+|Cliente|
+:Elige metodo de pago;
+
+if (Pago con Stripe?) then (si)
+  |Sistema|
+  :Crea sesion de pago en Stripe;
+  note right: <<planificado>>
+  |Cliente|
+  :Completa pago en formulario de Stripe;
+  |Sistema|
+  :Recibe webhook de confirmacion de Stripe;
+  note right: <<planificado>>
+  :Marca pedido como CONFIRMADO;
+  :Registra stripePagado = true;
+else (pago en establecimiento)
+  |Sistema|
+  :Marca pedido como CONFIRMADO;
+  :Registra metodoPago = PAGO_EN_LOCAL;
+endif
+
+|Sistema|
+:Incrementa hamburgesasOcupadas en cada bloque reservado;
+:Genera numero de pedido (BB-YYYYMMDD-XXXX);
+:Emite evento WebSocket a pantalla de cocina;
+:Imprime ticket en cocina via TCP/ESC-POS;
+note right
+  Email de confirmacion al cliente
+  <<planificado>>
+end note
+
+|Cliente|
+:Visualiza numero de pedido y hora de recogida;
+stop
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>
