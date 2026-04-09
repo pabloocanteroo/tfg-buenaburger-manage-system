@@ -1,14 +1,14 @@
 const cron = require('node-cron');
 const BloqueProduccion = require('../models/bloqueProduccion.model');
-
-const HORA_INICIO = '20:30';
-const HORA_FIN = '23:00';
-const INTERVALO_MIN = 5;
-const CAPACIDAD_MAX = 10;
-const DIAS_ADELANTE = 60;
-
-// Días operativos: viernes=5, sábado=6, domingo=0
-const DIAS_OPERATIVOS = new Set([0, 5, 6]);
+const {
+    BLOQUE_HORA_INICIO,
+    BLOQUE_HORA_FIN,
+    BLOQUE_INTERVALO_MIN,
+    BLOQUE_CAPACIDAD_MAX,
+    SCHEDULER_DIAS_ADELANTE,
+    DIAS_OPERATIVOS,
+} = require('../utils/constants');
+const { fechaToString } = require('../utils/helpers');
 
 /**
  * Genera los bloques de 20:30 a 23:00 para una fecha dada (string 'YYYY-MM-DD').
@@ -16,15 +16,15 @@ const DIAS_OPERATIVOS = new Set([0, 5, 6]);
  */
 async function generarBloquesParaDia(fechaStr) {
     const bloques = [];
-    let [h, m] = HORA_INICIO.split(':').map(Number);
-    const [hFin, mFin] = HORA_FIN.split(':').map(Number);
+    let [h, m] = BLOQUE_HORA_INICIO.split(':').map(Number);
+    const [hFin, mFin] = BLOQUE_HORA_FIN.split(':').map(Number);
 
     while (h * 60 + m < hFin * 60 + mFin) {
         const ini = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        m += INTERVALO_MIN;
+        m += BLOQUE_INTERVALO_MIN;
         if (m >= 60) { h++; m -= 60; }
         const fin = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        bloques.push({ fecha: fechaStr, horaInicio: ini, horaFin: fin, capacidadMax: CAPACIDAD_MAX });
+        bloques.push({ fecha: fechaStr, horaInicio: ini, horaFin: fin, capacidadMax: BLOQUE_CAPACIDAD_MAX });
     }
 
     try {
@@ -41,31 +41,19 @@ async function generarBloquesParaDia(fechaStr) {
 }
 
 /**
- * Formatea una fecha como 'YYYY-MM-DD' usando la hora LOCAL del servidor,
- * evitando el desfase que produce toISOString() (que usa UTC).
- */
-function toLocalDateStr(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
-
-/**
- * Recorre los próximos DIAS_ADELANTE días naturales y genera
+ * Recorre los próximos SCHEDULER_DIAS_ADELANTE días naturales y genera
  * bloques solo para los días operativos (vie/sáb/dom).
  */
 async function generarProximosDiasOperativos() {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    for (let i = 0; i < DIAS_ADELANTE; i++) {
+    for (let i = 0; i < SCHEDULER_DIAS_ADELANTE; i++) {
         const fecha = new Date(hoy);
         fecha.setDate(hoy.getDate() + i);
 
         if (DIAS_OPERATIVOS.has(fecha.getDay())) {
-            const fechaStr = toLocalDateStr(fecha); // hora local, no UTC
-            await generarBloquesParaDia(fechaStr);
+            await generarBloquesParaDia(fechaToString(fecha));
         }
     }
 }

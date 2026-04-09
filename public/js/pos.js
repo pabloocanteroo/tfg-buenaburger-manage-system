@@ -574,7 +574,10 @@ function cargarModoEdicion(edit) {
     // Restaurar ticket desde las lineas guardadas
     ticket = [];
     for (const linea of (edit.lineas || [])) {
-        const prodId = linea.producto?.toString?.() || linea.producto;
+        const prodRef = linea.producto;
+        const prodId = (prodRef && typeof prodRef === 'object')
+            ? (prodRef._id?.toString() || String(prodRef._id))
+            : (prodRef?.toString() || String(prodRef));
         const prod = productos.find(p => p._id === prodId || p._id.toString() === prodId);
         if (!prod) continue;
 

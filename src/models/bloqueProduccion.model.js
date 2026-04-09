@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
+const { BLOQUE_CAPACIDAD_MAX } = require('../utils/constants');
 
 const BloqueProduccionSchema = new mongoose.Schema({
     fecha: { type: String, required: true },          // 'YYYY-MM-DD'
     horaInicio: { type: String, required: true },     // 'HH:MM'
     horaFin: { type: String, required: true },        // 'HH:MM'
-    capacidadMax: { type: Number, default: 10 },      // max hamburguesas
+    capacidadMax: { type: Number, default: BLOQUE_CAPACIDAD_MAX },
     hamburgesasOcupadas: { type: Number, default: 0 },
     cerrado: { type: Boolean, default: false }         // cierre manual por admin
 }, { timestamps: true });

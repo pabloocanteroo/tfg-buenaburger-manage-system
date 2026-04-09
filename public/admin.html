@@ -383,7 +383,13 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/print.js"></script>
-    <script src="js/admin.js"></script>
+    <!-- Módulos admin (orden de carga importante) -->
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-pedidos.js"></script>
+    <script src="js/admin-empleados.js"></script>
+    <script src="js/admin-calendario.js"></script>
+    <script src="js/admin-estadisticas.js"></script>
+    <script src="js/admin-carta.js"></script>
 </body>
 
 </html>

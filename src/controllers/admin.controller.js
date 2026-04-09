@@ -1,74 +1,109 @@
-const Pedido = require('../models/pedido.model');
-const Usuario = require('../models/usuario.model');
+const Pedido   = require('../models/pedido.model');
+const Usuario  = require('../models/usuario.model');
+const Producto = require('../models/producto.model');
+const Extra    = require('../models/extra.model');
+const { fechaToString, ordenarPorCategoria } = require('../utils/helpers');
 
+// ── GET /api/admin/estadisticas?fecha=YYYY-MM-DD ──────────────────────────────
 exports.getEstadisticas = async (req, res) => {
     try {
-        const Producto = require('../models/producto.model');
-        const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-        const fechaStr = req.query.fecha || toStr(new Date());
+        const fechaStr  = req.query.fecha || fechaToString();
         const inicioHoy = new Date(`${fechaStr}T00:00:00`);
-        const finHoy   = new Date(`${fechaStr}T23:59:59.999`);
+        const finHoy    = new Date(`${fechaStr}T23:59:59.999`);
 
-        // Traer todos los pedidos no cancelados (para procesarlos en JS)
-        const todos = await Pedido.find({ estado: { $ne: 'CANCELADO' } }).lean();
+        const BASE_MATCH = { estado: { $ne: 'CANCELADO' } };
+        const HOY_MATCH  = { estado: { $ne: 'CANCELADO' }, fechaCreacion: { $gte: inicioHoy, $lte: finHoy } };
 
-        // ── Resumen global ─────────────────────────────────────────
-        const totalPedidos    = todos.length;
-        const ingresosTotales = todos.reduce((s, p) => s + (p.total || 0), 0);
-        const mediaPedido     = totalPedidos > 0 ? ingresosTotales / totalPedidos : 0;
+        // Lanzar todas las agregaciones en paralelo para minimizar latencia
+        const [
+            [globalStats],
+            canalesGlobal,
+            [hoyStats],
+            [canalHoyDoc],
+            topProductos,
+            ultimosDiasRaw,
+        ] = await Promise.all([
 
-        // Pedidos por canal global
-        const porCanal = {};
-        todos.forEach(p => { porCanal[p.canal] = (porCanal[p.canal] || 0) + 1; });
+            // 1. Totales globales
+            Pedido.aggregate([
+                { $match: BASE_MATCH },
+                { $group: { _id: null, totalPedidos: { $sum: 1 }, ingresosTotales: { $sum: '$total' } } },
+            ]),
 
-        // ── Resumen del día seleccionado ───────────────────────────
-        const deldía = todos.filter(p => {
-            const fc = new Date(p.fechaCreacion);
-            return fc >= inicioHoy && fc <= finHoy;
-        });
-        const pedidosHoy     = deldía.length;
-        const ingresosHoy    = deldía.reduce((s, p) => s + (p.total || 0), 0);
-        const unidadesHoy    = deldía.reduce((s, p) =>
-            s + (p.lineas || []).reduce((ls, l) => ls + (l.cantidad || 0), 0), 0);
-        const canalesHoy     = {};
-        deldía.forEach(p => { canalesHoy[p.canal] = (canalesHoy[p.canal] || 0) + 1; });
-        const canalHoy       = Object.entries(canalesHoy).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+            // 2. Pedidos por canal (global)
+            Pedido.aggregate([
+                { $match: BASE_MATCH },
+                { $group: { _id: '$canal', count: { $sum: 1 } } },
+            ]),
 
-        // ── Top 5 productos ────────────────────────────────────────
-        const contProd = {};
-        todos.forEach(p => (p.lineas || []).forEach(l => {
-            const id = l.producto?.toString();
-            if (id) contProd[id] = (contProd[id] || 0) + (l.cantidad || 0);
-        }));
-        const topIds = Object.entries(contProd).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        const productosDocs = await Producto.find({ _id: { $in: topIds.map(([id]) => id) } }).lean();
-        const topProductos = topIds.map(([id, unidades]) => {
-            const prod = productosDocs.find(p => p._id.toString() === id);
-            return { nombre: prod?.nombre || 'Desconocido', unidades };
-        });
+            // 3. Resumen del día seleccionado
+            Pedido.aggregate([
+                { $match: HOY_MATCH },
+                { $group: {
+                    _id: null,
+                    pedidosHoy:  { $sum: 1 },
+                    ingresosHoy: { $sum: '$total' },
+                    // $sum sobre un campo de array: el $sum interior suma la array por documento
+                    unidadesHoy: { $sum: { $sum: '$lineas.cantidad' } },
+                }},
+            ]),
 
-        // ── Últimos 10 días con actividad ──────────────────────────
-        const diasMap = {};
-        todos.forEach(p => {
-            const d = new Date(p.fechaCreacion);
-            const key = toStr(d);
-            if (!diasMap[key]) diasMap[key] = { pedidos: 0, ingresos: 0 };
-            diasMap[key].pedidos++;
-            diasMap[key].ingresos += p.total || 0;
-        });
-        const ultimosDias = Object.entries(diasMap)
-            .sort((a, b) => b[0].localeCompare(a[0]))
-            .slice(0, 10)
-            .reverse()
-            .map(([_id, v]) => ({ _id, ...v }));
+            // 4. Canal más frecuente del día
+            Pedido.aggregate([
+                { $match: HOY_MATCH },
+                { $group: { _id: '$canal', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 1 },
+            ]),
+
+            // 5. Top 5 productos (usa el nombre desnormalizado del ticket)
+            Pedido.aggregate([
+                { $match: BASE_MATCH },
+                { $unwind: '$lineas' },
+                { $group: {
+                    _id:      '$lineas.producto',
+                    nombre:   { $first: '$lineas.nombre' },
+                    unidades: { $sum: '$lineas.cantidad' },
+                }},
+                { $sort: { unidades: -1 } },
+                { $limit: 5 },
+                { $project: { _id: 0, nombre: { $ifNull: ['$nombre', 'Desconocido'] }, unidades: 1 } },
+            ]),
+
+            // 6. Últimos 10 días con actividad (orden cronológico)
+            Pedido.aggregate([
+                { $match: BASE_MATCH },
+                { $group: {
+                    _id:      { $dateToString: { format: '%Y-%m-%d', date: '$fechaCreacion' } },
+                    pedidos:  { $sum: 1 },
+                    ingresos: { $sum: '$total' },
+                }},
+                { $sort: { _id: -1 } },
+                { $limit: 10 },
+                { $sort: { _id:  1 } },   // reordenar cronológicamente los 10 obtenidos
+            ]),
+        ]);
+
+        const totalPedidos    = globalStats?.totalPedidos    || 0;
+        const ingresosTotales = globalStats?.ingresosTotales || 0;
+        const porCanal        = Object.fromEntries(canalesGlobal.map(c => [c._id, c.count]));
 
         res.json({
             ok: true,
-            hoy: { pedidos: pedidosHoy, ingresos: ingresosHoy, hamburguesas: unidadesHoy, canal: canalHoy },
-            global: { totalPedidos, ingresosTotales, mediaPedido, porCanal },
+            hoy: {
+                pedidos:       hoyStats?.pedidosHoy  || 0,
+                ingresos:      hoyStats?.ingresosHoy || 0,
+                hamburguesas:  hoyStats?.unidadesHoy || 0,
+                canal:         canalHoyDoc?._id || '—',
+            },
+            global: {
+                totalPedidos,
+                ingresosTotales,
+                mediaPedido: totalPedidos > 0 ? ingresosTotales / totalPedidos : 0,
+                porCanal,
+            },
             topProductos,
-            ultimosDias
+            ultimosDias: ultimosDiasRaw,
         });
     } catch (err) {
         console.error('[Estadísticas]', err);
@@ -76,6 +111,7 @@ exports.getEstadisticas = async (req, res) => {
     }
 };
 
+// ── GET /api/admin/empleados ──────────────────────────────────────────────────
 exports.getEmpleados = async (req, res) => {
     try {
         const empleados = await Usuario.find({ rol: 'EMPLEADO', activo: true }).select('-passwordHash');
@@ -83,6 +119,7 @@ exports.getEmpleados = async (req, res) => {
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
+// ── POST /api/admin/empleados ─────────────────────────────────────────────────
 exports.crearEmpleado = async (req, res) => {
     try {
         const { nombre, email, password } = req.body;
@@ -91,6 +128,7 @@ exports.crearEmpleado = async (req, res) => {
     } catch (err) { res.status(400).json({ ok: false, mensaje: err.message }); }
 };
 
+// ── DELETE /api/admin/empleados/:id ──────────────────────────────────────────
 exports.eliminarEmpleado = async (req, res) => {
     try {
         await Usuario.findByIdAndUpdate(req.params.id, { activo: false });
@@ -98,25 +136,17 @@ exports.eliminarEmpleado = async (req, res) => {
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
-const Producto = require('../models/producto.model');
-const Extra = require('../models/extra.model');
-
+// ── GET /api/admin/productos ──────────────────────────────────────────────────
 exports.getProductosAll = async (req, res) => {
     try {
-        let productos = await Producto.find().sort('nombre').lean();
-        
-        // Orden personalizado por categoría
-        const ordenCategorias = { 'HAMBURGUESA': 1, 'PATATAS': 2, 'POSTRE': 3, 'BEBIDA': 4 };
-        productos.sort((a, b) => {
-            const ordenA = ordenCategorias[a.categoria] || 99;
-            const ordenB = ordenCategorias[b.categoria] || 99;
-            return ordenA - ordenB;
-        });
-
+        const productos = ordenarPorCategoria(
+            await Producto.find().sort('nombre').lean()
+        );
         res.json({ ok: true, total: productos.length, productos });
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
+// ── GET /api/admin/extras ─────────────────────────────────────────────────────
 exports.getExtrasAll = async (req, res) => {
     try {
         const extras = await Extra.find().sort('nombre');
@@ -124,6 +154,7 @@ exports.getExtrasAll = async (req, res) => {
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
+// ── DELETE /api/admin/productos/:id ──────────────────────────────────────────
 exports.eliminarProductoFisico = async (req, res) => {
     try {
         const producto = await Producto.findByIdAndDelete(req.params.id);
@@ -132,6 +163,7 @@ exports.eliminarProductoFisico = async (req, res) => {
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }
 };
 
+// ── DELETE /api/admin/extras/:id ─────────────────────────────────────────────
 exports.eliminarExtraFisico = async (req, res) => {
     try {
         const extra = await Extra.findByIdAndDelete(req.params.id);

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { MODIFICATION_WINDOW_MINUTES } = require('../utils/constants');
 
 // ── ExtraLinea (subdocumento) ─────────────────────────────────────────────────
 const ExtraLineaSchema = new mongoose.Schema({
@@ -63,12 +64,13 @@ const PedidoSchema = new mongoose.Schema({
     fechaCreacion: { type: Date, default: Date.now },
     fechaConfirmacion: { type: Date, default: null }
 
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true } });
 
 // ── Auto-generar número de pedido ─────────────────────────────────────────────
 PedidoSchema.pre('save', async function () {
     if (!this.numero) {
-        const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const { fechaToString } = require('../utils/helpers');
+        const fecha = fechaToString().replace(/-/g, '');
         const count = await mongoose.model('Pedido').countDocuments();
         this.numero = `BB-${fecha}-${String(count + 1).padStart(4, '0')}`;
     }
@@ -77,12 +79,18 @@ PedidoSchema.pre('save', async function () {
 // ── Virtuals ──────────────────────────────────────────────────────────────────
 PedidoSchema.virtual('modificable').get(function () {
     const minutos = (Date.now() - this.fechaCreacion.getTime()) / 60000;
-    return minutos < 15 && this.estado !== 'CANCELADO';
+    return minutos < MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
 });
 
 PedidoSchema.virtual('cancelable').get(function () {
     const minutos = (Date.now() - this.fechaCreacion.getTime()) / 60000;
-    return minutos < 15 && this.estado !== 'CANCELADO';
+    return minutos < MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
 });
+
+// ── Índices ───────────────────────────────────────────────────────────────────
+PedidoSchema.index({ cliente: 1 });              // misPedidos: filtro por cliente
+PedidoSchema.index({ estado: 1 });              // filtros por estado en admin/estadísticas
+PedidoSchema.index({ fechaCreacion: -1 });      // ordenación y filtro por fecha
+PedidoSchema.index({ bloques: 1 });             // getTodosPedidos: $in sobre bloques
 
 module.exports = mongoose.model('Pedido', PedidoSchema);

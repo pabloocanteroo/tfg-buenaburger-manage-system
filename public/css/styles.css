@@ -681,6 +681,64 @@ button {
   transform: translateY(-2px);
 }
 
+/* ── Cabecera de la card (fecha + badge de estado) ── */
+.mi-pedido-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Fila de botones de acción ── */
+.mi-pedido-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mi-pedido-acciones .mi-pedido-btn-repetir {
+  flex: 1;
+  min-width: 90px;
+  width: auto;
+}
+
+.mi-pedido-btn-modificar {
+  flex: 1;
+  min-width: 100px;
+  background: var(--negro);
+  color: var(--blanco);
+  font-weight: 900;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.82rem;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform var(--tr), opacity var(--tr);
+}
+.mi-pedido-btn-modificar:hover { opacity: 0.85; transform: translateY(-2px); }
+
+.mi-pedido-btn-cancelar {
+  flex: 1;
+  min-width: 90px;
+  background: #ef4444;
+  color: var(--blanco);
+  font-weight: 900;
+  font-family: var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.82rem;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform var(--tr), opacity var(--tr);
+}
+.mi-pedido-btn-cancelar:hover { opacity: 0.85; transform: translateY(-2px); }
+
 .opcion-grupo {
   margin-bottom: 16px;
 }

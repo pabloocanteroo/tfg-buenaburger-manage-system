@@ -71,11 +71,8 @@ exports.actualizarPerfilCliente = async (req, res) => {
         if (nombre) cliente.nombre = nombre;
         if (telefono) cliente.telefono = telefono;
         if (password) {
-            cliente.passwordHash = password; // El pre('save') del modelo ya encripta automáticamente si detecta un hash en un doc instanciado (a menos que no funcione igual para updates manuales)
-            // Para asegurar el hash manual si el pre no salta
-            const bcrypt = require('bcryptjs');
-            const salt = await bcrypt.genSalt(10);
-            cliente.passwordHash = await bcrypt.hash(password, salt);
+            // Asignar la contraseña en texto plano — el pre('save') del modelo la hashea automáticamente
+            cliente.passwordHash = password;
         }
 
         await cliente.save();

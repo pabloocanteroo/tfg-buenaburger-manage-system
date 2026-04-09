@@ -10,7 +10,7 @@ router.get('/mis-pedidos', protect, authorize('CLIENTE'), misPedidos);
 
 router.post('/', validarCrearPedido, crearPedido);
 router.get('/:id', protect, authorize('ADMIN', 'EMPLEADO'), getPedidoPorId);
-router.put('/:id', protect, authorize('CLIENTE'), modificarPedido);
+router.put('/:id', protect, authorize('CLIENTE', 'ADMIN', 'EMPLEADO'), modificarPedido);
 router.delete('/:id', protect, cancelarPedido);
 router.post('/:id/rehacer', protect, authorize('CLIENTE'), rehacerPedido);
 

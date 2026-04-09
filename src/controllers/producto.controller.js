@@ -1,20 +1,15 @@
 const Producto = require('../models/producto.model');
+const { ordenarPorCategoria } = require('../utils/helpers');
 
 exports.getProductos = async (req, res) => {
     try {
         const { categoria } = req.query;
         const filtro = { activo: true };
         if (categoria) filtro.categoria = categoria.toUpperCase();
-        
-        let productos = await Producto.find(filtro).sort('nombre').lean(); // Orden alfabético secundario y devolver objetos planos
-        
-        // Orden personalizado por categoría
-        const ordenCategorias = { 'HAMBURGUESA': 1, 'PATATAS': 2, 'POSTRE': 3, 'BEBIDA': 4 };
-        productos.sort((a, b) => {
-            const ordenA = ordenCategorias[a.categoria] || 99;
-            const ordenB = ordenCategorias[b.categoria] || 99;
-            return ordenA - ordenB;
-        });
+
+        const productos = ordenarPorCategoria(
+            await Producto.find(filtro).sort('nombre').lean()
+        );
 
         res.json({ ok: true, total: productos.length, productos });
     } catch (err) { res.status(500).json({ ok: false, mensaje: err.message }); }

@@ -4,11 +4,18 @@
 //  Funciona desde cualquier navegador (iPad Safari incluido).
 // ══════════════════════════════════════════════════════════════════
 const net = require('net');
+const {
+    PRINTER_DEFAULT_PORT,
+    PRINTER_LINE_WIDTH,
+    PRINTER_PAUSE_MS,
+    TCP_TIMEOUT_MS,
+    NOMBRE_LOCAL,
+} = require('../utils/constants');
 
 // ── Configuración (override en runtime desde admin) ─────────────
 let _config = {
-    ip:     process.env.PRINTER_IP   || '',
-    puerto: parseInt(process.env.PRINTER_PORT) || 9100,
+    ip:     process.env.PRINTER_IP || '',
+    puerto: parseInt(process.env.PRINTER_PORT) || PRINTER_DEFAULT_PORT,
 };
 
 // ── Cola de pedidos pendientes (impresora offline) ───────────────
@@ -17,7 +24,7 @@ let _imprimiendo = false;
 
 // ── ESC/POS helpers ──────────────────────────────────────────────
 const ESC = 0x1B, GS = 0x1D;
-const ANCHO = 48; // 80mm = 48 chars en fuente normal
+const ANCHO = PRINTER_LINE_WIDTH;
 
 function b(...args) { return Buffer.from(args); }
 
@@ -76,7 +83,7 @@ function generarTicketCliente(pedido) {
         txt('BUENA BURGER\n'),
         CMD.normalSize(),
         CMD.boldOff(),
-        txt('Oruna de Pielagos\n'),
+        txt(`${NOMBRE_LOCAL}\n`),
         CMD.feed(1),
         CMD.line(),
         CMD.alignLeft(),
@@ -187,9 +194,7 @@ function enviarTCP(bytes) {
         if (!_config.ip) return reject(new Error('IP de impresora no configurada'));
 
         const socket = new net.Socket();
-        const TIMEOUT = 5000;
-
-        socket.setTimeout(TIMEOUT);
+        socket.setTimeout(TCP_TIMEOUT_MS);
         socket.connect(_config.puerto, _config.ip, () => {
             socket.write(bytes, () => {
                 socket.destroy();
@@ -206,8 +211,7 @@ function enviarTCP(bytes) {
 /** Imprime ambos tickets (cocina + cliente) para un pedido */
 exports.imprimirPedido = async (pedido) => {
     await enviarTCP(generarTicketCocina(pedido));
-    // Pausa para que la impresora procese el corte
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, PRINTER_PAUSE_MS));
     await enviarTCP(generarTicketCliente(pedido));
 };
 
@@ -247,5 +251,5 @@ exports.getCola   = ()          => _cola;
 exports.getConfig = ()          => ({ ..._config });
 exports.configurar = (ip, puerto) => {
     _config.ip     = ip;
-    _config.puerto = parseInt(puerto) || 9100;
+    _config.puerto = parseInt(puerto) || PRINTER_DEFAULT_PORT;
 };

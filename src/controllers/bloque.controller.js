@@ -1,4 +1,5 @@
 const BloqueProduccion = require('../models/bloqueProduccion.model');
+const { fechaToString } = require('../utils/helpers');
 
 // GET /api/bloques?fecha=YYYY-MM-DD
 exports.getBloques = async (req, res) => {
@@ -14,15 +15,14 @@ exports.getBloques = async (req, res) => {
 // Devuelve un resumen por día de los próximos N meses (solo vie/sáb/dom)
 exports.getDiasOperativos = async (req, res) => {
     try {
-        const meses = parseInt(req.query.meses) || 2;
+        const meses = Math.min(parseInt(req.query.meses) || 2, 12); // máximo 12 meses
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         const fin = new Date(hoy);
         fin.setDate(hoy.getDate() + meses * 30);
 
-        const toLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        const fechaInicio = toLocal(hoy);
-        const fechaFin = toLocal(fin);
+        const fechaInicio = fechaToString(hoy);
+        const fechaFin = fechaToString(fin);
 
         // Obtener todos los bloques en el rango
         const bloques = await BloqueProduccion.find({

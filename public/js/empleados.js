@@ -203,6 +203,23 @@ function cerrarModal() {
     document.getElementById('modal-pedido').style.display = 'none';
 }
 
+// ══ Modificar Pedido ══════════════════════════════════════════════════════════
+function modificarPedidoEmpleado() {
+    if (!pedidoParaCancelar) return;
+    const p = pedidos.find(x => x._id === pedidoParaCancelar);
+    if (!p) return;
+    const bloqueId = p.bloques?.[0]?._id || p.bloques?.[0] || null;
+    localStorage.setItem('bb_editar_pedido', JSON.stringify({
+        pedidoId:        p._id,
+        numero:          p.numero || p._id.slice(-6).toUpperCase(),
+        nombreCliente:   p.nombreCliente || '',
+        telefonoCliente: p.telefonoCliente || '',
+        bloqueId:        bloqueId ? bloqueId.toString() : null,
+        lineas:          p.lineas
+    }));
+    window.location.href = '/pos.html';
+}
+
 // ══ Cancelar Pedido ═══════════════════════════════════════════════════════════
 async function cancelarPedido() {
     if (!pedidoParaCancelar) return;

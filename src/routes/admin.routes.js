@@ -1,31 +1,30 @@
 const express = require('express');
-const router = express.Router();
-const { protect, authorize } = require('../middleware/auth.middleware');
-const { validarCrearEmpleado } = require('../middleware/validation.middleware');
-const { getEstadisticas, getEmpleados, crearEmpleado, eliminarEmpleado } = require('../controllers/admin.controller');
+const router  = express.Router();
+const { protect, authorize }       = require('../middleware/auth.middleware');
+const { validarCrearEmpleado }     = require('../middleware/validation.middleware');
+const adminController              = require('../controllers/admin.controller');
+const printer                      = require('../services/printer');
+const Pedido                       = require('../models/pedido.model');
+const { PRINTER_DEFAULT_PORT }     = require('../utils/constants');
 
 router.use(protect, authorize('ADMIN'));
 
-router.get('/estadisticas', getEstadisticas);
+// ── Estadísticas ──────────────────────────────────────────────────────────────
+router.get('/estadisticas', adminController.getEstadisticas);
 
-// ── Impresora WiFi ────────────────────────────────────────────────
-const printer = require('../services/printer');
-const Pedido  = require('../models/pedido.model');
+// ── Impresora WiFi ────────────────────────────────────────────────────────────
 
-// GET /api/admin/impresora — config actual + estado de la cola
 router.get('/impresora', (req, res) => {
     res.json({ ok: true, config: printer.getConfig(), cola: printer.getCola().length });
 });
 
-// POST /api/admin/impresora — guardar IP/puerto
 router.post('/impresora', (req, res) => {
     const { ip, puerto } = req.body;
     if (!ip) return res.status(400).json({ ok: false, mensaje: 'Falta la IP de la impresora' });
-    printer.configurar(ip, puerto || 9100);
+    printer.configurar(ip, puerto || PRINTER_DEFAULT_PORT);
     res.json({ ok: true, config: printer.getConfig() });
 });
 
-// POST /api/admin/imprimir — imprimir un pedido concreto
 router.post('/imprimir', async (req, res) => {
     const { pedidoId, tipo } = req.body;   // tipo: 'ambos' | 'cliente' | 'cocina'
     if (!pedidoId) return res.status(400).json({ ok: false, mensaje: 'Falta pedidoId' });
@@ -47,7 +46,10 @@ router.post('/imprimir', async (req, res) => {
     }
 });
 
-// POST /api/admin/cola-impresion/imprimir — imprimir todos los pedidos encolados
+router.get('/cola-impresion', (req, res) => {
+    res.json({ ok: true, cantidad: printer.getCola().length });
+});
+
 router.post('/cola-impresion/imprimir', async (req, res) => {
     if (printer.getCola().length === 0) return res.json({ ok: true, impresos: 0, fallidos: 0 });
     try {
@@ -58,20 +60,16 @@ router.post('/cola-impresion/imprimir', async (req, res) => {
     }
 });
 
-// GET /api/admin/cola-impresion — cuántos pedidos hay en cola
-router.get('/cola-impresion', (req, res) => {
-    res.json({ ok: true, cantidad: printer.getCola().length });
-});
+// ── Empleados ─────────────────────────────────────────────────────────────────
+router.get('/empleados',      adminController.getEmpleados);
+router.post('/empleados',     validarCrearEmpleado, adminController.crearEmpleado);
+router.delete('/empleados/:id', adminController.eliminarEmpleado);
 
-// ── Empleados ────────────────────────────────────────────────────
-router.get('/empleados', getEmpleados);
-router.post('/empleados', validarCrearEmpleado, crearEmpleado);
-router.delete('/empleados/:id', eliminarEmpleado);
+// ── Productos y extras (gestión completa solo para admin) ─────────────────────
+router.get('/productos',       adminController.getProductosAll);
+router.delete('/productos/:id', adminController.eliminarProductoFisico);
 
-router.get('/productos', require('../controllers/admin.controller').getProductosAll);
-router.delete('/productos/:id', require('../controllers/admin.controller').eliminarProductoFisico);
-
-router.get('/extras', require('../controllers/admin.controller').getExtrasAll);
-router.delete('/extras/:id', require('../controllers/admin.controller').eliminarExtraFisico);
+router.get('/extras',          adminController.getExtrasAll);
+router.delete('/extras/:id',   adminController.eliminarExtraFisico);
 
 module.exports = router;
