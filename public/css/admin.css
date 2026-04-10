@@ -528,7 +528,9 @@ body {
     letter-spacing: .5px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
     border: 1.5px solid var(--gris-borde);
     border-radius: 8px;
     padding: 9px 12px;
@@ -536,10 +538,70 @@ body {
     font-family: var(--font);
     outline: none;
     transition: border .2s;
+    background: #fff;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.form-group input:focus {
+.form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 72px;
+    line-height: 1.5;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
     border-color: var(--rojo);
+}
+
+/* ── Ingredientes checkboxes ───────────────────────────────────── */
+.ingredientes-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 10px 12px;
+    min-height: 44px;
+    background: #fafafa;
+}
+
+.ingrediente-check-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 20px;
+    padding: 4px 12px 4px 8px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: #444;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+    user-select: none;
+}
+
+.ingrediente-check-label input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--rojo);
+    cursor: pointer;
+}
+
+.ingrediente-check-label:has(input:checked) {
+    border-color: var(--rojo);
+    background: var(--rojo);
+    color: #fff;
 }
 
 .btn-crear-emp {

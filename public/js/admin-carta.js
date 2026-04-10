@@ -1,5 +1,45 @@
 // ── admin-carta.js — CRUD de productos y extras ───────────────────────────────
 
+// ── Ingredientes desde extras ─────────────────────────────────────────────────
+
+async function renderIngredientesChecks(seleccionados = []) {
+    const cont = document.getElementById('prod-ingredientes-checks');
+    cont.innerHTML = '<span style="color:#aaa;font-size:.85rem;">Cargando...</span>';
+
+    try {
+        const res = await fetch(`${API}/api/admin/extras`, {
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const data = await res.json();
+        const extras = (data.extras || []).filter(e => e.activo);
+
+        if (!extras.length) {
+            cont.innerHTML = '<span style="color:#aaa;font-size:.85rem;">No hay extras creados todavía.</span>';
+            return;
+        }
+
+        const selSet = new Set(seleccionados.map(s => s.toLowerCase()));
+
+        cont.innerHTML = extras.map(e => `
+            <label class="ingrediente-check-label">
+                <input type="checkbox" name="ing-check" value="${e.nombre}"
+                    ${selSet.has(e.nombre.toLowerCase()) ? 'checked' : ''}
+                    onchange="sincronizarIngredientesHidden()">
+                ${e.nombre}
+            </label>
+        `).join('');
+
+        sincronizarIngredientesHidden();
+    } catch {
+        cont.innerHTML = '<span style="color:red;font-size:.85rem;">Error al cargar extras.</span>';
+    }
+}
+
+function sincronizarIngredientesHidden() {
+    const checks = document.querySelectorAll('#prod-ingredientes-checks input[name="ing-check"]:checked');
+    document.getElementById('prod-ingredientes').value = [...checks].map(c => c.value).join(',');
+}
+
 function cargarCarta() {
     cargarProductosAdmin();
     cargarExtrasAdmin();
@@ -46,28 +86,28 @@ async function cargarProductosAdmin() {
 
 function abrirModalProducto() {
     document.getElementById('modal-producto-titulo').textContent = 'Nuevo Producto';
-    document.getElementById('prod-id').value            = '';
-    document.getElementById('prod-nombre').value        = '';
-    document.getElementById('prod-desc').value          = '';
-    document.getElementById('prod-precio').value        = '';
-    document.getElementById('prod-cat').value           = 'HAMBURGUESA';
-    document.getElementById('prod-ingredientes').value  = '';
-    document.getElementById('prod-activo').checked      = true;
+    document.getElementById('prod-id').value       = '';
+    document.getElementById('prod-nombre').value   = '';
+    document.getElementById('prod-desc').value     = '';
+    document.getElementById('prod-precio').value   = '';
+    document.getElementById('prod-cat').value      = 'HAMBURGUESA';
+    document.getElementById('prod-activo').checked = true;
     document.getElementById('prod-form-error').style.display = 'none';
-    document.getElementById('modal-producto').style.display  = 'flex';
+    document.getElementById('modal-producto').style.display = 'flex';
+    renderIngredientesChecks([]);
 }
 
 function editarProducto(prod) {
     document.getElementById('modal-producto-titulo').textContent = 'Editar Producto';
-    document.getElementById('prod-id').value           = prod._id;
-    document.getElementById('prod-nombre').value       = prod.nombre;
-    document.getElementById('prod-desc').value         = prod.descripcion || '';
-    document.getElementById('prod-precio').value       = prod.precio;
-    document.getElementById('prod-cat').value          = prod.categoria;
-    document.getElementById('prod-ingredientes').value = prod.ingredientesPorDefecto ? prod.ingredientesPorDefecto.join(', ') : '';
-    document.getElementById('prod-activo').checked     = prod.activo;
+    document.getElementById('prod-id').value       = prod._id;
+    document.getElementById('prod-nombre').value   = prod.nombre;
+    document.getElementById('prod-desc').value     = prod.descripcion || '';
+    document.getElementById('prod-precio').value   = prod.precio;
+    document.getElementById('prod-cat').value      = prod.categoria;
+    document.getElementById('prod-activo').checked = prod.activo;
     document.getElementById('prod-form-error').style.display = 'none';
-    document.getElementById('modal-producto').style.display  = 'flex';
+    document.getElementById('modal-producto').style.display = 'flex';
+    renderIngredientesChecks(prod.ingredientesPorDefecto || []);
 }
 
 function cerrarModalProducto() {

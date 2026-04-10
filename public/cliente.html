@@ -24,7 +24,7 @@
             <a class="sh-link" href="index.html#page-carta">CARTA</a>
         </nav>
         <div class="sh-actions">
-            <button class="sh-action-btn" onclick="cerrarSesionLocal()">CERRAR SESIÓN</button>
+            <button class="sh-action-btn" onclick="abrirModalCliente('modal-cerrar-sesion')">CERRAR SESIÓN</button>
             <button class="sh-carrito-btn" onclick="window.location.href='index.html'">🛒 <span>Volver</span></button>
         </div>
     </header>
@@ -87,6 +87,28 @@
             <span>🕗 Viernes–domingo · 20:30–23:00</span>
         </div>
     </footer>
+
+    <!-- Modal: Confirmar cierre de sesión -->
+    <div id="modal-cerrar-sesion" class="modal-overlay" onclick="if(event.target===this)cerrarModalCliente('modal-cerrar-sesion')">
+        <div class="modal-box" style="max-width:420px; padding:36px 32px; text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:12px;">👋</div>
+            <h2 class="modal-title" style="margin-bottom:10px;">¿CERRAR SESIÓN?</h2>
+            <p style="color:#666; font-size:0.95rem; margin-bottom:28px; line-height:1.5;">
+                Vas a salir de tu cuenta. Podrás volver a iniciar sesión cuando quieras.
+            </p>
+            <div style="display:flex; gap:12px;">
+                <button onclick="cerrarModalCliente('modal-cerrar-sesion')"
+                    style="flex:1; padding:14px; border:2px solid #ddd; background:#fff;
+                    font-family:var(--font-cond); font-size:1rem; font-weight:700;
+                    border-radius:8px; cursor:pointer; letter-spacing:1px;">
+                    CANCELAR
+                </button>
+                <button class="btn-siguiente" onclick="cerrarSesionLocal()" style="flex:1;">
+                    SÍ, SALIR
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: Modificar pedido -->
     <div id="modal-modificar" class="modal-overlay" onclick="if(event.target===this)cerrarModalCliente('modal-modificar')">

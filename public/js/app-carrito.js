@@ -1,9 +1,9 @@
 // ── app-carrito.js — Estado y renderizado del carrito ────────────────────────
 
 function actualizarContadorCarrito() {
-    const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+    const total = totalCarrito();
     document.querySelectorAll('#carrito-count, #carrito-count-header').forEach(el => {
-        if (el) el.textContent = total;
+        if (el) el.textContent = total > 0 ? `${total.toFixed(2)}€` : '0';
     });
 }
 

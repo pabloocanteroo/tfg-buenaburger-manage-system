@@ -60,7 +60,7 @@ function verificarSesion() {
         usuarioActual = null;
     }
 
-    const text   = token ? (rol === 'CLIENTE' ? 'MI PERFIL' : 'PANEL STAFF') : 'ACCEDER';
+    const text   = token ? (rol === 'CLIENTE' ? 'MI PERFIL' : 'PANEL STAFF') : 'ACCEDER A MI CUENTA';
     const action = token ? irAlPanelCorrespondiente : abrirAuth;
 
     const btnL = document.getElementById('btn-auth-landing');
@@ -78,7 +78,7 @@ function actualizarBotonesAuth() {
     // Refresca los botones de cabecera según el estado de sesión actual
     const token = localStorage.getItem('bb_token');
     const rol   = localStorage.getItem('bb_rol');
-    const text   = token ? (rol === 'CLIENTE' ? 'MI PERFIL' : 'PANEL STAFF') : 'ACCEDER';
+    const text   = token ? (rol === 'CLIENTE' ? 'MI PERFIL' : 'PANEL STAFF') : 'ACCEDER A MI CUENTA';
     const action = token ? irAlPanelCorrespondiente : abrirAuth;
     document.querySelectorAll('.sh-action-btn').forEach(btn => {
         btn.textContent = text;
