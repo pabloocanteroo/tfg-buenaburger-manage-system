@@ -132,8 +132,8 @@ body {
 /* ── Layout ─────────────────────────────────── */
 .adm-body {
     display: flex;
-    flex: 1;
-    min-height: calc(100vh - 64px);
+    height: calc(100vh - 64px);
+    overflow: hidden;
 }
 
 /* ── Sidebar ─────────────────────────────────── */
@@ -146,6 +146,7 @@ body {
     padding: 20px 10px;
     gap: 6px;
     flex-shrink: 0;
+    overflow-y: auto;
 }
 
 .nav-btn {
