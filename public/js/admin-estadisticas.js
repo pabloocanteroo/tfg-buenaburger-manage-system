@@ -68,20 +68,82 @@ async function cargarEstadisticas() {
             }).join('')
             : '<p style="color:#888;font-size:.85rem">Sin datos</p>';
 
-        // ── Últimos días ──────────────────────────────────────────────────────
-        document.getElementById('stat-tabla-body').innerHTML = ultimosDias.length
-            ? ultimosDias.map(d => {
-                const fechaFormato = new Date(d._id + 'T12:00:00')
-                    .toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-                return `<tr>
-                    <td>${fechaFormato}</td>
-                    <td style="text-align:center">${d.pedidos}</td>
-                    <td style="text-align:right;font-weight:700">${d.ingresos.toFixed(2)} €</td>
-                </tr>`;
-            }).join('')
-            : '<tr><td colspan="3" style="color:#888;text-align:center;padding:16px">Sin actividad reciente</td></tr>';
+        // ── Últimos días (vista por defecto) ─────────────────────────────────
+        renderTablaActividad(ultimosDias, 'reciente');
 
     } catch (err) {
         console.error('Error cargando estadísticas:', err);
+    }
+}
+
+// ── Actividad filtrable ───────────────────────────────────────────────────────
+
+function onActTipoChange() {
+    const tipo = document.getElementById('act-tipo').value;
+    document.getElementById('act-val-dia').style.display = tipo === 'dia' ? '' : 'none';
+    document.getElementById('act-val-mes').style.display = tipo === 'mes' ? '' : 'none';
+    document.getElementById('act-val-año').style.display = tipo === 'año' ? '' : 'none';
+
+    if (tipo === 'reciente') cargarEstadisticas();
+}
+
+async function cargarActividad() {
+    const tipo = document.getElementById('act-tipo').value;
+    let valor;
+    if (tipo === 'dia') valor = document.getElementById('act-val-dia').value;
+    if (tipo === 'mes') valor = document.getElementById('act-val-mes').value;
+    if (tipo === 'año') valor = document.getElementById('act-val-año').value;
+    if (!valor) return;
+
+    try {
+        const res = await fetch(`${API}/api/admin/actividad?tipo=${tipo}&valor=${encodeURIComponent(valor)}`, {
+            headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.mensaje);
+        renderTablaActividad(data.filas, tipo, data.total);
+    } catch (err) {
+        document.getElementById('stat-tabla-body').innerHTML =
+            `<tr><td colspan="3" style="color:red;text-align:center;padding:16px">Error: ${err.message}</td></tr>`;
+    }
+}
+
+function renderTablaActividad(filas, tipo, total = null) {
+    const colFecha = document.getElementById('act-col-fecha');
+    const tbody    = document.getElementById('stat-tabla-body');
+    const tfoot    = document.getElementById('stat-tabla-foot');
+
+    colFecha.textContent = tipo === 'año' ? 'Mes' : 'Fecha';
+
+    if (!filas.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="color:#888;text-align:center;padding:16px">Sin actividad para este período</td></tr>';
+        tfoot.style.display = 'none';
+        return;
+    }
+
+    tbody.innerHTML = filas.map(d => {
+        let label;
+        if (tipo === 'año') {
+            label = new Date(d._id + '-01T12:00:00')
+                .toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            label = label.charAt(0).toUpperCase() + label.slice(1);
+        } else {
+            const opts = { weekday: 'short', day: 'numeric', month: 'short' };
+            if (tipo !== 'reciente') opts.year = 'numeric';
+            label = new Date(d._id + 'T12:00:00').toLocaleDateString('es-ES', opts);
+        }
+        return `<tr>
+            <td>${label}</td>
+            <td style="text-align:center">${d.pedidos}</td>
+            <td style="text-align:right;font-weight:700">${d.ingresos.toFixed(2)} €</td>
+        </tr>`;
+    }).join('');
+
+    if (total && tipo !== 'reciente') {
+        document.getElementById('act-total-pedidos').textContent  = total.pedidos;
+        document.getElementById('act-total-ingresos').textContent = `${total.ingresos.toFixed(2)} €`;
+        tfoot.style.display = '';
+    } else {
+        tfoot.style.display = 'none';
     }
 }

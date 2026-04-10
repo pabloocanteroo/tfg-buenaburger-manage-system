@@ -71,19 +71,19 @@ function estadoBadge(estado) {
 
 // Devuelve true si el pedido puede modificarse (virtual del servidor o cálculo local)
 function esPedidoModificable(p) {
-    // Usar el virtual si viene en el JSON
     if (typeof p.modificable === 'boolean') return p.modificable;
-    // Fallback: calcular en cliente (< 15 min desde creación y no cancelado)
     if (['CANCELADO', 'ENTREGADO'].includes(p.estado)) return false;
-    const minutos = (Date.now() - new Date(p.fechaCreacion).getTime()) / 60000;
-    return minutos < 15;
+    if (!p.horaRecogida) return false;
+    const minutosRestantes = (new Date(p.horaRecogida).getTime() - Date.now()) / 60000;
+    return minutosRestantes > 15;
 }
 
 function esPedidoCancelable(p) {
     if (typeof p.cancelable === 'boolean') return p.cancelable;
     if (['CANCELADO', 'ENTREGADO'].includes(p.estado)) return false;
-    const minutos = (Date.now() - new Date(p.fechaCreacion).getTime()) / 60000;
-    return minutos < 15;
+    if (!p.horaRecogida) return false;
+    const minutosRestantes = (new Date(p.horaRecogida).getTime() - Date.now()) / 60000;
+    return minutosRestantes > 15;
 }
 
 // ── MIS PEDIDOS ───────────────────────────────────────────────────────────────
@@ -184,141 +184,20 @@ async function cancelarMiPedido(pedidoId) {
 
 // ── UC-05: Modificar pedido (cliente) ─────────────────────────────────────────
 
-// Estado temporal de la modificación en curso
-let _pedidoModificarId = null;
-let _lineasModificar = [];
 let _historialPedidos = []; // cache para evitar encoding de JSON en onclick
 
 function abrirModalModificar(pedidoId, idxPedido) {
-    _pedidoModificarId = pedidoId;
     const pedido = _historialPedidos[idxPedido];
     if (!pedido) return;
-    _lineasModificar = JSON.parse(JSON.stringify(pedido.lineas)); // deep copy
 
-    renderLineasModificar();
-    abrirModalCliente('modal-modificar');
-}
+    // Guardar estado de edición en localStorage
+    localStorage.setItem('bb_editando', JSON.stringify({ id: pedidoId, numero: pedido.numero }));
 
-function renderLineasModificar() {
-    const lineas = _lineasModificar;
+    // Cargar las líneas actuales del pedido en el carrito
+    localStorage.setItem('bb_carrito', JSON.stringify(pedido.lineas));
 
-    if (lineas.length === 0) {
-        document.getElementById('modal-modificar-content').innerHTML = `
-            <p style="color:#666;text-align:center;padding:20px;">
-                No quedan líneas en el pedido.<br>
-                Si quieres eliminarlo, usa el botón <strong>CANCELAR PEDIDO</strong>.
-            </p>
-            <button class="btn-siguiente" style="width:100%;background:#888;" onclick="cerrarModalCliente('modal-modificar')">CERRAR</button>
-        `;
-        return;
-    }
-
-    const total = lineas.reduce((s, l) => {
-        const extras = (l.extras || []).reduce((es, e) => es + (e.precio || 0) * e.cantidad, 0);
-        return s + (l.precioUnitario * l.cantidad) + extras;
-    }, 0);
-
-    let html = '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">';
-    lineas.forEach((l, idx) => {
-        const extras = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
-        const precioLinea = ((l.precioUnitario || 0) + extras) * l.cantidad;
-
-        html += `
-            <div style="display:flex;align-items:center;gap:10px;background:#f8f8f8;
-                border-radius:10px;padding:10px 12px;" id="mod-linea-${idx}">
-                <div style="flex:1;min-width:0;">
-                    <div style="font-weight:700;font-size:0.95rem;white-space:nowrap;
-                        overflow:hidden;text-overflow:ellipsis;">${l.nombre}</div>
-                    ${l.ingredientesExcluidos?.length
-                        ? `<div style="font-size:0.75rem;color:#888;">Sin: ${l.ingredientesExcluidos.join(', ')}</div>` : ''}
-                    ${l.ingredientesAnadidos?.length
-                        ? `<div style="font-size:0.75rem;color:#888;">Con: ${l.ingredientesAnadidos.join(', ')}</div>` : ''}
-                    ${l.extras?.length
-                        ? `<div style="font-size:0.75rem;color:#888;">Extras: ${l.extras.map(e => e.nombre).join(', ')}</div>` : ''}
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                    <button class="btn-cantidad" onclick="cambiarCantidadModificar(${idx}, -1)"
-                        style="width:28px;height:28px;font-size:1rem;">−</button>
-                    <span style="min-width:20px;text-align:center;font-weight:700;">${l.cantidad}</span>
-                    <button class="btn-cantidad" onclick="cambiarCantidadModificar(${idx}, 1)"
-                        style="width:28px;height:28px;font-size:1rem;">+</button>
-                    <span style="font-size:0.85rem;font-weight:700;color:var(--rojo);
-                        min-width:48px;text-align:right;">${precioLinea.toFixed(2)}€</span>
-                    <button class="btn-remove" onclick="eliminarLineaModificar(${idx})"
-                        style="width:24px;height:24px;font-size:0.75rem;">✕</button>
-                </div>
-            </div>
-        `;
-    });
-
-    html += `</div>
-        <div style="display:flex;justify-content:space-between;font-family:var(--font-cond);
-            font-size:1.3rem;font-weight:900;border-top:2px solid #eee;padding-top:12px;margin-bottom:16px;">
-            <span>TOTAL</span>
-            <span id="modificar-total-display" style="color:var(--rojo);">${total.toFixed(2)}€</span>
-        </div>
-        <div style="display:flex;gap:10px;">
-            <button onclick="cerrarModalCliente('modal-modificar')"
-                style="flex:1;padding:13px;border:2px solid #ddd;background:#fff;
-                font-family:var(--font-cond);font-size:1rem;font-weight:700;
-                border-radius:8px;cursor:pointer;letter-spacing:1px;">
-                CANCELAR
-            </button>
-            <button class="btn-siguiente" onclick="guardarModificacion()" style="flex:2;">
-                GUARDAR CAMBIOS ✓
-            </button>
-        </div>`;
-
-    document.getElementById('modal-modificar-content').innerHTML = html;
-}
-
-function cambiarCantidadModificar(idx, delta) {
-    const linea = _lineasModificar[idx];
-    const nuevaCantidad = linea.cantidad + delta;
-    if (nuevaCantidad < 1) return; // mínimo 1; para eliminar usar el botón ✕
-    linea.cantidad = nuevaCantidad;
-    renderLineasModificar();
-}
-
-function eliminarLineaModificar(idx) {
-    _lineasModificar.splice(idx, 1);
-    renderLineasModificar();
-}
-
-async function guardarModificacion() {
-    if (_lineasModificar.length === 0) {
-        mostrarToast('El pedido no puede quedar vacío. Usa Cancelar Pedido si quieres anularlo.', 'error');
-        return;
-    }
-
-    const nuevoTotal = _lineasModificar.reduce((s, l) => {
-        const extras = (l.extras || []).reduce((es, e) => es + (e.precio || 0) * e.cantidad, 0);
-        return s + (l.precioUnitario * l.cantidad) + extras;
-    }, 0);
-
-    try {
-        const data = await fetchAuth(`/pedidos/${_pedidoModificarId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ lineas: _lineasModificar, total: +nuevoTotal.toFixed(2) })
-        });
-
-        if (data && data.ok) {
-            cerrarModalCliente('modal-modificar');
-            const diferencia = data.diferencia || 0;
-            if (diferencia > 0) {
-                mostrarToast(`Pedido actualizado. Diferencia a pagar en local: +${diferencia.toFixed(2)}€`, 'success');
-            } else if (diferencia < 0) {
-                mostrarToast(`Pedido actualizado. Se te devolverá: ${Math.abs(diferencia).toFixed(2)}€`, 'success');
-            } else {
-                mostrarToast('Pedido modificado correctamente', 'success');
-            }
-            cargarMisPedidos();
-        } else {
-            mostrarToast(data?.mensaje || 'No se pudo modificar el pedido', 'error');
-        }
-    } catch {
-        mostrarToast('Error al contactar el servidor', 'error');
-    }
+    // Redirigir a la carta en modo edición
+    window.location.href = 'index.html?modo=editar';
 }
 
 // ── MIS DATOS ─────────────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ router.use(protect, authorize('ADMIN'));
 
 // ── Estadísticas ──────────────────────────────────────────────────────────────
 router.get('/estadisticas', adminController.getEstadisticas);
+router.get('/actividad',    adminController.getActividad);
 
 // ── Impresora WiFi ────────────────────────────────────────────────────────────
 

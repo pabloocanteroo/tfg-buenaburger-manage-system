@@ -40,8 +40,12 @@ const desnormalizarLineas = (lineas, productos) =>
  * Devuelve un array de { id, cantidad } con cuántas hamburguesas se añadieron a cada bloque.
  * Si algo falla ANTES de actualizar los bloques, lanza error sin efectos secundarios.
  */
+/**
+ * Devuelve { reservas, horaRecogida } donde horaRecogida es el Date del primer bloque.
+ * Así el llamador no necesita una query extra para obtener fecha/hora del bloque inicial.
+ */
 const reservarBloques = async (bloqueInicialId, numHamburguesas, forzar = false) => {
-    if (numHamburguesas <= 0) return [];
+    if (numHamburguesas <= 0) return { reservas: [], horaRecogida: null };
 
     const bloqueInicial = await BloqueProduccion.findById(bloqueInicialId);
     if (!bloqueInicial) throw new Error('Bloque no encontrado');
@@ -95,7 +99,8 @@ const reservarBloques = async (bloqueInicialId, numHamburguesas, forzar = false)
         }
     }
 
-    return reservas;
+    const horaRecogida = new Date(`${bloqueInicial.fecha}T${bloqueInicial.horaInicio}:00`);
+    return { reservas, horaRecogida };
 };
 
 /**
@@ -121,14 +126,14 @@ const notificarEImprimir = async (pedidoId) => {
 
 // ── POST /api/pedidos ─────────────────────────────────────────────────────────
 exports.crearPedido = async (req, res) => {
-    let reservas = [];
+    let reservas = [], horaRecogida = null;
     try {
         const { nombre, telefono, email, lineas, bloqueId, metodoPago, clienteId } = req.body;
 
         const productos = await Producto.find({ _id: { $in: lineas.map(l => l.producto) } });
         const numHamburguesas = contarHamburguesas(lineas, productos);
 
-        reservas = await reservarBloques(bloqueId, numHamburguesas);
+        ({ reservas, horaRecogida } = await reservarBloques(bloqueId, numHamburguesas));
         const bloquesIds = reservas.map(r => r.id);
 
         const lineasEnriquecidas = desnormalizarLineas(lineas, productos);
@@ -153,6 +158,7 @@ exports.crearPedido = async (req, res) => {
             lineas: lineasEnriquecidas,
             total,
             estado: estadoInicial,
+            horaRecogida,
         });
 
         // Solo imprimir si el pedido queda confirmado (pago en local).
@@ -244,14 +250,14 @@ exports.rehacerPedido = async (req, res) => {
 
 // ── POST /api/pedidos/telefonico ──────────────────────────────────────────────
 exports.crearPedidoTelefonico = async (req, res) => {
-    let reservas = [];
+    let reservas = [], horaRecogida = null;
     try {
         const { nombre, telefono, lineas, bloqueId, forzarBloque: forzar = false } = req.body;
 
         const productos = await Producto.find({ _id: { $in: lineas.map(l => l.producto) } });
         const numHamburguesas = contarHamburguesas(lineas, productos);
 
-        reservas = await reservarBloques(bloqueId, numHamburguesas, forzar);
+        ({ reservas, horaRecogida } = await reservarBloques(bloqueId, numHamburguesas, forzar));
         const bloquesIds = reservas.map(r => r.id);
 
         const lineasEnriquecidas = desnormalizarLineas(lineas, productos);
@@ -266,6 +272,7 @@ exports.crearPedidoTelefonico = async (req, res) => {
             lineas:          lineasEnriquecidas,
             total,
             estado:          'CONFIRMADO',
+            horaRecogida,
         });
 
         await notificarEImprimir(pedido._id);

@@ -1045,6 +1045,47 @@ body {
 }
 
 /* Tabla de últimos días */
+.stat-actividad-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.stat-actividad-filtros {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stat-actividad-filtros select,
+.stat-actividad-filtros input {
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: .85rem;
+    font-family: var(--font);
+    outline: none;
+    background: #fff;
+    transition: border .2s;
+}
+
+.stat-actividad-filtros select:focus,
+.stat-actividad-filtros input:focus {
+    border-color: var(--rojo);
+}
+
+.stat-tabla-total td {
+    background: var(--gris-bg);
+    font-weight: 700;
+    font-size: .9rem;
+    border-top: 2px solid var(--gris-borde);
+    padding: 10px 16px;
+}
+
 .stat-tabla-wrap {
     background: var(--blanco);
     border: 1.5px solid var(--gris-borde);

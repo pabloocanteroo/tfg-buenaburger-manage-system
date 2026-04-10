@@ -115,6 +115,67 @@ exports.getEstadisticas = async (req, res) => {
     }
 };
 
+// ── GET /api/admin/actividad?tipo=dia|mes|año&valor=... ───────────────────────
+exports.getActividad = async (req, res) => {
+    try {
+        const { tipo, valor } = req.query;
+        if (!tipo || !valor) return res.status(400).json({ ok: false, mensaje: 'Faltan parámetros tipo y valor' });
+
+        const BASE_MATCH = { estado: { $ne: 'CANCELADO' } };
+        let match, groupId, labelExpr, filas, sortField = '_id';
+
+        if (tipo === 'dia') {
+            // valor = 'YYYY-MM-DD'
+            const inicio = new Date(`${valor}T00:00:00`);
+            const fin    = new Date(`${valor}T23:59:59.999`);
+            match    = { ...BASE_MATCH, fechaCreacion: { $gte: inicio, $lte: fin } };
+            groupId  = { $dateToString: { format: '%Y-%m-%d', date: '$fechaCreacion' } };
+            labelExpr = '$_id';
+
+        } else if (tipo === 'mes') {
+            // valor = 'YYYY-MM'
+            const [y, m] = valor.split('-').map(Number);
+            const inicio = new Date(y, m - 1, 1);
+            const fin    = new Date(y, m, 0, 23, 59, 59, 999);
+            match    = { ...BASE_MATCH, fechaCreacion: { $gte: inicio, $lte: fin } };
+            groupId  = { $dateToString: { format: '%Y-%m-%d', date: '$fechaCreacion' } };
+            labelExpr = '$_id';
+
+        } else if (tipo === 'año') {
+            // valor = 'YYYY'
+            const y      = parseInt(valor);
+            const inicio = new Date(y, 0, 1);
+            const fin    = new Date(y, 11, 31, 23, 59, 59, 999);
+            match    = { ...BASE_MATCH, fechaCreacion: { $gte: inicio, $lte: fin } };
+            groupId  = { $dateToString: { format: '%Y-%m', date: '$fechaCreacion' } };
+            labelExpr = '$_id';
+
+        } else {
+            return res.status(400).json({ ok: false, mensaje: 'tipo debe ser dia, mes o año' });
+        }
+
+        filas = await Pedido.aggregate([
+            { $match: match },
+            { $group: {
+                _id:      groupId,
+                pedidos:  { $sum: 1 },
+                ingresos: { $sum: '$total' },
+            }},
+            { $sort: { _id: 1 } },
+        ]);
+
+        const total = filas.reduce((acc, f) => ({
+            pedidos:  acc.pedidos  + f.pedidos,
+            ingresos: acc.ingresos + f.ingresos,
+        }), { pedidos: 0, ingresos: 0 });
+
+        res.json({ ok: true, filas, total });
+    } catch (err) {
+        console.error('[Actividad]', err);
+        res.status(500).json({ ok: false, mensaje: err.message });
+    }
+};
+
 // ── GET /api/admin/empleados ──────────────────────────────────────────────────
 exports.getEmpleados = async (req, res) => {
     try {

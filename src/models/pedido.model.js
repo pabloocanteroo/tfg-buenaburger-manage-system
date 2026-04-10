@@ -62,7 +62,10 @@ const PedidoSchema = new mongoose.Schema({
 
     // Control de tiempo para modificaciones/cancelaciones
     fechaCreacion: { type: Date, default: Date.now },
-    fechaConfirmacion: { type: Date, default: null }
+    fechaConfirmacion: { type: Date, default: null },
+
+    // Hora de recogida desnormalizada (del primer bloque reservado) — usada para la ventana de modificación
+    horaRecogida: { type: Date, default: null }
 
 }, { timestamps: true, toJSON: { virtuals: true } });
 
@@ -77,14 +80,17 @@ PedidoSchema.pre('save', async function () {
 });
 
 // ── Virtuals ──────────────────────────────────────────────────────────────────
+// Un pedido es modificable/cancelable mientras falten más de 15 min para la hora de recogida
 PedidoSchema.virtual('modificable').get(function () {
-    const minutos = (Date.now() - this.fechaCreacion.getTime()) / 60000;
-    return minutos < MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
+    if (!this.horaRecogida) return false;
+    const minutosRestantes = (this.horaRecogida.getTime() - Date.now()) / 60000;
+    return minutosRestantes > MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
 });
 
 PedidoSchema.virtual('cancelable').get(function () {
-    const minutos = (Date.now() - this.fechaCreacion.getTime()) / 60000;
-    return minutos < MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
+    if (!this.horaRecogida) return false;
+    const minutosRestantes = (this.horaRecogida.getTime() - Date.now()) / 60000;
+    return minutosRestantes > MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
 });
 
 // ── Índices ───────────────────────────────────────────────────────────────────

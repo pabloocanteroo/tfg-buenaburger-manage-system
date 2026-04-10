@@ -3,6 +3,14 @@
 async function iniciarCheckout() {
     cerrarModal('modal-carrito');
 
+    // UC-05: Modo edición — saltamos el flujo normal y vamos directo a confirmar cambios
+    const editando = JSON.parse(localStorage.getItem('bb_editando') || 'null');
+    if (editando) {
+        abrirModal('modal-checkout');
+        renderCheckoutEditar(editando);
+        return;
+    }
+
     const token = localStorage.getItem('bb_token');
     const rol   = localStorage.getItem('bb_rol');
 
@@ -35,6 +43,100 @@ async function iniciarCheckout() {
 
     renderCheckoutPaso1();
     abrirModal('modal-checkout');
+}
+
+// ── Checkout en modo edición ──────────────────────────────────────────────────
+
+function renderCheckoutEditar(editando) {
+    const resumen = carrito.map(i => `
+        <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
+            <span>${i.cantidad}× ${i.nombre}
+                ${i.ingredientesExcluidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (sin ${i.ingredientesExcluidos.join(', ')})</span>` : ''}
+                ${i.ingredientesAnadidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (con ${i.ingredientesAnadidos.join(', ')})</span>` : ''}
+            </span>
+            <span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
+        </div>
+    `).join('');
+
+    document.getElementById('checkout-content').innerHTML = `
+        <div style="background:#1a1a1a;color:#fff;border-radius:10px;padding:11px 15px;
+            margin-bottom:16px;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;">
+            EDITANDO <span style="color:#e63c2f;">${editando.numero}</span>
+        </div>
+        <div style="background:#f8f8f8;border-radius:11px;padding:14px;margin-bottom:16px;">
+            <div style="font-weight:700;font-size:0.8rem;color:#555;letter-spacing:1px;
+                text-transform:uppercase;margin-bottom:10px;">Nuevo contenido del pedido</div>
+            ${resumen}
+            <div style="border-top:1px solid #e5e5e5;margin-top:8px;padding-top:8px;font-weight:900;
+                display:flex;justify-content:space-between;font-size:1.05rem;">
+                <span>TOTAL</span>
+                <span style="color:var(--rojo)">${totalCarrito().toFixed(2)}€</span>
+            </div>
+        </div>
+        <p style="font-size:0.82rem;color:#888;margin-bottom:14px;line-height:1.4;">
+            La hora de recogida no cambia. Si el nuevo total es mayor, pagarás la diferencia en el local.
+        </p>
+        <div style="display:flex;gap:10px;">
+            <button onclick="cerrarModal('modal-checkout')"
+                style="flex:1;padding:13px;border:2px solid #ddd;background:#fff;
+                font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;
+                border-radius:8px;cursor:pointer;letter-spacing:1px;">
+                VOLVER
+            </button>
+            <button class="btn-siguiente" onclick="guardarModificacionDesdeCheckout()" style="flex:2;">
+                GUARDAR CAMBIOS ✓
+            </button>
+        </div>
+    `;
+}
+
+async function guardarModificacionDesdeCheckout() {
+    const editando = JSON.parse(localStorage.getItem('bb_editando') || 'null');
+    if (!editando) return;
+
+    if (carrito.length === 0) {
+        mostrarToast('El pedido no puede quedar vacío. Usa Cancelar Pedido si quieres anularlo.', 'error');
+        return;
+    }
+
+    const lineas = carrito.map(item => ({
+        producto:              item.productId,
+        nombre:                item.nombre,
+        precio:                item.precioBase,
+        cantidad:              item.cantidad,
+        precioUnitario:        item.precioBase,
+        ingredientesExcluidos: item.ingredientesExcluidos || [],
+        ingredientesAnadidos:  item.ingredientesAnadidos  || [],
+        extras: (item.extras || []).map(e => ({ extra: e.extra, nombre: e.nombre, precio: e.precio, cantidad: 1 }))
+    }));
+
+    const btn = document.querySelector('#checkout-content .btn-siguiente');
+    if (btn) { btn.disabled = true; btn.textContent = 'GUARDANDO...'; }
+
+    try {
+        const data = await apiFetch(`/pedidos/${editando.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ lineas, total: +totalCarrito().toFixed(2) })
+        });
+
+        localStorage.removeItem('bb_editando');
+        carrito = [];
+        actualizarContadorCarrito();
+        cerrarModal('modal-checkout');
+
+        const diferencia = data.diferencia || 0;
+        const msg = diferencia > 0
+            ? `Pedido actualizado. Diferencia a pagar en local: +${diferencia.toFixed(2)}€`
+            : diferencia < 0
+                ? `Pedido actualizado. Se te devolverá: ${Math.abs(diferencia).toFixed(2)}€`
+                : 'Pedido modificado correctamente';
+        mostrarToast(msg, 'success');
+
+        setTimeout(() => window.location.href = 'cliente.html', 1200);
+    } catch (e) {
+        mostrarToast(`Error: ${e.message}`, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR CAMBIOS ✓'; }
+    }
 }
 
 function renderCheckoutPaso1() {
@@ -94,7 +196,7 @@ async function checkoutPaso2() {
 async function renderPaso2Directo() {
     const hoy          = new Date();
     const opcionesFecha = [];
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 8; i++) {
         const d = new Date(hoy); d.setDate(d.getDate() + i);
         if ([0, 5, 6].includes(d.getDay())) opcionesFecha.push(d.toISOString().slice(0, 10));
     }

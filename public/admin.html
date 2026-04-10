@@ -253,14 +253,39 @@
                     </div>
                 </div>
 
-                <!-- Últimos días -->
-                <div class="stat-seccion-titulo">ÚLTIMOS DÍAS CON ACTIVIDAD</div>
+                <!-- Actividad filtrable -->
+                <div class="stat-actividad-header">
+                    <div class="stat-seccion-titulo" style="margin:0">ACTIVIDAD</div>
+                    <div class="stat-actividad-filtros">
+                        <select id="act-tipo" onchange="onActTipoChange()">
+                            <option value="reciente">Últimos días</option>
+                            <option value="dia">Día concreto</option>
+                            <option value="mes">Mes</option>
+                            <option value="año">Año</option>
+                        </select>
+                        <input type="date"  id="act-val-dia" style="display:none" onchange="cargarActividad()">
+                        <input type="month" id="act-val-mes" style="display:none" onchange="cargarActividad()">
+                        <input type="number" id="act-val-año" min="2020" max="2100"
+                            placeholder="Ej: 2026" style="display:none;width:100px" onchange="cargarActividad()">
+                    </div>
+                </div>
                 <div class="stat-tabla-wrap">
                     <table class="stat-tabla" id="stat-tabla-dias">
                         <thead>
-                            <tr><th>Fecha</th><th style="text-align:center">Pedidos</th><th style="text-align:right">Ingresos</th></tr>
+                            <tr>
+                                <th id="act-col-fecha">Fecha</th>
+                                <th style="text-align:center">Pedidos</th>
+                                <th style="text-align:right">Ingresos</th>
+                            </tr>
                         </thead>
                         <tbody id="stat-tabla-body"></tbody>
+                        <tfoot id="stat-tabla-foot" style="display:none">
+                            <tr class="stat-tabla-total">
+                                <td><strong>TOTAL</strong></td>
+                                <td style="text-align:center" id="act-total-pedidos"></td>
+                                <td style="text-align:right" id="act-total-ingresos"></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </section>
