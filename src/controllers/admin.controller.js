@@ -56,7 +56,7 @@ exports.getEstadisticas = async (req, res) => {
                 { $limit: 1 },
             ]),
 
-            // 5. Top 5 productos (usa el nombre desnormalizado del ticket)
+            // 5. Top 5 productos — fallback a lookup si el nombre está desnormalizado como null
             Pedido.aggregate([
                 { $match: BASE_MATCH },
                 { $unwind: '$lineas' },
@@ -65,12 +65,17 @@ exports.getEstadisticas = async (req, res) => {
                     nombre:   { $first: '$lineas.nombre' },
                     unidades: { $sum: '$lineas.cantidad' },
                 }},
+                { $lookup: { from: 'productos', localField: '_id', foreignField: '_id', as: '_prod' } },
+                { $addFields: {
+                    nombreFinal: { $ifNull: ['$nombre', { $arrayElemAt: ['$_prod.nombre', 0] }] }
+                }},
+                { $match: { nombreFinal: { $ne: null } } },
                 { $sort: { unidades: -1 } },
                 { $limit: 5 },
-                { $project: { _id: 0, nombre: { $ifNull: ['$nombre', 'Desconocido'] }, unidades: 1 } },
+                { $project: { _id: 0, unidades: 1, nombre: '$nombreFinal' } },
             ]),
 
-            // 6. Últimos 10 días con actividad (orden cronológico)
+            // 6. Últimos 10 días con actividad (del más reciente al más antiguo)
             Pedido.aggregate([
                 { $match: BASE_MATCH },
                 { $group: {
@@ -80,7 +85,6 @@ exports.getEstadisticas = async (req, res) => {
                 }},
                 { $sort: { _id: -1 } },
                 { $limit: 10 },
-                { $sort: { _id:  1 } },   // reordenar cronológicamente los 10 obtenidos
             ]),
         ]);
 

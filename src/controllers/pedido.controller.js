@@ -24,6 +24,17 @@ const calcularTotal = (lineas) =>
         return sum + l.precioUnitario * l.cantidad + extrasTotal;
     }, 0);
 
+/** Enriquece las líneas con nombre y precio desnormalizados desde el catálogo */
+const desnormalizarLineas = (lineas, productos) =>
+    lineas.map(l => {
+        const prod = productos.find(p => p._id.toString() === l.producto.toString());
+        return {
+            ...l,
+            nombre: l.nombre || prod?.nombre || null,
+            precio: l.precio ?? prod?.precio ?? l.precioUnitario,
+        };
+    });
+
 /**
  * Reserva los bloques necesarios de forma atómica.
  * Devuelve un array de { id, cantidad } con cuántas hamburguesas se añadieron a cada bloque.
@@ -120,7 +131,8 @@ exports.crearPedido = async (req, res) => {
         reservas = await reservarBloques(bloqueId, numHamburguesas);
         const bloquesIds = reservas.map(r => r.id);
 
-        const total = calcularTotal(lineas);
+        const lineasEnriquecidas = desnormalizarLineas(lineas, productos);
+        const total = calcularTotal(lineasEnriquecidas);
 
         let clienteFinal = clienteId;
         if (!clienteId) {
@@ -138,7 +150,7 @@ exports.crearPedido = async (req, res) => {
             canal: 'WEB',
             metodoPago,
             bloques: bloquesIds,
-            lineas,
+            lineas: lineasEnriquecidas,
             total,
             estado: estadoInicial,
         });
@@ -242,7 +254,8 @@ exports.crearPedidoTelefonico = async (req, res) => {
         reservas = await reservarBloques(bloqueId, numHamburguesas, forzar);
         const bloquesIds = reservas.map(r => r.id);
 
-        const total = calcularTotal(lineas);
+        const lineasEnriquecidas = desnormalizarLineas(lineas, productos);
+        const total = calcularTotal(lineasEnriquecidas);
 
         const pedido = await Pedido.create({
             nombreCliente:   nombre,
@@ -250,7 +263,7 @@ exports.crearPedidoTelefonico = async (req, res) => {
             canal:           'TELEFONO',
             metodoPago:      'PAGO_EN_LOCAL',
             bloques:         bloquesIds,
-            lineas,
+            lineas:          lineasEnriquecidas,
             total,
             estado:          'CONFIRMADO',
         });
