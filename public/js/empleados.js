@@ -92,10 +92,10 @@ function renderBloques() {
         const selected = bloqueSeleccionado === b._id ? ' selected' : '';
         const clickable = !b.cerrado;
 
-        return `<div class="bloque-card${selected}${b.cerrado ? ' bloque-cerrado' : ''}" ${clickable ? `onclick="seleccionarBloque('${b._id}', '${b.horaInicio}')"` : ''}>
+        return `<div class="bloque-card${selected}${b.cerrado ? ' bloque-cerrado' : ''}" ${clickable ? `onclick="seleccionarBloque('${escAttr(b._id)}', '${escAttr(b.horaInicio)}')"` : ''}>
             <div class="bloque-card-top">
-                <span class="bloque-hora">${b.horaInicio}</span>
-                <span class="bloque-estado ${estadoClass}">${estadoLabel}</span>
+                <span class="bloque-hora">${escHTML(b.horaInicio)}</span>
+                <span class="bloque-estado ${estadoClass}">${escHTML(estadoLabel)}</span>
             </div>
             <div class="bloque-barra-wrap">
                 <div class="bloque-barra ${barraClass}" style="width:${Math.min(pct, 100)}%"></div>
@@ -137,22 +137,21 @@ function renderPedidos(lista = []) {
 
     cont.innerHTML = lista.map(p => {
         const hora = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-        const lineasStr = p.lineas.map(l => `${l.cantidad}× ${l.nombreProducto || 'Producto'}`).join(', ');
 
-        return `<div class="pedido-card" onclick="abrirModal('${p._id}')">
+        return `<div class="pedido-card" onclick="abrirModal('${escAttr(p._id)}')">
             <div class="pedido-card-top">
                 <div>
-                    <div class="pedido-num">${p.numero || p._id.slice(-6).toUpperCase()}</div>
+                    <div class="pedido-num">${escHTML(p.numero || p._id.slice(-6).toUpperCase())}</div>
                     <div class="pedido-hora">Creado a las ${hora}</div>
                 </div>
                 <div class="pedido-total">${p.total?.toFixed(2)}€</div>
             </div>
             <div class="pedido-cliente">
-                <span>👤 ${p.nombreCliente || '—'}</span>
-                <span>📞 ${p.telefonoCliente || '—'}</span>
+                <span>👤 ${escHTML(p.nombreCliente || '—')}</span>
+                <span>📞 ${escHTML(p.telefonoCliente || '—')}</span>
             </div>
             <div class="pedido-lineas">
-                ${p.lineas.map(l => `<span class="linea-chip">${l.cantidad}× ${l.nombreProducto || 'Producto'}</span>`).join('')}
+                ${p.lineas.map(l => `<span class="linea-chip">${l.cantidad}× ${escHTML(l.nombreProducto || 'Producto')}</span>`).join('')}
             </div>
         </div>`;
     }).join('');
@@ -172,17 +171,17 @@ function abrirModal(pedidoId) {
     document.getElementById('modal-body').innerHTML = `
         <div class="modal-section">
             <h4>Cliente</h4>
-            <p><strong>${p.nombreCliente || '—'}</strong> · ${p.telefonoCliente || 'Sin teléfono'}</p>
-            <p style="color:#888;font-size:0.8rem;margin-top:4px">Pedido a las ${hora} · Bloque ${horaBloque}</p>
+            <p><strong>${escHTML(p.nombreCliente || '—')}</strong> · ${escHTML(p.telefonoCliente || 'Sin teléfono')}</p>
+            <p style="color:#888;font-size:0.8rem;margin-top:4px">Pedido a las ${hora} · Bloque ${escHTML(horaBloque)}</p>
         </div>
         <div class="modal-section">
             <h4>Líneas del pedido</h4>
             ${p.lineas.map(l => `
                 <div class="modal-linea">
                     <div>
-                        <div class="modal-linea-nombre">${l.cantidad}× ${l.nombreProducto || 'Producto'}</div>
-                        ${l.sinIngredientes?.length ? `<div class="modal-linea-mods">Sin: ${l.sinIngredientes.join(', ')}</div>` : ''}
-                        ${l.extras?.length ? `<div class="modal-linea-mods">Extras: ${l.extras.map(e => e.nombreExtra || 'Extra').join(', ')}</div>` : ''}
+                        <div class="modal-linea-nombre">${l.cantidad}× ${escHTML(l.nombreProducto || 'Producto')}</div>
+                        ${l.sinIngredientes?.length ? `<div class="modal-linea-mods">Sin: ${escHTML(l.sinIngredientes.join(', '))}</div>` : ''}
+                        ${l.extras?.length ? `<div class="modal-linea-mods">Extras: ${escHTML(l.extras.map(e => e.nombreExtra || 'Extra').join(', '))}</div>` : ''}
                     </div>
                     <div class="modal-linea-precio">${(l.precioUnitario * l.cantidad).toFixed(2)}€</div>
                 </div>
@@ -190,7 +189,7 @@ function abrirModal(pedidoId) {
         </div>
         <div class="modal-section">
             <h4>Resumen</h4>
-            <p>Canal: <strong>${p.canal || '—'}</strong> · Estado: <strong>${p.estado || '—'}</strong></p>
+            <p>Canal: <strong>${escHTML(p.canal || '—')}</strong> · Estado: <strong>${escHTML(p.estado || '—')}</strong></p>
             <p style="margin-top:6px">Total: <strong style="font-size:1.1rem;color:var(--rojo)">${p.total?.toFixed(2)}€</strong></p>
         </div>
     `;

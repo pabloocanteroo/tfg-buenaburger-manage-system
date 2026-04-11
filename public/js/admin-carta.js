@@ -22,10 +22,10 @@ async function renderIngredientesChecks(seleccionados = []) {
 
         cont.innerHTML = extras.map(e => `
             <label class="ingrediente-check-label">
-                <input type="checkbox" name="ing-check" value="${e.nombre}"
+                <input type="checkbox" name="ing-check" value="${escAttr(e.nombre)}"
                     ${selSet.has(e.nombre.toLowerCase()) ? 'checked' : ''}
                     onchange="sincronizarIngredientesHidden()">
-                ${e.nombre}
+                ${escHTML(e.nombre)}
             </label>
         `).join('');
 
@@ -60,27 +60,37 @@ async function cargarProductosAdmin() {
             cont.innerHTML = '<p style="color:#888;padding:16px">No hay productos disponibles.</p>';
             return;
         }
-        cont.innerHTML = data.productos.map(p => `
+        cont.innerHTML = data.productos.map(p => {
+            // editarProducto() recibe el objeto completo serializado dentro de un atributo
+            // onclick='...'. Se escapan <, >, ", & y ' del JSON para que ni el nombre ni la
+            // descripción puedan cerrar el atributo o inyectar otro tag.
+            const pJson = JSON.stringify(p)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            return `
             <div class="carta-item ${!p.activo ? 'inactivo' : ''}">
                 <div class="carta-item-info">
                     <div class="carta-item-nombre">
-                        ${p.nombre}
+                        ${escHTML(p.nombre)}
                         <span class="badge-estado ${p.activo ? 'activo' : 'inactivo'}">${p.activo ? 'Activo' : 'Inactivo'}</span>
                     </div>
                     <div class="carta-item-precio">${p.precio.toFixed(2)} €</div>
                     <div class="carta-item-detalles">
-                        ${p.categoria} | Ingredientes: ${p.ingredientesPorDefecto?.join(', ') || 'Ninguno'}
+                        ${escHTML(p.categoria)} | Ingredientes: ${escHTML(p.ingredientesPorDefecto?.join(', ') || 'Ninguno')}
                     </div>
                 </div>
                 <div class="carta-item-acciones">
-                    <button class="btn-editar" onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editar</button>
-                    ${p.activo ? `<button class="btn-baja" onclick="eliminarProducto('${p._id}', '${p.nombre}')">Desactivar</button>` : ''}
-                    <button class="btn-baja" style="background-color:var(--rojo);color:white" onclick="eliminarProductoDefinitivo('${p._id}', '${p.nombre}')">Eliminar</button>
+                    <button class="btn-editar" onclick='editarProducto(${pJson})'>Editar</button>
+                    ${p.activo ? `<button class="btn-baja" onclick="eliminarProducto('${escAttr(p._id)}', '${escAttr(p.nombre)}')">Desactivar</button>` : ''}
+                    <button class="btn-baja" style="background-color:var(--rojo);color:white" onclick="eliminarProductoDefinitivo('${escAttr(p._id)}', '${escAttr(p.nombre)}')">Eliminar</button>
                 </div>
             </div>
-        `).join('');
+        `;}).join('');
     } catch (err) {
-        cont.innerHTML = `<p style="color:red;padding:16px">Error: ${err.message}</p>`;
+        cont.innerHTML = `<p style="color:red;padding:16px">Error: ${escHTML(err.message)}</p>`;
     }
 }
 
@@ -196,25 +206,32 @@ async function cargarExtrasAdmin() {
             cont.innerHTML = '<p style="color:#888;padding:16px">No hay extras disponibles.</p>';
             return;
         }
-        cont.innerHTML = data.extras.map(e => `
+        cont.innerHTML = data.extras.map(e => {
+            const eJson = JSON.stringify(e)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            return `
             <div class="carta-item ${!e.activo ? 'inactivo' : ''}">
                 <div class="carta-item-info">
                     <div class="carta-item-nombre">
-                        ${e.nombre}
+                        ${escHTML(e.nombre)}
                         <span class="badge-estado ${e.activo ? 'activo' : 'inactivo'}">${e.activo ? 'Activo' : 'Inactivo'}</span>
                     </div>
                     <div class="carta-item-precio">+${e.precio.toFixed(2)} €</div>
                     <div class="carta-item-detalles">Máximo permitido: ${e.cantidadMaxima}</div>
                 </div>
                 <div class="carta-item-acciones">
-                    <button class="btn-editar" onclick='editarExtra(${JSON.stringify(e).replace(/'/g, "&#39;")})'>Editar</button>
-                    ${e.activo ? `<button class="btn-baja" onclick="eliminarExtra('${e._id}', '${e.nombre}')">Desactivar</button>` : ''}
-                    <button class="btn-baja" style="background-color:var(--rojo);color:white" onclick="eliminarExtraDefinitivo('${e._id}', '${e.nombre}')">Eliminar</button>
+                    <button class="btn-editar" onclick='editarExtra(${eJson})'>Editar</button>
+                    ${e.activo ? `<button class="btn-baja" onclick="eliminarExtra('${escAttr(e._id)}', '${escAttr(e.nombre)}')">Desactivar</button>` : ''}
+                    <button class="btn-baja" style="background-color:var(--rojo);color:white" onclick="eliminarExtraDefinitivo('${escAttr(e._id)}', '${escAttr(e.nombre)}')">Eliminar</button>
                 </div>
             </div>
-        `).join('');
+        `;}).join('');
     } catch (err) {
-        cont.innerHTML = `<p style="color:red;padding:16px">Error: ${err.message}</p>`;
+        cont.innerHTML = `<p style="color:red;padding:16px">Error: ${escHTML(err.message)}</p>`;
     }
 }
 

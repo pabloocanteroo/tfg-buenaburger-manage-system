@@ -44,7 +44,7 @@ async function cargarEstadisticas() {
             .map(([canal, count]) => {
                 const pct = Math.round((count / totalCanal) * 100);
                 return `<div class="canal-row">
-                    <span class="canal-nombre">${canalesIconos[canal] || '—'} ${canal}</span>
+                    <span class="canal-nombre">${canalesIconos[canal] || '—'} ${escHTML(canal)}</span>
                     <div class="canal-barra-wrap">
                         <div class="canal-barra" style="width:${pct}%"></div>
                     </div>
@@ -59,7 +59,7 @@ async function cargarEstadisticas() {
                 const pct = Math.round((p.unidades / maxUnidades) * 100);
                 return `<div class="top-prod-row">
                     <span class="top-prod-pos">${i + 1}</span>
-                    <span class="top-prod-nombre">${p.nombre}</span>
+                    <span class="top-prod-nombre">${escHTML(p.nombre)}</span>
                     <div class="canal-barra-wrap">
                         <div class="canal-barra" style="width:${pct}%;background:#e74c3c"></div>
                     </div>
@@ -104,7 +104,7 @@ async function cargarActividad() {
         renderTablaActividad(data.filas, tipo, data.total);
     } catch (err) {
         document.getElementById('stat-tabla-body').innerHTML =
-            `<tr><td colspan="3" style="color:red;text-align:center;padding:16px">Error: ${err.message}</td></tr>`;
+            `<tr><td colspan="3" style="color:red;text-align:center;padding:16px">Error: ${escHTML(err.message)}</td></tr>`;
     }
 }
 

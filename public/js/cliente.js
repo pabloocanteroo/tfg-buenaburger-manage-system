@@ -138,12 +138,14 @@ async function cargarMisPedidos() {
                 }) + ' · ' + fechaRecogida.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + 'h';
             }
 
-            const resumenLista = p.lineas.map(l => `${l.cantidad}× ${l.nombre}`).join(', ');
+            // Nombres de producto vienen del catálogo — escapar igualmente
+            // porque el admin puede poner cualquier texto en el nombre.
+            const resumenLista = p.lineas.map(l => `${l.cantidad}× ${escHTML(l.nombre)}`).join(', ');
             const modificable = esPedidoModificable(p);
             const cancelable = esPedidoCancelable(p);
 
             html += `
-                <div class="mi-pedido-card" id="pedido-card-${p._id}">
+                <div class="mi-pedido-card" id="pedido-card-${escAttr(p._id)}">
                     <div class="mi-pedido-header">
                         <span class="mi-pedido-fecha">${fechaPedidoStr} · ${horaPedidoStr}h</span>
                         ${estadoBadge(p.estado)}
@@ -151,22 +153,22 @@ async function cargarMisPedidos() {
                     ${recogidaStr ? `
                     <div style="font-size:0.78rem;font-weight:700;color:#e63c2f;
                         letter-spacing:0.3px;margin-bottom:6px;">
-                        RECOGIDA: ${recogidaStr.toUpperCase()}
+                        RECOGIDA: ${escHTML(recogidaStr.toUpperCase())}
                     </div>` : ''}
                     <div class="mi-pedido-info">
                         <span class="mi-pedido-resumen">${resumenLista}</span>
                         <span class="mi-pedido-precio">${p.total.toFixed(2)}€</span>
                     </div>
                     <div class="mi-pedido-acciones">
-                        <button class="mi-pedido-btn-repetir" onclick="repetirPedidoViejo('${p._id}')">
+                        <button class="mi-pedido-btn-repetir" onclick="repetirPedidoViejo('${escAttr(p._id)}')">
                             ↻ REPETIR
                         </button>
                         ${modificable ? `
-                        <button class="mi-pedido-btn-modificar" onclick="abrirModalModificar('${p._id}', ${idx})">
+                        <button class="mi-pedido-btn-modificar" onclick="abrirModalModificar('${escAttr(p._id)}', ${idx})">
                             ✏️ MODIFICAR
                         </button>` : ''}
                         ${cancelable ? `
-                        <button class="mi-pedido-btn-cancelar" onclick="cancelarMiPedido('${p._id}')">
+                        <button class="mi-pedido-btn-cancelar" onclick="cancelarMiPedido('${escAttr(p._id)}')">
                             ✕ CANCELAR
                         </button>` : ''}
                     </div>

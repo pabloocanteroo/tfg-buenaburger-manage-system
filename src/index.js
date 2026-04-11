@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const connectDB = require('./config/database');
 const { iniciarScheduler } = require('./services/bloqueScheduler');
@@ -15,6 +16,12 @@ connectDB().then(() => iniciarScheduler());
 
 const app = express();
 const server = http.createServer(app);
+
+// ── Cabeceras de seguridad HTTP ───────────────────────────────────────────────
+// X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy...
+// CSP queda desactivada de momento para no romper Google Fonts / inline scripts del frontend;
+// cuando se migre el XSS a addEventListener se puede afinar una CSP completa.
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // En desarrollo acepta cualquier origen; en producción usa ALLOWED_ORIGINS del .env
@@ -28,12 +35,19 @@ socketService.init(io);
 
 // ── Autenticación Socket.io ───────────────────────────────────────────────────
 // Verifica el token JWT en el handshake. Si no lleva token se permite la conexión
-// como anónimo (necesario para las páginas públicas de cliente).
+// como anónimo (necesario para las páginas públicas de cliente). Si el token es
+// válido y el usuario es staff (ADMIN/EMPLEADO) se une al room 'staff', que es
+// al que van los eventos sensibles (nuevo-pedido, etc.) para no filtrárselos a
+// clientes anónimos que tengan la consola abierta.
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token || socket.handshake.query?.token;
     if (token) {
         try {
-            socket.usuario = jwt.verify(token, process.env.JWT_SECRET);
+            const payload = jwt.verify(token, process.env.JWT_SECRET);
+            socket.usuario = payload;
+            if (payload.rol === 'ADMIN' || payload.rol === 'EMPLEADO') {
+                socket.join('staff');
+            }
         } catch {
             // Token inválido — se conecta igualmente como anónimo
         }
@@ -42,7 +56,10 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-    socket.emit('cola-pendiente', { cantidad: printerService.getCola().length });
+    // Solo el staff necesita saber el tamaño de la cola de impresión pendiente.
+    if (socket.rooms.has('staff')) {
+        socket.emit('cola-pendiente', { cantidad: printerService.getCola().length });
+    }
 });
 
 // ── Ficheros estáticos (frontend) ─────────────────────────────────────────────

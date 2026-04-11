@@ -7,7 +7,12 @@ let _io = null;
 exports.init  = (io) => { _io = io; };
 exports.getIo = ()   => _io;
 
-/** Emite evento de nuevo pedido al iPad para activar alerta sonora y actualizar UI */
+/**
+ * Emite evento de nuevo pedido al room `staff` (ADMIN y EMPLEADO autenticados
+ * vía JWT en el handshake del socket). No se hace broadcast general porque
+ * cualquier visitante anónimo de la web pública estaría conectado al namespace
+ * y podría escuchar los eventos con dos líneas en la consola del navegador.
+ */
 exports.notificarNuevoPedido = (pedido) => {
-    if (_io) _io.emit('nuevo-pedido', { pedidoId: pedido._id });
+    if (_io) _io.to('staff').emit('nuevo-pedido', { pedidoId: pedido._id });
 };

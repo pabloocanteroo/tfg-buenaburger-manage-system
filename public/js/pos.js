@@ -178,8 +178,8 @@ function renderGrid() {
     }
 
     cont.innerHTML = filtrados.map(p => `
-        <div class="item-btn cat-${p.categoria}" onclick="addToTicket('${p._id}')">
-            <span class="item-btn-nombre">${p.nombre}</span>
+        <div class="item-btn cat-${escAttr(p.categoria)}" onclick="addToTicket('${escAttr(p._id)}')">
+            <span class="item-btn-nombre">${escHTML(p.nombre)}</span>
             <span class="item-btn-precio">${p.precio.toFixed(2)}€</span>
         </div>
     `).join('');
@@ -246,17 +246,18 @@ function renderTicket() {
         item.precioTotalItem = (item.precioBase + costoExtras) * item.cantidad;
         totalGlobal += item.precioTotalItem;
 
-        // Texto mods
+        // Texto mods — los elementos ya pueden contener texto libre del admin (extras, ingredientes);
+        // se escapan al componer y se unen con <br> literal (no se escapan ese separador).
         let modsTxt = [];
-        if (item.excluidos.length) modsTxt.push(`SIN: ${item.excluidos.join(', ')}`);
-        if (item.anadidos.length) modsTxt.push(`+ ${item.anadidos.join(', ')}`);
-        if (item.extras.length) modsTxt.push(item.extras.map(e => `${e.cantidad}x ${e.nombre}`).join(' | '));
+        if (item.excluidos.length) modsTxt.push(`SIN: ${escHTML(item.excluidos.join(', '))}`);
+        if (item.anadidos.length) modsTxt.push(`+ ${escHTML(item.anadidos.join(', '))}`);
+        if (item.extras.length) modsTxt.push(escHTML(item.extras.map(e => `${e.cantidad}x ${e.nombre}`).join(' | ')));
 
         return `
             <div class="t-item" onclick="abrirModalPersonalizacion(${index})">
                 <div class="t-item-info">
                     <span class="t-item-qty">${item.cantidad}x</span>
-                    <span class="t-item-name">${item.producto.nombre}</span>
+                    <span class="t-item-name">${escHTML(item.producto.nombre)}</span>
                     <div class="t-item-mods">${modsTxt.join('<br>')}</div>
                 </div>
                 <div class="t-item-price">${item.precioTotalItem.toFixed(2)}€</div>
@@ -298,8 +299,8 @@ function renderBloques() {
             estadoLabel = `<span style="font-size:0.85rem;">${huecosLibres} libres</span>`;
         }
 
-        return `<button class="${c}" ${esPasado ? 'disabled style="opacity:0.3"' : ''} onclick="seleccionarBloque('${b._id}')">
-            ${b.horaInicio}<br>${estadoLabel}
+        return `<button class="${c}" ${esPasado ? 'disabled style="opacity:0.3"' : ''} onclick="seleccionarBloque('${escAttr(b._id)}')">
+            ${escHTML(b.horaInicio)}<br>${estadoLabel}
         </button>`;
     }).join('');
 }
@@ -335,7 +336,7 @@ function abrirModalPersonalizacion(index) {
         cQuitar.innerHTML = '<i>- No modificable -</i>';
     } else {
         cQuitar.innerHTML = prod.ingredientesPorDefecto.map((ing, i) =>
-            `<div class="chip-t${item.excluidos.includes(ing) ? ' active' : ''}" data-idx="${i}">${ing}</div>`
+            `<div class="chip-t${item.excluidos.includes(ing) ? ' active' : ''}" data-idx="${i}">${escHTML(ing)}</div>`
         ).join('');
         // addEventListener evita problemas con this y strings en atributos HTML
         cQuitar.querySelectorAll('.chip-t').forEach(el => {
@@ -360,13 +361,13 @@ function abrirModalPersonalizacion(index) {
             if (e.precio === 0) {
                 const act = item.anadidos.includes(e.nombre) ? ' active' : '';
                 return `<div class="extra-t${act}" data-extra-idx="${i}">
-                            <span>Salsa: <b>${e.nombre}</b></span>
+                            <span>Salsa: <b>${escHTML(e.nombre)}</b></span>
                             <span>Gratis</span>
                         </div>`;
             } else {
                 const qty = objExtra ? objExtra.cantidad : 0;
                 return `<div class="extra-t${qty > 0 ? ' active' : ''}" data-extra-idx="${i}">
-                            <span>${e.nombre}</span>
+                            <span>${escHTML(e.nombre)}</span>
                             <span>+${e.precio.toFixed(2)}€</span>
                             <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:5px;">
                                 <button class="btn-rojo btn-ext-menos" style="padding:2px 10px;border-radius:50%">-</button>

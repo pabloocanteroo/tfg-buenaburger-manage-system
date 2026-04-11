@@ -33,14 +33,14 @@ function renderProductos(lista) {
     const grid = document.getElementById('productos-grid');
     if (!lista.length) { grid.innerHTML = '<p class="lista-loading">Sin productos en esta categoría</p>'; return; }
     grid.innerHTML = lista.map(p => `
-        <div class="producto-linea" onclick="abrirModalProducto('${p._id}')">
+        <div class="producto-linea" onclick="abrirModalProducto('${escAttr(p._id)}')">
             <div class="pl-info">
-                <span class="pl-nombre">${p.nombre}</span>
-                <span class="pl-desc">${p.descripcion}</span>
+                <span class="pl-nombre">${escHTML(p.nombre)}</span>
+                <span class="pl-desc">${escHTML(p.descripcion)}</span>
             </div>
             <span class="pl-dots"></span>
             <span class="pl-precio">${p.precio.toFixed(2)}€</span>
-            <button class="pl-add" onclick="event.stopPropagation();abrirModalProducto('${p._id}')">+</button>
+            <button class="pl-add" onclick="event.stopPropagation();abrirModalProducto('${escAttr(p._id)}')">+</button>
         </div>
     `).join('');
 }
@@ -55,18 +55,18 @@ function abrirModalProducto(productoId) {
         <div class="modal-producto-header">
             <div class="modal-emoji">${emojiCategoria(prod.categoria)}</div>
             <div>
-                <div class="modal-nombre">${prod.nombre}</div>
+                <div class="modal-nombre">${escHTML(prod.nombre)}</div>
                 <div class="modal-precio-tag">${prod.precio.toFixed(2)}€</div>
             </div>
         </div>
-        <p class="modal-desc-texto">${prod.descripcion}</p>
+        <p class="modal-desc-texto">${escHTML(prod.descripcion)}</p>
 
         ${prod.ingredientesPorDefecto?.length > 0 ? `
         <div class="opcion-grupo">
             <span class="opcion-label">❌ Quitar ingredientes</span>
             <div class="opcion-chips">
                 ${prod.ingredientesPorDefecto.map(ing => `
-                    <div class="chip quitar" onclick="toggleChip(this, 'excluidos', '${ing}')">${ing}</div>
+                    <div class="chip quitar" onclick="toggleChip(this, 'excluidos', '${escAttr(ing)}')">${escHTML(ing)}</div>
                 `).join('')}
             </div>
         </div>` : ''}
@@ -76,7 +76,7 @@ function abrirModalProducto(productoId) {
             <span class="opcion-label">✅ Añadir salsas</span>
             <div class="opcion-chips">
                 ${extras.filter(e => e.precio === 0).map(e => `
-                    <div class="chip anadir" onclick="toggleChip(this, 'anadidos', '${e.nombre}')">${e.nombre}</div>
+                    <div class="chip anadir" onclick="toggleChip(this, 'anadidos', '${escAttr(e.nombre)}')">${escHTML(e.nombre)}</div>
                 `).join('')}
             </div>
         </div>
@@ -86,13 +86,13 @@ function abrirModalProducto(productoId) {
                 ${extras.filter(e => e.precio > 0).map(e => `
                     <div class="extra-item">
                         <div class="extra-item-info">
-                            <span class="extra-item-nombre">${e.nombre}</span>
+                            <span class="extra-item-nombre">${escHTML(e.nombre)}</span>
                             <span class="extra-item-precio">+${e.precio.toFixed(2)}€</span>
                         </div>
                         <div class="extra-item-ctrl">
-                            <button class="btn-cantidad-extra" onclick="ajustarExtra(this, '${e._id}', '${e.nombre}', ${e.precio}, -1)">−</button>
-                            <span class="cantidad-extra-num" data-extra-id="${e._id}">0</span>
-                            <button class="btn-cantidad-extra" onclick="ajustarExtra(this, '${e._id}', '${e.nombre}', ${e.precio}, 1)">+</button>
+                            <button class="btn-cantidad-extra" onclick="ajustarExtra(this, '${escAttr(e._id)}', '${escAttr(e.nombre)}', ${e.precio}, -1)">−</button>
+                            <span class="cantidad-extra-num" data-extra-id="${escAttr(e._id)}">0</span>
+                            <button class="btn-cantidad-extra" onclick="ajustarExtra(this, '${escAttr(e._id)}', '${escAttr(e.nombre)}', ${e.precio}, 1)">+</button>
                         </div>
                     </div>
                 `).join('')}

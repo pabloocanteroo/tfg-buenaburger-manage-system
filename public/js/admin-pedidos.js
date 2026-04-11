@@ -21,35 +21,39 @@ async function cargarPedidosAdmin() {
         }
         cont.innerHTML = pedidos.map((p, idx) => {
             const hora        = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            const lineas      = p.lineas.map(l => `${l.cantidad}× ${l.producto?.nombre || l.nombre || '?'}`).join(', ');
+            // Nombres de producto vienen del catálogo, pero los puede editar el admin → escapar igualmente.
+            const lineas      = p.lineas.map(l => `${l.cantidad}× ${escHTML(l.producto?.nombre || l.nombre || '?')}`).join(', ');
             const estadoColor = p.estado === 'CANCELADO' ? '#e74c3c' : p.estado === 'CONFIRMADO' ? '#27ae60' : '#f39c12';
             const cancelado   = p.estado === 'CANCELADO';
+            // numero es BB-YYYYMMDD-NNNN (seguro) pero lo escapamos por si en el futuro cambia el formato.
+            const numeroPedido = escHTML(p.numero || p._id.slice(-6).toUpperCase());
+            const numeroAttr   = escAttr(p.numero || p._id.slice(-6).toUpperCase());
             return `
             <div class="pedido-admin-card ${cancelado ? 'pedido-cancelado' : ''}">
                 <div class="pedido-admin-top">
                     <div>
-                        <div class="pedido-admin-num">${p.numero || p._id.slice(-6).toUpperCase()}</div>
-                        <div class="pedido-admin-hora">${hora} · ${p.canal || '—'}</div>
+                        <div class="pedido-admin-num">${numeroPedido}</div>
+                        <div class="pedido-admin-hora">${hora} · ${escHTML(p.canal || '—')}</div>
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
                         <span style="font-weight:900;font-size:1.1rem;color:#1a1a1a">${p.total?.toFixed(2)}€</span>
-                        <span style="font-size:.75rem;font-weight:700;color:${estadoColor}">${p.estado}</span>
+                        <span style="font-size:.75rem;font-weight:700;color:${estadoColor}">${escHTML(p.estado)}</span>
                     </div>
                 </div>
-                <div class="pedido-admin-cliente">👤 ${p.nombreCliente || '—'} &nbsp;·&nbsp; 📞 ${p.telefonoCliente || '—'}</div>
+                <div class="pedido-admin-cliente">👤 ${escHTML(p.nombreCliente || '—')} &nbsp;·&nbsp; 📞 ${escHTML(p.telefonoCliente || '—')}</div>
                 <div class="pedido-admin-lineas">${lineas}</div>
                 <div class="pedido-admin-acciones">
-                    <button class="btn-reimprimir" onclick="reimprimirTicket('${p._id}', 'cliente')" title="Reimprimir ticket cliente">🖨 Cliente</button>
-                    <button class="btn-reimprimir" onclick="reimprimirTicket('${p._id}', 'cocina')"  title="Reimprimir ticket cocina">🖨 Cocina</button>
+                    <button class="btn-reimprimir" onclick="reimprimirTicket('${escAttr(p._id)}', 'cliente')" title="Reimprimir ticket cliente">🖨 Cliente</button>
+                    <button class="btn-reimprimir" onclick="reimprimirTicket('${escAttr(p._id)}', 'cocina')"  title="Reimprimir ticket cocina">🖨 Cocina</button>
                     ${!cancelado ? `
                     <button class="btn-modificar-pedido" onclick="modificarPedidoAdmin(${idx})">✏️ Modificar</button>
-                    <button class="btn-eliminar-pedido"  onclick="eliminarPedidoAdmin('${p._id}', '${p.numero || p._id.slice(-6).toUpperCase()}')">🗑 Eliminar</button>
+                    <button class="btn-eliminar-pedido"  onclick="eliminarPedidoAdmin('${escAttr(p._id)}', '${numeroAttr}')">🗑 Eliminar</button>
                     ` : ''}
                 </div>
             </div>`;
         }).join('');
     } catch (err) {
-        cont.innerHTML = `<p style="color:red;padding:20px">Error: ${err.message}</p>`;
+        cont.innerHTML = `<p style="color:red;padding:20px">Error: ${escHTML(err.message)}</p>`;
     }
 }
 

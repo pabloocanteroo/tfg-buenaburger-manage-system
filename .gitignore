@@ -7,7 +7,9 @@ node_modules/
 # Archivos personales (no subir al repo)
 CALENDARIO.md
 NOTAS_IMPLEMENTACION.md
-
+DEUDA_TECNICA.md
+CALENDARIO.md
+HANDOFF.md
 # Logs
 logs/
 *.log

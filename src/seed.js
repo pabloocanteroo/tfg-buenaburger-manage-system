@@ -1,6 +1,12 @@
 /**
  * seed.js — Poblar la base de datos con los datos reales de la carta de Buena Burger
- * Ejecutar con: node src/seed.js
+ * Ejecutar con: node src/seed.js --force
+ *
+ * Por seguridad, el seed:
+ *   - Aborta si NODE_ENV=production (nunca tocar datos reales con este script).
+ *   - Exige el flag --force para confirmar el borrado (deleteMany destructivo).
+ *   - Lee el email/password del admin inicial desde SEED_ADMIN_EMAIL y
+ *     SEED_ADMIN_PASSWORD en el entorno; no hay password por defecto.
  */
 
 require('dotenv').config();
@@ -10,6 +16,25 @@ const connectDB = require('./config/database');
 const Producto = require('./models/producto.model');
 const Extra = require('./models/extra.model');
 const Usuario = require('./models/usuario.model');
+
+// ── Guardas de ejecución ──────────────────────────────────────────────────────
+if (process.env.NODE_ENV === 'production') {
+    console.error('❌ NO ejecutar seed con NODE_ENV=production. Borraría productos, extras y usuarios.');
+    process.exit(1);
+}
+if (!process.argv.includes('--force')) {
+    console.error('❌ Este script borra productos, extras y usuarios. Añade --force para confirmar:');
+    console.error('   node src/seed.js --force');
+    process.exit(1);
+}
+
+const SEED_ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL;
+const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+if (!SEED_ADMIN_EMAIL || !SEED_ADMIN_PASSWORD) {
+    console.error('❌ Faltan SEED_ADMIN_EMAIL y/o SEED_ADMIN_PASSWORD en el .env.');
+    console.error('   Añádelos al .env antes de lanzar el seed.');
+    process.exit(1);
+}
 
 const productos = [
     // ── Hamburguesas ──────────────────────────────────────────────────────────
@@ -89,8 +114,8 @@ const extras = [
 
 const adminInicial = {
     nombre: 'Admin Buena Burger',
-    email: 'admin@buenaburger.es',
-    passwordHash: 'Admin1234!',
+    email: SEED_ADMIN_EMAIL,
+    passwordHash: SEED_ADMIN_PASSWORD,  // el pre('save') del modelo lo hashea
     rol: 'ADMIN'
 };
 
@@ -112,7 +137,7 @@ async function seed() {
 
     console.log('👤 Creando usuario admin...');
     await Usuario.create(adminInicial);
-    console.log(`   ✅ Admin creado: ${adminInicial.email} / Admin1234!`);
+    console.log(`   ✅ Admin creado: ${adminInicial.email} (password tomada de SEED_ADMIN_PASSWORD)`);
 
     console.log('\n✅ Seed completado correctamente.\n');
     process.exit(0);

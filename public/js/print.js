@@ -123,7 +123,11 @@ async function guardarConfigImpresora() {
         console.error('Socket.io no cargado. Incluye el script antes de print.js');
         return;
     }
-    const socket = io();
+    // Se pasa el JWT en el handshake: el servidor lo valida y, si corresponde
+    // a staff (ADMIN/EMPLEADO), une el socket al room 'staff', que es al que
+    // se emiten los eventos sensibles como `nuevo-pedido`.
+    const token = localStorage.getItem('bb_token');
+    const socket = io({ auth: { token } });
     BB_PRINT.socket = socket;
 
     socket.on('nuevo-pedido', () => {

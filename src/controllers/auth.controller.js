@@ -2,8 +2,14 @@ const jwt = require('jsonwebtoken');
 const { ClienteRegistrado } = require('../models/cliente.model');
 const Usuario = require('../models/usuario.model');
 
-const generarToken = (id) =>
-    jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+/**
+ * Genera un JWT que incluye rol y tipo (usuario=staff, cliente=registrado).
+ * Así el middleware de auth puede decidir qué modelo consultar sin hacer
+ * dos findById, y Socket.io puede autorizar a un room de staff en el
+ * handshake sin ir a la BD.
+ */
+const generarToken = (id, rol, tipo) =>
+    jwt.sign({ id, rol, tipo }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
 // POST /api/auth/registro
 exports.registrarCliente = async (req, res) => {
@@ -16,7 +22,7 @@ exports.registrarCliente = async (req, res) => {
             nombre, telefono, email, passwordHash: password
         });
 
-        res.status(201).json({ ok: true, token: generarToken(cliente._id), cliente: { id: cliente._id, nombre, email } });
+        res.status(201).json({ ok: true, token: generarToken(cliente._id, 'CLIENTE', 'cliente'), cliente: { id: cliente._id, nombre, email } });
     } catch (err) {
         res.status(500).json({ ok: false, mensaje: err.message });
     }
@@ -30,7 +36,7 @@ exports.loginCliente = async (req, res) => {
         if (!cliente || !(await cliente.compararPassword(password)))
             return res.status(401).json({ ok: false, mensaje: 'Credenciales incorrectas' });
 
-        res.json({ ok: true, token: generarToken(cliente._id), cliente: { id: cliente._id, nombre: cliente.nombre, email } });
+        res.json({ ok: true, token: generarToken(cliente._id, 'CLIENTE', 'cliente'), cliente: { id: cliente._id, nombre: cliente.nombre, email } });
     } catch (err) {
         res.status(500).json({ ok: false, mensaje: err.message });
     }
@@ -44,7 +50,7 @@ exports.loginStaff = async (req, res) => {
         if (!usuario || !(await usuario.compararPassword(password)))
             return res.status(401).json({ ok: false, mensaje: 'Credenciales incorrectas' });
 
-        res.json({ ok: true, token: generarToken(usuario._id), usuario: { id: usuario._id, nombre: usuario.nombre, rol: usuario.rol } });
+        res.json({ ok: true, token: generarToken(usuario._id, usuario.rol, 'usuario'), usuario: { id: usuario._id, nombre: usuario.nombre, rol: usuario.rol } });
     } catch (err) {
         res.status(500).json({ ok: false, mensaje: err.message });
     }

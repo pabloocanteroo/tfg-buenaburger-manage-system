@@ -30,9 +30,9 @@ function renderCarrito() {
     cont.innerHTML = carrito.map(item => `
         <div class="carrito-item">
             <div class="carrito-item-info">
-                <div class="carrito-item-nombre">${item.cantidad}× ${item.nombre}</div>
-                ${item.ingredientesExcluidos.length ? `<div class="carrito-item-detalle">Sin: ${item.ingredientesExcluidos.join(', ')}</div>` : ''}
-                ${item.extras.length ? `<div class="carrito-item-detalle">Extras: ${item.extras.map(e => e.nombre).join(', ')}</div>` : ''}
+                <div class="carrito-item-nombre">${item.cantidad}× ${escHTML(item.nombre)}</div>
+                ${item.ingredientesExcluidos.length ? `<div class="carrito-item-detalle">Sin: ${escHTML(item.ingredientesExcluidos.join(', '))}</div>` : ''}
+                ${item.extras.length ? `<div class="carrito-item-detalle">Extras: ${escHTML(item.extras.map(e => e.nombre).join(', '))}</div>` : ''}
                 <div class="carrito-item-precio">${((item.precioBase + item.extras.reduce((s, e) => s + e.precio * e.cantidad, 0)) * item.cantidad).toFixed(2)}€</div>
             </div>
             <button class="btn-remove" onclick="eliminarDelCarrito(${item.id})">✕</button>

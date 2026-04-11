@@ -16,14 +16,14 @@ async function cargarEmpleados() {
         cont.innerHTML = data.empleados.map(e => `
             <div class="empleado-card">
                 <div class="empleado-info">
-                    <span class="empleado-nombre">👤 ${e.nombre}</span>
-                    <span class="empleado-email">${e.email}</span>
+                    <span class="empleado-nombre">👤 ${escHTML(e.nombre)}</span>
+                    <span class="empleado-email">${escHTML(e.email)}</span>
                 </div>
-                <button class="btn-baja" onclick="darDeBaja('${e._id}', '${e.nombre}')">Dar de baja</button>
+                <button class="btn-baja" onclick="darDeBaja('${escAttr(e._id)}', '${escAttr(e.nombre)}')">Dar de baja</button>
             </div>
         `).join('');
     } catch (err) {
-        cont.innerHTML = `<p style="color:red;padding:16px">Error: ${err.message}</p>`;
+        cont.innerHTML = `<p style="color:red;padding:16px">Error: ${escHTML(err.message)}</p>`;
     }
 }
 

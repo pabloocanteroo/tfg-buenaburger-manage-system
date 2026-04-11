@@ -50,9 +50,9 @@ async function iniciarCheckout() {
 function renderCheckoutEditar(editando) {
     const resumen = carrito.map(i => `
         <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
-            <span>${i.cantidad}× ${i.nombre}
-                ${i.ingredientesExcluidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (sin ${i.ingredientesExcluidos.join(', ')})</span>` : ''}
-                ${i.ingredientesAnadidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (con ${i.ingredientesAnadidos.join(', ')})</span>` : ''}
+            <span>${i.cantidad}× ${escHTML(i.nombre)}
+                ${i.ingredientesExcluidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (sin ${escHTML(i.ingredientesExcluidos.join(', '))})</span>` : ''}
+                ${i.ingredientesAnadidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (con ${escHTML(i.ingredientesAnadidos.join(', '))})</span>` : ''}
             </span>
             <span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
         </div>
@@ -61,7 +61,7 @@ function renderCheckoutEditar(editando) {
     document.getElementById('checkout-content').innerHTML = `
         <div style="background:#1a1a1a;color:#fff;border-radius:10px;padding:11px 15px;
             margin-bottom:16px;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;">
-            EDITANDO <span style="color:#e63c2f;">${editando.numero}</span>
+            EDITANDO <span style="color:#e63c2f;">${escHTML(editando.numero)}</span>
         </div>
         <div style="background:#f8f8f8;border-radius:11px;padding:14px;margin-bottom:16px;">
             <div style="font-weight:700;font-size:0.8rem;color:#555;letter-spacing:1px;
@@ -180,16 +180,16 @@ function renderSelectorBloquesModificacion(editando, { mensaje, bloquesDisponibl
         : [`<option value="">-- Elige una hora --</option>`,
            ...bloquesValidos.map(b => {
                const libres = b.capacidadMax - b.hamburgesasOcupadas;
-               return `<option value="${b._id}">${b.horaInicio} · ${libres} hueco${libres !== 1 ? 's' : ''} libre${libres !== 1 ? 's' : ''}</option>`;
+               return `<option value="${escAttr(b._id)}">${escHTML(b.horaInicio)} · ${libres} hueco${libres !== 1 ? 's' : ''} libre${libres !== 1 ? 's' : ''}</option>`;
            })
           ].join('');
 
     document.getElementById('checkout-content').innerHTML = `
         <div style="background:#1a1a1a;color:#fff;border-radius:10px;padding:11px 15px;
             margin-bottom:14px;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;">
-            EDITANDO <span style="color:#e63c2f;">${editando.numero}</span>
+            EDITANDO <span style="color:#e63c2f;">${escHTML(editando.numero)}</span>
         </div>
-        <p style="font-size:0.88rem;color:#333;line-height:1.5;margin-bottom:14px;">${mensaje}</p>
+        <p style="font-size:0.88rem;color:#333;line-height:1.5;margin-bottom:14px;">${escHTML(mensaje)}</p>
         <div class="form-group" style="margin-bottom:16px;">
             <label style="font-size:0.8rem;font-weight:700;color:#555;letter-spacing:1px;
                 text-transform:uppercase;display:block;margin-bottom:6px;">Nueva hora de recogida</label>
@@ -236,22 +236,22 @@ function renderCheckoutPaso1() {
         <div class="form-row">
             <div class="form-group">
                 <label>Nombre *</label>
-                <input type="text" id="co-nombre" placeholder="Tu nombre" value="${dNombre}">
+                <input type="text" id="co-nombre" placeholder="Tu nombre" value="${escAttr(dNombre)}">
             </div>
             <div class="form-group">
                 <label>Teléfono *</label>
-                <input type="tel" id="co-telefono" placeholder="612 345 678" value="${dTel}">
+                <input type="tel" id="co-telefono" placeholder="612 345 678" value="${escAttr(dTel)}">
             </div>
         </div>
         <div class="form-group">
             <label>Email (para confirmación)</label>
-            <input type="email" id="co-email" placeholder="tu@email.com" value="${dEmail}">
+            <input type="email" id="co-email" placeholder="tu@email.com" value="${escAttr(dEmail)}">
         </div>
         <div style="margin-top:10px;padding-top:14px;border-top:1px solid #f0f0f0;">
             <div style="font-weight:700;font-size:0.8rem;color:#555;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">Resumen</div>
             ${carrito.map(i => `
                 <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
-                    <span>${i.cantidad}× ${i.nombre}</span>
+                    <span>${i.cantidad}× ${escHTML(i.nombre)}</span>
                     <span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
                 </div>
             `).join('')}
@@ -290,7 +290,7 @@ async function renderPaso2Directo() {
             <label>Fecha de recogida *</label>
             <select id="co-fecha" onchange="cargarBloquesFecha(this.value)">
                 <option value="">Selecciona una fecha...</option>
-                ${opcionesFecha.map(f => `<option value="${f}">${formatearFecha(f)}</option>`).join('')}
+                ${opcionesFecha.map(f => `<option value="${escAttr(f)}">${escHTML(formatearFecha(f))}</option>`).join('')}
             </select>
         </div>
         <div class="form-group">
@@ -330,16 +330,16 @@ async function cargarBloquesFecha(fecha) {
             const lleno = b.hamburgesasOcupadas >= b.capacidadMax || b.cerrado;
             return `
                 <button class="bloque-btn"
-                    onclick="${lleno ? '' : `seleccionarBloque('${b._id}', this)`}"
-                    id="bloque-${b._id}"
+                    onclick="${lleno ? '' : `seleccionarBloque('${escAttr(b._id)}', this)`}"
+                    id="bloque-${escAttr(b._id)}"
                     ${lleno ? 'disabled' : ''}>
-                    ${b.horaInicio}
+                    ${escHTML(b.horaInicio)}
                     ${lleno ? '<span class="bloque-lleno">LLENO</span>' : ''}
                 </button>
             `;
         }).join('');
     } catch (e) {
-        grid.innerHTML = `<p style="color:var(--rojo);grid-column:1/-1;padding:10px 0">Error: ${e.message}</p>`;
+        grid.innerHTML = `<p style="color:var(--rojo);grid-column:1/-1;padding:10px 0">Error: ${escHTML(e.message)}</p>`;
     }
 }
 
@@ -372,7 +372,7 @@ function checkoutPaso3() {
         <div style="background:#f8f8f8;border-radius:11px;padding:14px;margin-bottom:14px;">
             <div style="font-weight:700;margin-bottom:7px;">Resumen</div>
             ${carrito.map(i => `<div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
-                <span>${i.cantidad}× ${i.nombre}</span><span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
+                <span>${i.cantidad}× ${escHTML(i.nombre)}</span><span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
             </div>`).join('')}
             <div style="border-top:1px solid #e5e5e5;margin-top:7px;padding-top:7px;font-weight:900;display:flex;justify-content:space-between;font-size:1.05rem;">
                 <span>TOTAL</span><span style="color:var(--rojo)">${totalCarrito().toFixed(2)}€</span>
@@ -404,7 +404,9 @@ async function confirmarPedido() {
         extras: item.extras.map(e => ({ extra: e.extra, nombre: e.nombre, precio: e.precio, cantidad: 1 }))
     }));
 
-    const body = { nombre, telefono, email, bloqueId: bloqueSeleccionado, metodoPago: metodoPagoSeleccionado, clienteId: usuarioActual?.id || null, lineas };
+    // El backend ignora `clienteId` del body por seguridad y toma el cliente del JWT si existe.
+    // `apiFetch` envía Authorization automáticamente si hay token en localStorage.
+    const body = { nombre, telefono, email, bloqueId: bloqueSeleccionado, metodoPago: metodoPagoSeleccionado, lineas };
 
     try {
         const data = await apiFetch('/pedidos', { method: 'POST', body: JSON.stringify(body) });
@@ -414,9 +416,9 @@ async function confirmarPedido() {
             <div class="pedido-confirmado">
                 <div class="check">✅</div>
                 <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--negro)">¡Pedido confirmado!</h2>
-                <div class="pedido-numero">${data.pedido.numero}</div>
+                <div class="pedido-numero">${escHTML(data.pedido.numero)}</div>
                 <p class="pedido-info">
-                    Hora de recogida: <strong>${bloques.find(b => b._id === bloqueSeleccionado)?.horaInicio || ''}</strong><br>
+                    Hora de recogida: <strong>${escHTML(bloques.find(b => b._id === bloqueSeleccionado)?.horaInicio || '')}</strong><br>
                     ${metodoPagoSeleccionado === 'PAGO_EN_LOCAL' ? '💵 Pagas en el local al recoger.' : '💳 Hemos procesado tu pago online.'}
                 </p>
                 <button class="btn-siguiente" style="margin-top:20px" onclick="cerrarModal('modal-checkout')">CERRAR</button>
