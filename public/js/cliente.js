@@ -73,17 +73,27 @@ function estadoBadge(estado) {
 function esPedidoModificable(p) {
     if (typeof p.modificable === 'boolean') return p.modificable;
     if (['CANCELADO', 'ENTREGADO'].includes(p.estado)) return false;
-    if (!p.horaRecogida) return false;
-    const minutosRestantes = (new Date(p.horaRecogida).getTime() - Date.now()) / 60000;
-    return minutosRestantes > 15;
+    const minutos = minutosParaRecogidaFrontend(p);
+    return minutos > 15;
 }
 
 function esPedidoCancelable(p) {
     if (typeof p.cancelable === 'boolean') return p.cancelable;
     if (['CANCELADO', 'ENTREGADO'].includes(p.estado)) return false;
-    if (!p.horaRecogida) return false;
-    const minutosRestantes = (new Date(p.horaRecogida).getTime() - Date.now()) / 60000;
-    return minutosRestantes > 15;
+    const minutos = minutosParaRecogidaFrontend(p);
+    return minutos > 15;
+}
+
+function minutosParaRecogidaFrontend(p) {
+    if (p.horaRecogida) {
+        return (new Date(p.horaRecogida).getTime() - Date.now()) / 60000;
+    }
+    // Fallback: usar el primer bloque populado si viene en el JSON
+    const bloque = p.bloques?.[0];
+    if (bloque && bloque.fecha && bloque.horaInicio) {
+        return (new Date(`${bloque.fecha}T${bloque.horaInicio}:00`).getTime() - Date.now()) / 60000;
+    }
+    return Infinity;
 }
 
 // ── MIS PEDIDOS ───────────────────────────────────────────────────────────────
@@ -104,9 +114,30 @@ async function cargarMisPedidos() {
 
         let html = '';
         pedidos.forEach((p, idx) => {
-            const fechaStr = new Date(p.fechaCreacion).toLocaleDateString('es-ES', {
+            // Fecha y hora en que se hizo el pedido
+            const fechaPedido = new Date(p.fechaCreacion);
+            const fechaPedidoStr = fechaPedido.toLocaleDateString('es-ES', {
                 day: 'numeric', month: 'short', year: 'numeric'
             });
+            const horaPedidoStr = fechaPedido.toLocaleTimeString('es-ES', {
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Fecha y hora de recogida (del primer bloque populado)
+            let recogidaStr = null;
+            const bloque = p.bloques?.[0];
+            if (bloque && bloque.fecha && bloque.horaInicio) {
+                const fechaRecogida = new Date(`${bloque.fecha}T${bloque.horaInicio}:00`);
+                recogidaStr = fechaRecogida.toLocaleDateString('es-ES', {
+                    weekday: 'short', day: 'numeric', month: 'short'
+                }) + ' · ' + bloque.horaInicio + 'h';
+            } else if (p.horaRecogida) {
+                const fechaRecogida = new Date(p.horaRecogida);
+                recogidaStr = fechaRecogida.toLocaleDateString('es-ES', {
+                    weekday: 'short', day: 'numeric', month: 'short'
+                }) + ' · ' + fechaRecogida.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) + 'h';
+            }
+
             const resumenLista = p.lineas.map(l => `${l.cantidad}× ${l.nombre}`).join(', ');
             const modificable = esPedidoModificable(p);
             const cancelable = esPedidoCancelable(p);
@@ -114,9 +145,14 @@ async function cargarMisPedidos() {
             html += `
                 <div class="mi-pedido-card" id="pedido-card-${p._id}">
                     <div class="mi-pedido-header">
-                        <span class="mi-pedido-fecha">${fechaStr}</span>
+                        <span class="mi-pedido-fecha">${fechaPedidoStr} · ${horaPedidoStr}h</span>
                         ${estadoBadge(p.estado)}
                     </div>
+                    ${recogidaStr ? `
+                    <div style="font-size:0.78rem;font-weight:700;color:#e63c2f;
+                        letter-spacing:0.3px;margin-bottom:6px;">
+                        RECOGIDA: ${recogidaStr.toUpperCase()}
+                    </div>` : ''}
                     <div class="mi-pedido-info">
                         <span class="mi-pedido-resumen">${resumenLista}</span>
                         <span class="mi-pedido-precio">${p.total.toFixed(2)}€</span>

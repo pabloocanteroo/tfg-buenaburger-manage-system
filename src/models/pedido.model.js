@@ -52,6 +52,11 @@ const PedidoSchema = new mongoose.Schema({
     // Bloques reservados (puede ser 1 o varios si hay muchas hamburguesas)
     bloques: [{ type: mongoose.Schema.Types.ObjectId, ref: 'BloqueProduccion' }],
 
+    // Cantidad de hamburguesas reservadas en cada bloque, paralelo a `bloques` en el mismo
+    // orden. Permite calcular la liberación exacta al modificar/cancelar un pedido en vez
+    // de repartir uniformemente. Para pedidos legacy sin este campo, se cae a reparto uniforme.
+    cantidadPorBloque: { type: [Number], default: undefined },
+
     lineas: [LineaPedidoSchema],
 
     total: { type: Number, required: true, min: 0 },
@@ -81,16 +86,30 @@ PedidoSchema.pre('save', async function () {
 
 // ── Virtuals ──────────────────────────────────────────────────────────────────
 // Un pedido es modificable/cancelable mientras falten más de 15 min para la hora de recogida
+
+function minutosParaRecogida(pedido) {
+    // Caso normal: horaRecogida guardada al crear el pedido
+    if (pedido.horaRecogida) {
+        return (pedido.horaRecogida.getTime() - Date.now()) / 60000;
+    }
+    // Fallback para pedidos antiguos sin horaRecogida: usar el primer bloque populado si existe
+    const primerBloque = pedido.bloques?.[0];
+    if (primerBloque && primerBloque.fecha && primerBloque.horaInicio) {
+        const fecha = new Date(`${primerBloque.fecha}T${primerBloque.horaInicio}:00`);
+        return (fecha.getTime() - Date.now()) / 60000;
+    }
+    // Sin ninguna referencia temporal, no bloqueamos (pedido de prueba / datos legacy)
+    return Infinity;
+}
+
 PedidoSchema.virtual('modificable').get(function () {
-    if (!this.horaRecogida) return false;
-    const minutosRestantes = (this.horaRecogida.getTime() - Date.now()) / 60000;
-    return minutosRestantes > MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
+    if (this.estado === 'CANCELADO') return false;
+    return minutosParaRecogida(this) > MODIFICATION_WINDOW_MINUTES;
 });
 
 PedidoSchema.virtual('cancelable').get(function () {
-    if (!this.horaRecogida) return false;
-    const minutosRestantes = (this.horaRecogida.getTime() - Date.now()) / 60000;
-    return minutosRestantes > MODIFICATION_WINDOW_MINUTES && this.estado !== 'CANCELADO';
+    if (this.estado === 'CANCELADO') return false;
+    return minutosParaRecogida(this) > MODIFICATION_WINDOW_MINUTES;
 });
 
 // ── Índices ───────────────────────────────────────────────────────────────────

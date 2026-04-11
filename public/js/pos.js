@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(actualizarReloj, 1000);
 
     // 2. Cargar datos
+    inicializarSelectorFecha();
     await Promise.all([
         cargarProductos(),
         cargarExtras(),
@@ -91,15 +92,49 @@ async function cargarExtras() {
     } catch (e) { console.error("Error cargando extras", e); }
 }
 
-async function cargarBloques() {
+function inicializarSelectorFecha() {
+    const select = document.getElementById('pos-fecha-selector');
+    const hoy = new Date();
+    const opciones = [];
+
+    for (let i = 0; i < 8; i++) {
+        const d = new Date(hoy);
+        d.setDate(d.getDate() + i);
+        if ([0, 5, 6].includes(d.getDay())) { // dom, vie, sab
+            const iso = d.toISOString().slice(0, 10);
+            const label = i === 0
+                ? `HOY — ${d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase()}`
+                : d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+            opciones.push({ iso, label });
+        }
+    }
+
+    if (opciones.length === 0) {
+        // No hay días operativos en los próximos 7 días (no es vi/sa/do)
+        select.innerHTML = '<option value="">Sin días disponibles esta semana</option>';
+        return;
+    }
+
+    select.innerHTML = opciones.map(o => `<option value="${o.iso}">${o.label}</option>`).join('');
+    select.value = opciones[0].iso;
+}
+
+async function cargarBloques(fecha) {
     try {
-        const hoy = new Date();
-        const date = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
-        const res = await fetch(`/api/bloques?fecha=${date}`);
+        const fechaConsulta = fecha || document.getElementById('pos-fecha-selector')?.value || (() => {
+            const hoy = new Date();
+            return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+        })();
+        const res = await fetch(`/api/bloques?fecha=${fechaConsulta}`);
         const data = await res.json();
         bloques = data.bloques || [];
         renderBloques();
     } catch (e) { console.error("Error cargando bloques", e); }
+}
+
+function cambiarFecha(fecha) {
+    bloqueSeleccionado = null;
+    cargarBloques(fecha);
 }
 
 // ══ Componentes Interactivos ══════════════════════════════════════════════
@@ -237,13 +272,16 @@ function renderTicket() {
 let bloqueSeleccionado = null;
 function renderBloques() {
     const cont = document.getElementById('ticket-bloques');
-    if (!bloques.length) { cont.innerHTML = '<p>No hay bloques creados hoy.</p>'; return; }
+    if (!bloques.length) { cont.innerHTML = '<p style="color:#888;padding:14px;grid-column:1/-1;text-align:center">No hay bloques para este día.</p>'; return; }
 
     const now = new Date();
+    const hoyIso = now.toISOString().slice(0, 10);
     const horaActualStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const fechaSeleccionada = document.getElementById('pos-fecha-selector')?.value || hoyIso;
+    const esHoy = fechaSeleccionada === hoyIso;
 
     cont.innerHTML = bloques.map(b => {
-        const esPasado = b.horaInicio < horaActualStr;
+        const esPasado = esHoy && b.horaInicio < horaActualStr;
         const huecosLibres = b.capacidadMax - b.hamburgesasOcupadas;
         const estaLleno = huecosLibres <= 0;
         const estaForzado = huecosLibres < 0;

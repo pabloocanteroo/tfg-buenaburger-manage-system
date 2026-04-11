@@ -72,6 +72,11 @@
             <!-- ── COL 2: Bloques horarios (espacio central grande) ── -->
             <section class="pos-bloques-col">
                 <div class="bloques-col-header">🕐 HORA DE RECOGIDA</div>
+                <select id="pos-fecha-selector" onchange="cambiarFecha(this.value)"
+                    style="width:100%;padding:8px 10px;margin-bottom:10px;border:2px solid #333;
+                    border-radius:8px;background:#1a1a1a;color:#fff;font-family:'Barlow Condensed',sans-serif;
+                    font-size:1rem;font-weight:700;cursor:pointer;">
+                </select>
                 <div class="ticket-bloques" id="ticket-bloques">
                     <p style="color:#888;padding:14px;grid-column:1/-1;text-align:center">Cargando horas...</p>
                 </div>

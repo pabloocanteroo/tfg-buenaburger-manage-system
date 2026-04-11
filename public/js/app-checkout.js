@@ -90,16 +90,8 @@ function renderCheckoutEditar(editando) {
     `;
 }
 
-async function guardarModificacionDesdeCheckout() {
-    const editando = JSON.parse(localStorage.getItem('bb_editando') || 'null');
-    if (!editando) return;
-
-    if (carrito.length === 0) {
-        mostrarToast('El pedido no puede quedar vacío. Usa Cancelar Pedido si quieres anularlo.', 'error');
-        return;
-    }
-
-    const lineas = carrito.map(item => ({
+function _lineasDesdeCarrito() {
+    return carrito.map(item => ({
         producto:              item.productId,
         nombre:                item.nombre,
         precio:                item.precioBase,
@@ -109,16 +101,53 @@ async function guardarModificacionDesdeCheckout() {
         ingredientesAnadidos:  item.ingredientesAnadidos  || [],
         extras: (item.extras || []).map(e => ({ extra: e.extra, nombre: e.nombre, precio: e.precio, cantidad: 1 }))
     }));
+}
+
+async function _enviarModificacion(editando, body) {
+    const token = localStorage.getItem('bb_token');
+    const res = await fetch(`${API}/pedidos/${editando.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body)
+    });
+    return { res, data: await res.json() };
+}
+
+async function guardarModificacionDesdeCheckout(nuevoBloqueId = null) {
+    const editando = JSON.parse(localStorage.getItem('bb_editando') || 'null');
+    if (!editando) return;
+
+    if (carrito.length === 0) {
+        mostrarToast('El pedido no puede quedar vacío. Usa Cancelar Pedido si quieres anularlo.', 'error');
+        return;
+    }
 
     const btn = document.querySelector('#checkout-content .btn-siguiente');
     if (btn) { btn.disabled = true; btn.textContent = 'GUARDANDO...'; }
 
-    try {
-        const data = await apiFetch(`/pedidos/${editando.id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ lineas, total: +totalCarrito().toFixed(2) })
-        });
+    const body = {
+        lineas: _lineasDesdeCarrito(),
+        total:  +totalCarrito().toFixed(2),
+        ...(nuevoBloqueId ? { nuevoBloqueId } : {})
+    };
 
+    try {
+        const { res, data } = await _enviarModificacion(editando, body);
+
+        // Sin hueco en el bloque actual — mostrar selector de bloques alternativos
+        if (res.status === 409 && data.sinHueco) {
+            if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR CAMBIOS ✓'; }
+            renderSelectorBloquesModificacion(editando, data);
+            return;
+        }
+
+        if (!res.ok) {
+            mostrarToast(data.mensaje || 'No se pudo modificar el pedido', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR CAMBIOS ✓'; }
+            return;
+        }
+
+        // Éxito
         localStorage.removeItem('bb_editando');
         carrito = [];
         actualizarContadorCarrito();
@@ -131,12 +160,62 @@ async function guardarModificacionDesdeCheckout() {
                 ? `Pedido actualizado. Se te devolverá: ${Math.abs(diferencia).toFixed(2)}€`
                 : 'Pedido modificado correctamente';
         mostrarToast(msg, 'success');
-
         setTimeout(() => window.location.href = 'cliente.html', 1200);
+
     } catch (e) {
-        mostrarToast(`Error: ${e.message}`, 'error');
+        mostrarToast(`Error de red: ${e.message}`, 'error');
         if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR CAMBIOS ✓'; }
     }
+}
+
+function renderSelectorBloquesModificacion(editando, { mensaje, bloquesDisponibles }) {
+    const ahora = new Date();
+    const horaActual = ahora.toTimeString().slice(0, 5);
+
+    // Filtrar bloques pasados
+    const bloquesValidos = bloquesDisponibles.filter(b => b.horaInicio > horaActual);
+
+    const selectOpciones = bloquesValidos.length === 0
+        ? `<option value="">No hay horas disponibles este día</option>`
+        : [`<option value="">-- Elige una hora --</option>`,
+           ...bloquesValidos.map(b => {
+               const libres = b.capacidadMax - b.hamburgesasOcupadas;
+               return `<option value="${b._id}">${b.horaInicio} · ${libres} hueco${libres !== 1 ? 's' : ''} libre${libres !== 1 ? 's' : ''}</option>`;
+           })
+          ].join('');
+
+    document.getElementById('checkout-content').innerHTML = `
+        <div style="background:#1a1a1a;color:#fff;border-radius:10px;padding:11px 15px;
+            margin-bottom:14px;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;">
+            EDITANDO <span style="color:#e63c2f;">${editando.numero}</span>
+        </div>
+        <p style="font-size:0.88rem;color:#333;line-height:1.5;margin-bottom:14px;">${mensaje}</p>
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-size:0.8rem;font-weight:700;color:#555;letter-spacing:1px;
+                text-transform:uppercase;display:block;margin-bottom:6px;">Nueva hora de recogida</label>
+            <select id="select-bloque-alternativo"
+                onchange="window._bloqueAlternativoSeleccionado = this.value; document.getElementById('btn-confirmar-bloque').disabled = !this.value; document.getElementById('btn-confirmar-bloque').style.opacity = this.value ? '1' : '0.5';"
+                style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;
+                font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;
+                background:#fff;cursor:pointer;">
+                ${selectOpciones}
+            </select>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button onclick="renderCheckoutEditar(JSON.parse(localStorage.getItem('bb_editando')))"
+                style="flex:1;padding:13px;border:2px solid #ddd;background:#fff;
+                font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;
+                border-radius:8px;cursor:pointer;letter-spacing:1px;">
+                ← VOLVER
+            </button>
+            <button class="btn-siguiente" id="btn-confirmar-bloque"
+                onclick="guardarModificacionDesdeCheckout(window._bloqueAlternativoSeleccionado)"
+                disabled style="flex:2;opacity:0.5;">
+                CONFIRMAR NUEVA HORA ✓
+            </button>
+        </div>
+    `;
+    window._bloqueAlternativoSeleccionado = null;
 }
 
 function renderCheckoutPaso1() {
