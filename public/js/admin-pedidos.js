@@ -20,7 +20,13 @@ async function cargarPedidosAdmin() {
             return;
         }
         cont.innerHTML = pedidos.map((p, idx) => {
-            const hora        = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const horaCreacion = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const primerBloque = p.bloques?.[0];
+            const horaRecogida = primerBloque?.horaInicio || (p.horaRecogida ? new Date(p.horaRecogida).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '—');
+            const fechaRecogidaRaw = primerBloque?.fecha || p.horaRecogida;
+            const fechaRecogida = fechaRecogidaRaw
+                ? new Date(fechaRecogidaRaw).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                : '—';
             // Nombres de producto vienen del catálogo, pero los puede editar el admin → escapar igualmente.
             const lineas      = p.lineas.map(l => `${l.cantidad}× ${escHTML(l.producto?.nombre || l.nombre || '?')}`).join(', ');
             const estadoColor = p.estado === 'CANCELADO' ? '#e74c3c' : p.estado === 'CONFIRMADO' ? '#27ae60' : '#f39c12';
@@ -33,12 +39,15 @@ async function cargarPedidosAdmin() {
                 <div class="pedido-admin-top">
                     <div>
                         <div class="pedido-admin-num">${numeroPedido}</div>
-                        <div class="pedido-admin-hora">${hora} · ${escHTML(p.canal || '—')}</div>
+                        <div class="pedido-admin-hora">Creado: ${horaCreacion} · ${escHTML(p.canal || '—')}</div>
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
                         <span style="font-weight:900;font-size:1.1rem;color:#1a1a1a">${p.total?.toFixed(2)}€</span>
                         <span style="font-size:.75rem;font-weight:700;color:${estadoColor}">${escHTML(p.estado)}</span>
                     </div>
+                </div>
+                <div class="pedido-admin-recogida" style="background:#FFEBEE;border-left:3px solid #E32A2A;padding:8px 12px;margin:8px 0;border-radius:4px;font-weight:700;color:#B71C1C">
+                    📅 RECOGIDA: ${escHTML(fechaRecogida)} a las ${escHTML(horaRecogida)}
                 </div>
                 <div class="pedido-admin-cliente">👤 ${escHTML(p.nombreCliente || '—')} &nbsp;·&nbsp; 📞 ${escHTML(p.telefonoCliente || '—')}</div>
                 <div class="pedido-admin-lineas">${lineas}</div>

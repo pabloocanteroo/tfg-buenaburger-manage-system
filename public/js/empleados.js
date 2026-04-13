@@ -137,6 +137,15 @@ function renderPedidos(lista = []) {
 
     cont.innerHTML = lista.map(p => {
         const hora = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        const canal = p.canal || '—';
+        const canalLabel = canal === 'TELEFONO' ? '📞 Teléfono'
+                         : canal === 'WEB'      ? '🌐 Web'
+                         : canal === 'WHATSAPP' ? '💬 WhatsApp'
+                         : `📍 ${canal}`;
+        const canalColor = canal === 'TELEFONO' ? '#1976D2'
+                         : canal === 'WEB'      ? '#2E7D32'
+                         : canal === 'WHATSAPP' ? '#25D366'
+                         : '#666';
 
         return `<div class="pedido-card" onclick="abrirModal('${escAttr(p._id)}')">
             <div class="pedido-card-top">
@@ -144,14 +153,30 @@ function renderPedidos(lista = []) {
                     <div class="pedido-num">${escHTML(p.numero || p._id.slice(-6).toUpperCase())}</div>
                     <div class="pedido-hora">Creado a las ${hora}</div>
                 </div>
-                <div class="pedido-total">${p.total?.toFixed(2)}€</div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                    <div class="pedido-total">${p.total?.toFixed(2)}€</div>
+                    <span style="font-size:.75rem;font-weight:700;color:${canalColor};background:#f5f5f5;padding:3px 8px;border-radius:10px">${escHTML(canalLabel)}</span>
+                </div>
             </div>
             <div class="pedido-cliente">
-                <span>👤 ${escHTML(p.nombreCliente || '—')}</span>
-                <span>📞 ${escHTML(p.telefonoCliente || '—')}</span>
+                <span>👤 ${escHTML(p.nombreCliente || 'Sin nombre')}</span>
+                <span>📞 ${escHTML(p.telefonoCliente || 'Sin teléfono')}</span>
             </div>
-            <div class="pedido-lineas">
-                ${p.lineas.map(l => `<span class="linea-chip">${l.cantidad}× ${escHTML(l.nombreProducto || 'Producto')}</span>`).join('')}
+            <div class="pedido-lineas" style="display:flex;flex-direction:column;gap:6px">
+                ${p.lineas.map(l => {
+                    const nombreProd = l.producto?.nombre || l.nombre || 'Producto';
+                    const sinIngr    = l.ingredientesExcluidos || [];
+                    const addIngr    = l.ingredientesAnadidos || [];
+                    const extras     = l.extras || [];
+                    const mods = [];
+                    if (sinIngr.length) mods.push(`<span style="color:#c62828;font-size:.8rem">SIN ${escHTML(sinIngr.join(', '))}</span>`);
+                    if (addIngr.length) mods.push(`<span style="color:#2E7D32;font-size:.8rem">+ ${escHTML(addIngr.join(', '))}</span>`);
+                    if (extras.length)  mods.push(`<span style="color:#1976D2;font-size:.8rem">+ ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</span>`);
+                    return `<div style="background:#f5f5f5;padding:6px 10px;border-radius:6px">
+                        <strong>${l.cantidad}× ${escHTML(nombreProd)}</strong>
+                        ${mods.length ? `<div style="margin-top:3px;display:flex;flex-direction:column;gap:2px">${mods.join('')}</div>` : ''}
+                    </div>`;
+                }).join('')}
             </div>
         </div>`;
     }).join('');
@@ -168,24 +193,38 @@ function abrirModal(pedidoId) {
     const hora = new Date(p.fechaCreacion).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
     const horaBloque = p.bloques?.[0]?.horaInicio || '—';
 
+    const fechaBloque = p.bloques?.[0]?.fecha
+        ? new Date(p.bloques[0].fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : (p.horaRecogida ? new Date(p.horaRecogida).toLocaleDateString('es-ES') : '—');
+
     document.getElementById('modal-body').innerHTML = `
+        <div class="modal-section" style="background:#FFEBEE;border-left:4px solid var(--rojo);padding:12px;border-radius:6px">
+            <h4 style="color:var(--rojo);margin-bottom:4px">📅 RECOGIDA</h4>
+            <p style="font-size:1.15rem;font-weight:700;color:#B71C1C">${escHTML(fechaBloque)} a las ${escHTML(horaBloque)}</p>
+        </div>
         <div class="modal-section">
             <h4>Cliente</h4>
-            <p><strong>${escHTML(p.nombreCliente || '—')}</strong> · ${escHTML(p.telefonoCliente || 'Sin teléfono')}</p>
-            <p style="color:#888;font-size:0.8rem;margin-top:4px">Pedido a las ${hora} · Bloque ${escHTML(horaBloque)}</p>
+            <p><strong>${escHTML(p.nombreCliente || 'Sin nombre')}</strong> · ${escHTML(p.telefonoCliente || 'Sin teléfono')}</p>
+            <p style="color:#888;font-size:0.8rem;margin-top:4px">Pedido creado: ${hora}</p>
         </div>
         <div class="modal-section">
             <h4>Líneas del pedido</h4>
-            ${p.lineas.map(l => `
+            ${p.lineas.map(l => {
+                const nombreProd = l.producto?.nombre || l.nombre || 'Producto';
+                const sinIngr    = l.ingredientesExcluidos || [];
+                const addIngr    = l.ingredientesAnadidos || [];
+                const extras     = l.extras || [];
+                return `
                 <div class="modal-linea">
                     <div>
-                        <div class="modal-linea-nombre">${l.cantidad}× ${escHTML(l.nombreProducto || 'Producto')}</div>
-                        ${l.sinIngredientes?.length ? `<div class="modal-linea-mods">Sin: ${escHTML(l.sinIngredientes.join(', '))}</div>` : ''}
-                        ${l.extras?.length ? `<div class="modal-linea-mods">Extras: ${escHTML(l.extras.map(e => e.nombreExtra || 'Extra').join(', '))}</div>` : ''}
+                        <div class="modal-linea-nombre">${l.cantidad}× ${escHTML(nombreProd)}</div>
+                        ${sinIngr.length ? `<div class="modal-linea-mods" style="color:#c62828">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
+                        ${addIngr.length ? `<div class="modal-linea-mods" style="color:#2E7D32">Añadir: ${escHTML(addIngr.join(', '))}</div>` : ''}
+                        ${extras.length ? `<div class="modal-linea-mods">Extras: ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
                     </div>
                     <div class="modal-linea-precio">${(l.precioUnitario * l.cantidad).toFixed(2)}€</div>
-                </div>
-            `).join('')}
+                </div>`;
+            }).join('')}
         </div>
         <div class="modal-section">
             <h4>Resumen</h4>

@@ -399,6 +399,7 @@ exports.modificarPedido = async (req, res) => {
                     pedido.cantidadPorBloque  = nuevasReservas.map(r => r.cantidad);
                     pedido.horaRecogida       = nuevaHora;
                     await pedido.save();
+                    await notificarEImprimir(pedido._id);
                     return res.json({ ok: true, pedido, diferencia: +(pedido.total - totalAnterior).toFixed(2) });
                 }
 
@@ -438,6 +439,7 @@ exports.modificarPedido = async (req, res) => {
                         pedido.cantidadPorBloque = nuevasReservas.map(r => r.cantidad);
                         pedido.horaRecogida      = nuevaHora;
                         await pedido.save();
+                        await notificarEImprimir(pedido._id);
                         return res.json({ ok: true, pedido, diferencia: +(pedido.total - totalAnterior).toFixed(2) });
                     }
 
@@ -476,6 +478,7 @@ exports.modificarPedido = async (req, res) => {
         }
 
         await pedido.save();
+        await notificarEImprimir(pedido._id);
 
         res.json({ ok: true, pedido, diferencia: +(pedido.total - totalAnterior).toFixed(2) });
     } catch (err) { res.status(400).json({ ok: false, mensaje: err.message }); }
@@ -589,7 +592,7 @@ exports.getTodosPedidos = async (req, res) => {
             estado:  { $ne: 'CANCELADO' },
         })
             .sort('fechaCreacion')
-            .populate('bloques', 'horaInicio horaFin capacidadMax hamburgesasOcupadas')
+            .populate('bloques', 'horaInicio horaFin fecha capacidadMax hamburgesasOcupadas')
             .populate('lineas.producto', 'nombre precio categoria')
             .lean();
 
