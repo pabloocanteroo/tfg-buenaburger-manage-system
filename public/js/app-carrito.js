@@ -8,10 +8,21 @@ function actualizarContadorCarrito() {
 }
 
 function totalCarrito() {
-    return carrito.reduce((s, i) => {
+    const subtotal = carrito.reduce((s, i) => {
         const extrasTotal = i.extras.reduce((es, e) => es + e.precio * e.cantidad, 0);
         return s + (i.precioBase + extrasTotal) * i.cantidad;
     }, 0);
+    return subtotal - descuentoSalsas3x2();
+}
+
+function descuentoSalsas3x2() {
+    const totalSalsas = carrito
+        .filter(i => i.categoria === 'SALSA')
+        .reduce((t, i) => t + i.cantidad, 0);
+    const gratis = Math.floor(totalSalsas / 3);
+    if (gratis === 0) return 0;
+    const precioSalsa = carrito.find(i => i.categoria === 'SALSA')?.precioBase || 1;
+    return gratis * precioSalsa;
 }
 
 function abrirCarrito() {
@@ -38,7 +49,9 @@ function renderCarrito() {
             <button class="btn-remove" onclick="eliminarDelCarrito(${item.id})">✕</button>
         </div>
     `).join('');
+    const descuento = descuentoSalsas3x2();
     footer.innerHTML = `
+        ${descuento > 0 ? `<div class="carrito-descuento">🏷️ Promo 3x2 salsas<span>-${descuento.toFixed(2)}€</span></div>` : ''}
         <div class="carrito-total">
             <span>Total</span><span>${totalCarrito().toFixed(2)}€</span>
         </div>

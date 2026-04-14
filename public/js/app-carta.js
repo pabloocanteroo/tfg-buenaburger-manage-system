@@ -26,7 +26,11 @@ function filtrarCategoria(cat, tabEl) {
 }
 
 function emojiCategoria(cat) {
-    return cat === 'HAMBURGUESA' ? '🍔' : cat === 'PATATAS' ? '🍟' : cat === 'POSTRE' ? '🍰' : '🥤';
+    if (cat === 'HAMBURGUESA') return '🍔';
+    if (cat === 'PATATAS') return '🍟';
+    if (cat === 'POSTRE') return '🍰';
+    if (cat === 'SALSA') return '🥫';
+    return '🥤';
 }
 
 function renderProductos(lista) {
@@ -60,6 +64,7 @@ function abrirModalProducto(productoId) {
             </div>
         </div>
         <p class="modal-desc-texto">${escHTML(prod.descripcion)}</p>
+        ${prod.categoria === 'SALSA' ? `<p class="modal-promo-tag">🏷️ PROMO 3x2 — lleva 3, paga 2</p>` : ''}
 
         ${prod.ingredientesPorDefecto?.length > 0 ? `
         <div class="opcion-grupo">
@@ -71,7 +76,7 @@ function abrirModalProducto(productoId) {
             </div>
         </div>` : ''}
 
-        ${prod.categoria !== 'BEBIDA' && prod.categoria !== 'POSTRE' ? `
+        ${prod.categoria !== 'BEBIDA' && prod.categoria !== 'POSTRE' && prod.categoria !== 'SALSA' ? `
         <div class="opcion-grupo">
             <span class="opcion-label">✅ Añadir salsas</span>
             <div class="opcion-chips">

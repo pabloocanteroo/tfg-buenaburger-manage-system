@@ -266,6 +266,27 @@ function renderTicket() {
         `;
     }).join('');
 
+    // Descuento 3x2 salsas
+    const totalSalsas = ticket
+        .filter(it => it.producto.categoria === 'SALSA')
+        .reduce((t, it) => t + it.cantidad, 0);
+    const salsasGratis = Math.floor(totalSalsas / 3);
+    const precioSalsa = ticket.find(it => it.producto.categoria === 'SALSA')?.precioBase || 1;
+    const descuentoSalsas = salsasGratis * precioSalsa;
+
+    if (descuentoSalsas > 0) {
+        cont.innerHTML += `
+            <div class="t-item" style="opacity:0.75;pointer-events:none;">
+                <div class="t-item-info">
+                    <span class="t-item-qty"></span>
+                    <span class="t-item-name" style="color:#2ecc71">🏷️ Promo 3x2 salsas</span>
+                </div>
+                <div class="t-item-price" style="color:#2ecc71">-${descuentoSalsas.toFixed(2)}€</div>
+            </div>
+        `;
+        totalGlobal -= descuentoSalsas;
+    }
+
     document.getElementById('ticket-total').textContent = totalGlobal.toFixed(2) + '€';
 }
 
@@ -353,7 +374,7 @@ function abrirModalPersonalizacion(index) {
 
     // ── Render Extras de Pago y Salsas ─────────────────────────────────────
     const cExtras = document.getElementById('grid-extras');
-    if (prod.categoria === 'BEBIDA' || prod.categoria === 'POSTRE') {
+    if (prod.categoria === 'BEBIDA' || prod.categoria === 'POSTRE' || prod.categoria === 'SALSA') {
         cExtras.innerHTML = '<i>- No aplicable -</i>';
     } else {
         cExtras.innerHTML = extras.map((e, i) => {

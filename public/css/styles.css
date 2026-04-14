@@ -620,6 +620,17 @@ button {
   margin-bottom: 18px;
 }
 
+.modal-promo-tag {
+  display: inline-block;
+  background: #27ae60;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
 /* Historial Mis Pedidos */
 .lista-mis-pedidos {
   display: flex;
@@ -969,6 +980,16 @@ button {
 
 .btn-remove:hover {
   color: var(--rojo);
+}
+
+.carrito-descuento {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #27ae60;
 }
 
 .carrito-total {

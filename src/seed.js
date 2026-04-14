@@ -81,6 +81,14 @@ const productos = [
         categoria: 'PATATAS',
         ingredientesPorDefecto: ['salsa especial', 'sal']
     },
+    // ── Salsas ────────────────────────────────────────────────────────────────
+    {
+        nombre: 'Bote de salsa especial',
+        descripcion: 'Bote de nuestra salsa especial artesanal. Promoción 3x2.',
+        precio: 1,
+        categoria: 'SALSA',
+        ingredientesPorDefecto: []
+    },
     // ── Bebidas ───────────────────────────────────────────────────────────────
     {
         nombre: 'Agua',

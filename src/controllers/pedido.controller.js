@@ -25,6 +25,25 @@ const calcularTotal = (lineas) =>
         return sum + l.precioUnitario * l.cantidad + extrasTotal;
     }, 0);
 
+/**
+ * Descuento 3x2 en salsas: por cada 3 botes se regala 1.
+ * Devuelve el importe a descontar (ya redondeado a 2 decimales).
+ */
+const calcularDescuentoSalsas = (lineas, productos) => {
+    const totalSalsas = lineas.reduce((total, linea) => {
+        const prod = productos.find(p => p._id.toString() === linea.producto.toString());
+        if (prod && prod.categoria === 'SALSA') total += linea.cantidad;
+        return total;
+    }, 0);
+    const salsasGratis = Math.floor(totalSalsas / 3);
+    if (salsasGratis === 0) return 0;
+    const lineaSalsa = lineas.find(l => {
+        const prod = productos.find(p => p._id.toString() === l.producto.toString());
+        return prod && prod.categoria === 'SALSA';
+    });
+    return +(salsasGratis * (lineaSalsa?.precioUnitario || 1)).toFixed(2);
+};
+
 /** Enriquece las líneas con nombre y precio desnormalizados desde el catálogo */
 const desnormalizarLineas = (lineas, productos) =>
     lineas.map(l => {
@@ -121,7 +140,14 @@ const validarYReconstruirLineas = async (lineasInput, productos) => {
  * Así el llamador no necesita una query extra para obtener fecha/hora del bloque inicial.
  */
 const reservarBloques = async (bloqueInicialId, numHamburguesas, forzar = false) => {
-    if (numHamburguesas <= 0) return { reservas: [], horaRecogida: null };
+    if (numHamburguesas <= 0) {
+        // Pedido sin hamburguesas (solo bebidas, fries…): no consume capacidad pero
+        // debe vincularse al bloque elegido para que aparezca en la vista de pedidos.
+        const bloqueInicial = await BloqueProduccion.findById(bloqueInicialId);
+        if (!bloqueInicial) throw new Error('Bloque no encontrado');
+        const horaRecogida = new Date(`${bloqueInicial.fecha}T${bloqueInicial.horaInicio}:00`);
+        return { reservas: [{ id: bloqueInicial._id, cantidad: 0 }], horaRecogida };
+    }
 
     const bloqueInicial = await BloqueProduccion.findById(bloqueInicialId);
     if (!bloqueInicial) throw new Error('Bloque no encontrado');
@@ -284,7 +310,7 @@ exports.crearPedido = async (req, res) => {
         const bloquesIds        = reservas.map(r => r.id);
         const cantidadPorBloque = reservas.map(r => r.cantidad);
 
-        const total = calcularTotal(lineasValidadas);
+        const total = calcularTotal(lineasValidadas) - calcularDescuentoSalsas(lineasValidadas, productos);
 
         // Resolver cliente: IGNORAR req.body.clienteId. Si hay cliente autenticado,
         // usar su _id. Si no, crear ClienteInvitado. Esto evita que un atacante
@@ -371,7 +397,7 @@ exports.modificarPedido = async (req, res) => {
             });
             lineasNuevasValidadas = await validarYReconstruirLineas(req.body.lineas, productosNuevos);
             pedido.lineas = lineasNuevasValidadas;
-            pedido.total  = calcularTotal(lineasNuevasValidadas);
+            pedido.total  = calcularTotal(lineasNuevasValidadas) - calcularDescuentoSalsas(lineasNuevasValidadas, productosNuevos);
         }
 
         // Ajustar hamburguesas ocupadas en los bloques si cambió la cantidad
@@ -545,7 +571,7 @@ exports.crearPedidoTelefonico = async (req, res) => {
         const bloquesIds        = reservas.map(r => r.id);
         const cantidadPorBloque = reservas.map(r => r.cantidad);
 
-        const total = calcularTotal(lineasValidadas);
+        const total = calcularTotal(lineasValidadas) - calcularDescuentoSalsas(lineasValidadas, productos);
 
         const pedido = await Pedido.create({
             nombreCliente:    nombre,
