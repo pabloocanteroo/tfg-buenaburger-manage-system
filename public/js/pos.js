@@ -337,7 +337,8 @@ function abrirModalPersonalizacion(index) {
     const item = ticket[index];
     const prod = item.producto;
 
-    document.getElementById('modal-p-titulo').textContent = `Pers: ${prod.nombre} (${item.cantidad}x)`;
+    document.getElementById('modal-p-titulo').textContent =
+        `${prod.nombre}${item.cantidad > 1 ? ` (${item.cantidad}×)` : ''}`;
 
     // ── Stepper de split ───────────────────────────────────────────────────
     const splitWrap = document.getElementById('modal-split-wrap');
@@ -354,89 +355,133 @@ function abrirModalPersonalizacion(index) {
     // ── Render Quitar ingredientes ──────────────────────────────────────────
     const cQuitar = document.getElementById('chips-quitar');
     if (!prod.ingredientesPorDefecto || prod.ingredientesPorDefecto.length === 0) {
-        cQuitar.innerHTML = '<i>- No modificable -</i>';
+        document.getElementById('pm-sec-quitar').style.display = 'none';
     } else {
-        cQuitar.innerHTML = prod.ingredientesPorDefecto.map((ing, i) =>
-            `<div class="chip-t${item.excluidos.includes(ing) ? ' active' : ''}" data-idx="${i}">${escHTML(ing)}</div>`
-        ).join('');
-        // addEventListener evita problemas con this y strings en atributos HTML
-        cQuitar.querySelectorAll('.chip-t').forEach(el => {
+        document.getElementById('pm-sec-quitar').style.display = '';
+        cQuitar.innerHTML = prod.ingredientesPorDefecto.map((ing, i) => {
+            const excluido = item.excluidos.includes(ing);
+            return `<div class="pm-chip${excluido ? ' excluido' : ''}" data-idx="${i}">${escHTML(ing)}</div>`;
+        }).join('');
+
+        cQuitar.querySelectorAll('.pm-chip').forEach(el => {
             const ing = prod.ingredientesPorDefecto[+el.dataset.idx];
             el.addEventListener('click', () => {
                 if (itemEditandoIndex === -1) return;
                 const itm = ticket[itemEditandoIndex];
-                el.classList.toggle('active');
-                if (el.classList.contains('active')) itm.excluidos.push(ing);
+                el.classList.toggle('excluido');
+                if (el.classList.contains('excluido')) itm.excluidos.push(ing);
                 else itm.excluidos = itm.excluidos.filter(x => x !== ing);
+                actualizarResumenModal();
             });
         });
     }
 
-    // ── Render Extras de Pago y Salsas ─────────────────────────────────────
+    // ── Render Salsas gratis y Extras de pago ──────────────────────────────
     const cExtras = document.getElementById('grid-extras');
-    if (prod.categoria === 'BEBIDA' || prod.categoria === 'POSTRE' || prod.categoria === 'SALSA') {
-        cExtras.innerHTML = '<i>- No aplicable -</i>';
-    } else {
-        cExtras.innerHTML = extras.map((e, i) => {
-            const objExtra = item.extras.find(ex => ex.extra === e._id);
-            if (e.precio === 0) {
-                const act = item.anadidos.includes(e.nombre) ? ' active' : '';
-                return `<div class="extra-t${act}" data-extra-idx="${i}">
-                            <span>Salsa: <b>${escHTML(e.nombre)}</b></span>
-                            <span>Gratis</span>
-                        </div>`;
-            } else {
-                const qty = objExtra ? objExtra.cantidad : 0;
-                return `<div class="extra-t${qty > 0 ? ' active' : ''}" data-extra-idx="${i}">
-                            <span>${escHTML(e.nombre)}</span>
-                            <span>+${e.precio.toFixed(2)}€</span>
-                            <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:5px;">
-                                <button class="btn-rojo btn-ext-menos" style="padding:2px 10px;border-radius:50%">-</button>
-                                <span class="ext-qty" style="font-weight:900">${qty}</span>
-                                <button class="btn-rojo btn-ext-mas" style="padding:2px 10px;border-radius:50%">+</button>
-                            </div>
-                        </div>`;
-            }
-        }).join('');
+    const secExtras = document.getElementById('pm-sec-extras');
 
-        cExtras.querySelectorAll('.extra-t').forEach(el => {
-            const ext = extras[+el.dataset.extraIdx];
-            if (!ext) return;
-            if (ext.precio === 0) {
-                // Salsa gratis: toggle
-                el.addEventListener('click', () => {
-                    if (itemEditandoIndex === -1) return;
-                    const itm = ticket[itemEditandoIndex];
-                    el.classList.toggle('active');
-                    if (el.classList.contains('active')) itm.anadidos.push(ext.nombre);
-                    else itm.anadidos = itm.anadidos.filter(x => x !== ext.nombre);
-                });
-            } else {
-                // Extra de pago: botones +/-
-                const qtyEl = el.querySelector('.ext-qty');
-                const ajustar = (delta, ev) => {
-                    ev.stopPropagation();
-                    if (itemEditandoIndex === -1) return;
-                    const itm = ticket[itemEditandoIndex];
-                    let obj = itm.extras.find(e => e.extra === ext._id);
-                    if (!obj) {
-                        if (delta < 0) return;
-                        obj = { extra: ext._id, nombre: ext.nombre, precio: ext.precio, cantidad: 0 };
-                        itm.extras.push(obj);
-                    }
-                    obj.cantidad = Math.max(0, Math.min(10, obj.cantidad + delta));
-                    qtyEl.textContent = obj.cantidad;
-                    if (obj.cantidad > 0) el.classList.add('active');
-                    else el.classList.remove('active');
-                    itm.extras = itm.extras.filter(e => e.cantidad > 0);
-                };
-                el.querySelector('.btn-ext-menos').addEventListener('click', ev => ajustar(-1, ev));
-                el.querySelector('.btn-ext-mas').addEventListener('click', ev => ajustar(1, ev));
-            }
+    if (prod.categoria === 'BEBIDA' || prod.categoria === 'POSTRE' || prod.categoria === 'SALSA' || !extras.length) {
+        secExtras.style.display = 'none';
+    } else {
+        secExtras.style.display = '';
+        const salsas = extras.filter(e => e.precio === 0);
+        const pagados = extras.filter(e => e.precio > 0);
+
+        let html = '';
+
+        if (salsas.length) {
+            html += `<div class="pm-salsas">` +
+                salsas.map((e, i) => {
+                    const act = item.anadidos.includes(e.nombre) ? ' activo' : '';
+                    return `<div class="pm-salsa${act}" data-salsa-id="${escAttr(e._id)}">
+                        <span>${escHTML(e.nombre)}</span>
+                        <span class="pm-salsa-gratis">Gratis</span>
+                    </div>`;
+                }).join('') +
+            `</div>`;
+        }
+
+        if (pagados.length) {
+            html += pagados.map(e => {
+                const objExtra = item.extras.find(ex => ex.extra === e._id);
+                const qty = objExtra ? objExtra.cantidad : 0;
+                return `<div class="pm-extra-row${qty > 0 ? ' activo' : ''}" data-extra-id="${escAttr(e._id)}">
+                    <div class="pm-extra-info">
+                        <div class="pm-extra-nombre">${escHTML(e.nombre)}</div>
+                        <div class="pm-extra-precio">+${e.precio.toFixed(2)}€</div>
+                    </div>
+                    <div class="pm-extra-stepper">
+                        <button class="pm-extra-qty-btn pm-menos"${qty === 0 ? ' disabled' : ''}>−</button>
+                        <span class="pm-extra-qty">${qty}</span>
+                        <button class="pm-extra-qty-btn pm-mas">+</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        cExtras.innerHTML = html;
+
+        // Eventos: salsas toggle
+        cExtras.querySelectorAll('.pm-salsa').forEach(el => {
+            const extObj = salsas.find(e => e._id === el.dataset.salsaId);
+            if (!extObj) return;
+            el.addEventListener('click', () => {
+                if (itemEditandoIndex === -1) return;
+                const itm = ticket[itemEditandoIndex];
+                el.classList.toggle('activo');
+                if (el.classList.contains('activo')) itm.anadidos.push(extObj.nombre);
+                else itm.anadidos = itm.anadidos.filter(x => x !== extObj.nombre);
+                actualizarResumenModal();
+            });
+        });
+
+        // Eventos: extras de pago +/-
+        cExtras.querySelectorAll('.pm-extra-row').forEach(el => {
+            const extObj = pagados.find(e => e._id === el.dataset.extraId);
+            if (!extObj) return;
+            const qtyEl  = el.querySelector('.pm-extra-qty');
+            const menosBtn = el.querySelector('.pm-menos');
+            const masBtn   = el.querySelector('.pm-mas');
+
+            const ajustar = (delta) => {
+                if (itemEditandoIndex === -1) return;
+                const itm = ticket[itemEditandoIndex];
+                let obj = itm.extras.find(e => e.extra === extObj._id);
+                if (!obj) {
+                    if (delta < 0) return;
+                    obj = { extra: extObj._id, nombre: extObj.nombre, precio: extObj.precio, cantidad: 0 };
+                    itm.extras.push(obj);
+                }
+                obj.cantidad = Math.max(0, Math.min(10, obj.cantidad + delta));
+                qtyEl.textContent = obj.cantidad;
+                menosBtn.disabled = obj.cantidad === 0;
+                if (obj.cantidad > 0) el.classList.add('activo');
+                else el.classList.remove('activo');
+                itm.extras = itm.extras.filter(e => e.cantidad > 0);
+                actualizarResumenModal();
+            };
+
+            menosBtn.addEventListener('click', () => ajustar(-1));
+            masBtn.addEventListener('click',   () => ajustar(1));
         });
     }
 
+    actualizarResumenModal();
     document.getElementById('modal-personalizacion').style.display = 'flex';
+}
+
+function actualizarResumenModal() {
+    const el = document.getElementById('pm-resumen');
+    if (!el || itemEditandoIndex === -1) return;
+    const itm = ticket[itemEditandoIndex];
+    const partes = [];
+    if (itm.excluidos.length)
+        partes.push(`<strong>Sin:</strong> ${itm.excluidos.map(escHTML).join(', ')}`);
+    if (itm.anadidos.length)
+        partes.push(`<strong>+</strong> ${itm.anadidos.map(escHTML).join(', ')}`);
+    if (itm.extras.length)
+        partes.push(itm.extras.map(e => `<strong>${e.cantidad}× ${escHTML(e.nombre)}</strong>`).join(', '));
+    el.innerHTML = partes.join(' &nbsp;·&nbsp; ');
 }
 
 

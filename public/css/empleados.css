@@ -665,3 +665,25 @@ html {
     cursor: default !important;
     pointer-events: none;
 }
+
+/* ══ Tablet (≤1100px) ═══════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+    .panel-bloques { width: 250px; }
+
+    /* Botones del modal: mínimo táctil 44px */
+    .btn-cancelar-pedido,
+    .btn-modificar-pedido,
+    .btn-gris { padding: 13px 18px; font-size: 0.95rem; min-height: 44px; }
+}
+
+/* ══ Tablet pequeña (≤860px) ════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+    .panel-bloques { width: 220px; }
+    .bloque-hora   { font-size: 1.1rem; }
+
+    /* Selector de fecha más cómodo al tacto */
+    #selector-fecha { padding: 11px 10px; font-size: 1rem; }
+
+    /* Cards de pedido: padding más generoso para el dedo */
+    .pedido-card { padding: 18px; }
+}

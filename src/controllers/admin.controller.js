@@ -11,14 +11,18 @@ exports.getEstadisticas = async (req, res) => {
         const inicioHoy = new Date(`${fechaStr}T00:00:00`);
         const finHoy    = new Date(`${fechaStr}T23:59:59.999`);
 
+        // Las estadísticas se agrupan por la fecha de RECOGIDA (horaRecogida),
+        // no por fechaCreacion. Un pedido hecho el lunes para el viernes cuenta
+        // como actividad del viernes (cuando realmente se sirve).
         const BASE_MATCH = { estado: { $ne: 'CANCELADO' } };
-        const HOY_MATCH  = { estado: { $ne: 'CANCELADO' }, fechaCreacion: { $gte: inicioHoy, $lte: finHoy } };
+        const HOY_MATCH  = { estado: { $ne: 'CANCELADO' }, horaRecogida: { $gte: inicioHoy, $lte: finHoy } };
 
         // Lanzar todas las agregaciones en paralelo para minimizar latencia
         const [
             [globalStats],
             canalesGlobal,
             [hoyStats],
+            [hamburguesasHoyDoc],
             [canalHoyDoc],
             topProductos,
             ultimosDiasRaw,
@@ -36,19 +40,26 @@ exports.getEstadisticas = async (req, res) => {
                 { $group: { _id: '$canal', count: { $sum: 1 } } },
             ]),
 
-            // 3. Resumen del día seleccionado
+            // 3. Resumen del día seleccionado (pedidos + ingresos)
             Pedido.aggregate([
                 { $match: HOY_MATCH },
                 { $group: {
                     _id: null,
                     pedidosHoy:  { $sum: 1 },
                     ingresosHoy: { $sum: '$total' },
-                    // $sum sobre un campo de array: el $sum interior suma la array por documento
-                    unidadesHoy: { $sum: { $sum: '$lineas.cantidad' } },
                 }},
             ]),
 
-            // 4. Canal más frecuente del día
+            // 4. Hamburguesas vendidas del día — solo líneas con categoría HAMBURGUESA
+            Pedido.aggregate([
+                { $match: HOY_MATCH },
+                { $unwind: '$lineas' },
+                { $lookup: { from: 'productos', localField: 'lineas.producto', foreignField: '_id', as: '_prod' } },
+                { $match: { '_prod.categoria': 'HAMBURGUESA' } },
+                { $group: { _id: null, unidades: { $sum: '$lineas.cantidad' } } },
+            ]),
+
+            // 5. Canal más frecuente del día
             Pedido.aggregate([
                 { $match: HOY_MATCH },
                 { $group: { _id: '$canal', count: { $sum: 1 } } },
@@ -56,30 +67,30 @@ exports.getEstadisticas = async (req, res) => {
                 { $limit: 1 },
             ]),
 
-            // 5. Top 5 productos — fallback a lookup si el nombre está desnormalizado como null
+            // 6. Top 5 productos (solo hamburguesas, que es el dato relevante)
             Pedido.aggregate([
                 { $match: BASE_MATCH },
                 { $unwind: '$lineas' },
+                { $lookup: { from: 'productos', localField: 'lineas.producto', foreignField: '_id', as: '_prod' } },
+                { $match: { '_prod.categoria': 'HAMBURGUESA' } },
                 { $group: {
                     _id:      '$lineas.producto',
                     nombre:   { $first: '$lineas.nombre' },
+                    nombreProd: { $first: { $arrayElemAt: ['$_prod.nombre', 0] } },
                     unidades: { $sum: '$lineas.cantidad' },
                 }},
-                { $lookup: { from: 'productos', localField: '_id', foreignField: '_id', as: '_prod' } },
-                { $addFields: {
-                    nombreFinal: { $ifNull: ['$nombre', { $arrayElemAt: ['$_prod.nombre', 0] }] }
-                }},
+                { $addFields: { nombreFinal: { $ifNull: ['$nombre', '$nombreProd'] } } },
                 { $match: { nombreFinal: { $ne: null } } },
                 { $sort: { unidades: -1 } },
                 { $limit: 5 },
                 { $project: { _id: 0, unidades: 1, nombre: '$nombreFinal' } },
             ]),
 
-            // 6. Últimos 10 días con actividad (del más reciente al más antiguo)
+            // 7. Últimos 10 días con actividad (agrupados por fecha de recogida)
             Pedido.aggregate([
                 { $match: BASE_MATCH },
                 { $group: {
-                    _id:      { $dateToString: { format: '%Y-%m-%d', date: '$fechaCreacion' } },
+                    _id:      { $dateToString: { format: '%Y-%m-%d', date: '$horaRecogida' } },
                     pedidos:  { $sum: 1 },
                     ingresos: { $sum: '$total' },
                 }},
@@ -97,7 +108,7 @@ exports.getEstadisticas = async (req, res) => {
             hoy: {
                 pedidos:       hoyStats?.pedidosHoy  || 0,
                 ingresos:      hoyStats?.ingresosHoy || 0,
-                hamburguesas:  hoyStats?.unidadesHoy || 0,
+                hamburguesas:  hamburguesasHoyDoc?.unidades || 0,
                 canal:         canalHoyDoc?._id || '—',
             },
             global: {
@@ -124,12 +135,14 @@ exports.getActividad = async (req, res) => {
         const BASE_MATCH = { estado: { $ne: 'CANCELADO' } };
         let match, groupId, labelExpr, filas, sortField = '_id';
 
+        // Todas las agrupaciones usan horaRecogida (cuándo se sirve el pedido),
+        // no fechaCreacion, para que un pedido anticipado cuente en el día real.
         if (tipo === 'dia') {
             // valor = 'YYYY-MM-DD'
             const inicio = new Date(`${valor}T00:00:00`);
             const fin    = new Date(`${valor}T23:59:59.999`);
-            match    = { ...BASE_MATCH, fechaCreacion: { $gte: inicio, $lte: fin } };
-            groupId  = { $dateToString: { format: '%Y-%m-%d', date: '$fechaCreacion' } };
+            match    = { ...BASE_MATCH, horaRecogida: { $gte: inicio, $lte: fin } };
+            groupId  = { $dateToString: { format: '%Y-%m-%d', date: '$horaRecogida' } };
             labelExpr = '$_id';
 
         } else if (tipo === 'mes') {
@@ -137,8 +150,8 @@ exports.getActividad = async (req, res) => {
             const [y, m] = valor.split('-').map(Number);
             const inicio = new Date(y, m - 1, 1);
             const fin    = new Date(y, m, 0, 23, 59, 59, 999);
-            match    = { ...BASE_MATCH, fechaCreacion: { $gte: inicio, $lte: fin } };
-            groupId  = { $dateToString: { format: '%Y-%m-%d', date: '$fechaCreacion' } };
+            match    = { ...BASE_MATCH, horaRecogida: { $gte: inicio, $lte: fin } };
+            groupId  = { $dateToString: { format: '%Y-%m-%d', date: '$horaRecogida' } };
             labelExpr = '$_id';
 
         } else if (tipo === 'año') {
@@ -146,8 +159,8 @@ exports.getActividad = async (req, res) => {
             const y      = parseInt(valor);
             const inicio = new Date(y, 0, 1);
             const fin    = new Date(y, 11, 31, 23, 59, 59, 999);
-            match    = { ...BASE_MATCH, fechaCreacion: { $gte: inicio, $lte: fin } };
-            groupId  = { $dateToString: { format: '%Y-%m', date: '$fechaCreacion' } };
+            match    = { ...BASE_MATCH, horaRecogida: { $gte: inicio, $lte: fin } };
+            groupId  = { $dateToString: { format: '%Y-%m', date: '$horaRecogida' } };
             labelExpr = '$_id';
 
         } else {

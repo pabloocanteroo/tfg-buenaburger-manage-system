@@ -10,6 +10,27 @@
         href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:ital,wght@0,400;0,700;1,400&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="css/pos.css">
+    <script>
+        (function() {
+            const token = localStorage.getItem('bb_token');
+            const rol   = localStorage.getItem('bb_rol');
+            if (!token || (rol !== 'ADMIN' && rol !== 'EMPLEADO')) {
+                window.location.replace('/index.html');
+                return;
+            }
+            const _fetch = window.fetch;
+            window.fetch = async function(...args) {
+                const res = await _fetch.apply(this, args);
+                if (res.status === 401) {
+                    localStorage.removeItem('bb_token');
+                    localStorage.removeItem('bb_rol');
+                    localStorage.removeItem('bb_nombre');
+                    window.location.replace('/index.html');
+                }
+                return res;
+            };
+        })();
+    </script>
 </head>
 
 <body>
@@ -97,32 +118,47 @@
 
     <!-- Modal Personalización -->
     <div id="modal-personalizacion" class="pos-modal-overlay" style="display:none">
-        <div class="pos-modal">
-            <h2 id="modal-p-titulo">Personalizar Item</h2>
+        <div class="pm-modal">
 
-            <!-- Stepper de cuántas unidades personalizar (solo visible si cantidad > 1) -->
-            <div id="modal-split-wrap" style="display:none; margin-bottom:12px; padding:10px 0; border-bottom:1px solid #eee;">
-                <h3 style="margin-bottom:8px;">¿Cuántas personalizar?</h3>
-                <div style="display:flex;align-items:center;gap:14px;">
-                    <button class="btn-rojo" style="padding:4px 14px;border-radius:8px;font-size:1.1rem;" onclick="ajustarSplit(-1)">−</button>
-                    <span id="modal-split-qty" style="font-family:var(--font);font-size:1.6rem;font-weight:900;min-width:28px;text-align:center;">1</span>
-                    <button class="btn-rojo" style="padding:4px 14px;border-radius:8px;font-size:1.1rem;" onclick="ajustarSplit(1)">+</button>
-                    <span id="modal-split-info" style="font-size:.82rem;color:#888;"></span>
+            <!-- Header rojo -->
+            <div class="pm-header">
+                <div class="pm-header-top">
+                    <div id="modal-p-titulo" class="pm-titulo">Personalizar</div>
+                    <button class="pm-cerrar" onclick="cerrarModalesPOS(false)">✕</button>
+                </div>
+                <!-- Stepper split (visible solo si cantidad > 1) -->
+                <div id="modal-split-wrap" class="pm-split" style="display:none">
+                    <span class="pm-split-label">¿Cuántas personalizar?</span>
+                    <div class="pm-split-row">
+                        <button class="pm-split-btn" onclick="ajustarSplit(-1)">−</button>
+                        <span id="modal-split-qty" class="pm-split-qty">1</span>
+                        <button class="pm-split-btn" onclick="ajustarSplit(1)">+</button>
+                        <span id="modal-split-info" class="pm-split-info"></span>
+                    </div>
                 </div>
             </div>
 
-            <div id="modal-p-remover">
-                <h3>Quitar ingredientes</h3>
-                <div class="chips-container" id="chips-quitar"></div>
+            <!-- Cuerpo desplazable -->
+            <div class="pm-body">
+                <div id="pm-sec-quitar">
+                    <div class="pm-sec-label">QUITAR INGREDIENTES</div>
+                    <div class="pm-chips" id="chips-quitar"></div>
+                </div>
+                <div id="pm-sec-extras">
+                    <div class="pm-sec-label">AÑADIR EXTRAS</div>
+                    <div id="grid-extras"></div>
+                </div>
             </div>
-            <div id="modal-p-extras">
-                <h3>Añadir extras</h3>
-                <div class="extras-grid" id="grid-extras"></div>
+
+            <!-- Footer con resumen vivo -->
+            <div class="pm-footer">
+                <div id="pm-resumen" class="pm-resumen"></div>
+                <div class="pm-footer-btns">
+                    <button class="pm-btn-cancel" onclick="cerrarModalesPOS(false)">Cancelar</button>
+                    <button class="pm-btn-save" id="btn-guardar-personalizacion" onclick="cerrarModalesPOS(true)">✔ Guardar</button>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button class="btn-rojo" onclick="cerrarModalesPOS(false)">Cancelar</button>
-                <button class="btn-verde" id="btn-guardar-personalizacion" onclick="cerrarModalesPOS(true)">✔ Guardar</button>
-            </div>
+
         </div>
     </div>
 

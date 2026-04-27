@@ -79,7 +79,7 @@ app.use('/api/admin', require('./routes/admin.routes'));
 
 // ── Ruta raíz ─────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    res.json({ mensaje: 'Buena Burger API funcionando' });
+    res.redirect('/index.html');
 });
 
 // ── Manejo de errores global ──────────────────────────────────────────────────
