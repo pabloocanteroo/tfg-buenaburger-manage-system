@@ -208,21 +208,37 @@ function abrirModalAdmin(pedidoId) {
 
         <div class="padm-modal-seccion">
             <div class="padm-modal-sec-titulo">LÍNEAS DEL PEDIDO</div>
-            ${p.lineas.map(l => {
-                const nombre  = l.producto?.nombre || l.nombre || 'Producto';
-                const sinIngr = l.ingredientesExcluidos || [];
-                const addIngr = l.ingredientesAnadidos  || [];
-                const extras  = l.extras || [];
-                return `<div class="padm-modal-linea">
-                    <div>
-                        <div class="padm-modal-linea-nombre">${l.cantidad}× ${escHTML(nombre)}</div>
-                        ${sinIngr.length ? `<div class="padm-modal-linea-mod mod-sin">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
-                        ${addIngr.length ? `<div class="padm-modal-linea-mod mod-add">+ ${escHTML(addIngr.join(', '))}</div>` : ''}
-                        ${extras.length  ? `<div class="padm-modal-linea-mod mod-ext">Extras: ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
-                    </div>
-                    <div class="padm-modal-linea-precio">${(l.precioUnitario * l.cantidad).toFixed(2)}€</div>
-                </div>`;
-            }).join('')}
+            ${(() => {
+                const lineasHtml = p.lineas.map(l => {
+                    const nombre   = l.producto?.nombre || l.nombre || 'Producto';
+                    const sinIngr  = l.ingredientesExcluidos || [];
+                    const addIngr  = l.ingredientesAnadidos  || [];
+                    const extras   = l.extras || [];
+                    const precioL  = l.precioUnitario * l.cantidad + extras.reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
+                    return `<div class="padm-modal-linea">
+                        <div>
+                            <div class="padm-modal-linea-nombre">${l.cantidad}× ${escHTML(nombre)}</div>
+                            ${sinIngr.length ? `<div class="padm-modal-linea-mod mod-sin">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
+                            ${addIngr.length ? `<div class="padm-modal-linea-mod mod-add">+ ${escHTML(addIngr.join(', '))}</div>` : ''}
+                            ${extras.length  ? `<div class="padm-modal-linea-mod mod-ext">Extras: ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
+                        </div>
+                        <div class="padm-modal-linea-precio">${precioL.toFixed(2)}€</div>
+                    </div>`;
+                }).join('');
+
+                const sumaLineas = p.lineas.reduce((s, l) => {
+                    return s + l.precioUnitario * l.cantidad + (l.extras || []).reduce((se, e) => se + (e.precio || 0) * e.cantidad, 0);
+                }, 0);
+                const descuento = +(sumaLineas - (p.total || 0)).toFixed(2);
+                const descuentoHtml = descuento > 0.01
+                    ? `<div class="padm-modal-linea" style="color:#27ae60">
+                           <div><div class="padm-modal-linea-nombre">🎁 Descuento (3×2 salsas)</div></div>
+                           <div class="padm-modal-linea-precio">-${descuento.toFixed(2)}€</div>
+                       </div>`
+                    : '';
+
+                return lineasHtml + descuentoHtml;
+            })()}
         </div>
 
         <div class="padm-modal-resumen">
@@ -230,6 +246,10 @@ function abrirModalAdmin(pedidoId) {
                 Canal: <strong>${escHTML(p.canal || '—')}</strong>
                 &nbsp;·&nbsp;
                 <span style="font-weight:700;color:${estadoColor}">${escHTML(p.estado || '—')}</span>
+                &nbsp;·&nbsp;
+                ${p.metodoPago === 'STRIPE'
+                    ? `<span style="color:${p.stripePagado ? '#27ae60' : '#e67e22'};font-weight:700">💳 ${p.stripePagado ? 'Pagado online ✓' : 'Pago online pendiente'}</span>`
+                    : `<span style="color:#555">💵 Pago en local</span>`}
             </div>
             <div class="padm-modal-total">${p.total?.toFixed(2)}€</div>
         </div>`;

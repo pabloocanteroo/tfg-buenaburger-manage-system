@@ -48,15 +48,18 @@ async function iniciarCheckout() {
 // ── Checkout en modo edición ──────────────────────────────────────────────────
 
 function renderCheckoutEditar(editando) {
-    const resumen = carrito.map(i => `
+    const resumen = carrito.map(i => {
+        const pL = ((i.precioBase || i.precioUnitario || 0) + (i.extras || []).reduce((s, e) => s + e.precio * e.cantidad, 0)) * i.cantidad;
+        return `
         <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
             <span>${i.cantidad}× ${escHTML(i.nombre)}
                 ${i.ingredientesExcluidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (sin ${escHTML(i.ingredientesExcluidos.join(', '))})</span>` : ''}
                 ${i.ingredientesAnadidos?.length ? `<span style="color:#888;font-size:0.78rem;"> (con ${escHTML(i.ingredientesAnadidos.join(', '))})</span>` : ''}
             </span>
-            <span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
+            <span style="color:var(--rojo);font-weight:700;">${pL.toFixed(2)}€</span>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     document.getElementById('checkout-content').innerHTML = `
         <div style="background:#1a1a1a;color:#fff;border-radius:10px;padding:11px 15px;
@@ -249,12 +252,13 @@ function renderCheckoutPaso1() {
         </div>
         <div style="margin-top:10px;padding-top:14px;border-top:1px solid #f0f0f0;">
             <div style="font-weight:700;font-size:0.8rem;color:#555;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;">Resumen</div>
-            ${carrito.map(i => `
-                <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
+            ${carrito.map(i => {
+            const pL = ((i.precioBase || i.precioUnitario || 0) + (i.extras || []).reduce((s, e) => s + e.precio * e.cantidad, 0)) * i.cantidad;
+            return `<div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
                     <span>${i.cantidad}× ${escHTML(i.nombre)}</span>
-                    <span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
-                </div>
-            `).join('')}
+                    <span style="color:var(--rojo);font-weight:700;">${pL.toFixed(2)}€</span>
+                </div>`;
+        }).join('')}
             <div style="border-top:1px solid #e5e5e5;margin-top:7px;padding-top:7px;font-weight:900;display:flex;justify-content:space-between;">
                 <span>Total</span><span style="color:var(--rojo)">${totalCarrito().toFixed(2)}€</span>
             </div>
@@ -371,9 +375,12 @@ function checkoutPaso3() {
         </div>
         <div style="background:#f8f8f8;border-radius:11px;padding:14px;margin-bottom:14px;">
             <div style="font-weight:700;margin-bottom:7px;">Resumen</div>
-            ${carrito.map(i => `<div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
-                <span>${i.cantidad}× ${escHTML(i.nombre)}</span><span style="color:var(--rojo);font-weight:700;">${(i.precioUnitario * i.cantidad).toFixed(2)}€</span>
-            </div>`).join('')}
+            ${carrito.map(i => {
+                const pL = ((i.precioBase || i.precioUnitario || 0) + (i.extras || []).reduce((s, e) => s + e.precio * e.cantidad, 0)) * i.cantidad;
+                return `<div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:3px;">
+                <span>${i.cantidad}× ${escHTML(i.nombre)}</span><span style="color:var(--rojo);font-weight:700;">${pL.toFixed(2)}€</span>
+            </div>`;
+            }).join('')}
             <div style="border-top:1px solid #e5e5e5;margin-top:7px;padding-top:7px;font-weight:900;display:flex;justify-content:space-between;font-size:1.05rem;">
                 <span>TOTAL</span><span style="color:var(--rojo)">${totalCarrito().toFixed(2)}€</span>
             </div>
@@ -404,12 +411,33 @@ async function confirmarPedido() {
         extras: item.extras.map(e => ({ extra: e.extra, nombre: e.nombre, precio: e.precio, cantidad: 1 }))
     }));
 
-    // El backend ignora `clienteId` del body por seguridad y toma el cliente del JWT si existe.
-    // `apiFetch` envía Authorization automáticamente si hay token en localStorage.
     const body = { nombre, telefono, email, bloqueId: bloqueSeleccionado, metodoPago: metodoPagoSeleccionado, lineas };
+
+    const btn = document.querySelector('#checkout-content .btn-siguiente');
+    if (btn) { btn.disabled = true; btn.textContent = 'PROCESANDO...'; }
 
     try {
         const data = await apiFetch('/pedidos', { method: 'POST', body: JSON.stringify(body) });
+
+        // Pago online: crear sesión Stripe y redirigir
+        if (metodoPagoSeleccionado === 'STRIPE') {
+            if (btn) btn.textContent = 'REDIRIGIENDO AL PAGO...';
+            try {
+                const sesion = await apiFetch('/pagos/crear-sesion', {
+                    method: 'POST',
+                    body: JSON.stringify({ pedidoId: data.pedido._id })
+                });
+                carrito = [];
+                actualizarContadorCarrito();
+                window.location.href = sesion.url;
+            } catch (e) {
+                mostrarToast('Pedido creado pero no se pudo abrir el pago online. Llama al local.', 'error');
+                if (btn) { btn.disabled = false; btn.textContent = 'CONFIRMAR PEDIDO ✓'; }
+            }
+            return;
+        }
+
+        // Pago en local: confirmar directamente
         carrito = [];
         actualizarContadorCarrito();
         document.getElementById('checkout-content').innerHTML = `
@@ -419,7 +447,7 @@ async function confirmarPedido() {
                 <div class="pedido-numero">${escHTML(data.pedido.numero)}</div>
                 <p class="pedido-info">
                     Hora de recogida: <strong>${escHTML(bloques.find(b => b._id === bloqueSeleccionado)?.horaInicio || '')}</strong><br>
-                    ${metodoPagoSeleccionado === 'PAGO_EN_LOCAL' ? '💵 Pagas en el local al recoger.' : '💳 Hemos procesado tu pago online.'}
+                    💵 Pagas en el local al recoger.
                 </p>
                 <button class="btn-siguiente" style="margin-top:20px" onclick="cerrarModal('modal-checkout')">CERRAR</button>
             </div>
@@ -427,5 +455,6 @@ async function confirmarPedido() {
         mostrarToast('✅ Pedido confirmado', 'success');
     } catch (e) {
         mostrarToast(`Error: ${e.message}`, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'CONFIRMAR PEDIDO ✓'; }
     }
 }

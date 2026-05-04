@@ -65,6 +65,10 @@ io.on('connection', (socket) => {
 // ── Ficheros estáticos (frontend) ─────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '../public')));
 
+// ── Webhook Stripe (raw body — debe ir ANTES de express.json()) ───────────────
+const pagoController = require('./controllers/pago.controller');
+app.post('/api/pagos/webhook', express.raw({ type: 'application/json' }), pagoController.webhook);
+
 // ── Middlewares ───────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -76,6 +80,7 @@ app.use('/api/extras', require('./routes/extra.routes'));
 app.use('/api/bloques', require('./routes/bloque.routes'));
 app.use('/api/pedidos', require('./routes/pedido.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/pagos', require('./routes/pago.routes'));
 
 // ── Ruta raíz ─────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {

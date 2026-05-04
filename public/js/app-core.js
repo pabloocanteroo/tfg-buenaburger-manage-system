@@ -130,3 +130,26 @@ function mostrarToast(msg, tipo = '') {
     t.className = `toast ${tipo} show`;
     setTimeout(() => { t.className = 'toast'; }, 3000);
 }
+
+// ── Retorno desde Stripe ──────────────────────────────────────────────────────
+function checkearRetornoStripe() {
+    const params = new URLSearchParams(window.location.search);
+    const pago   = params.get('pago');
+    if (!pago) return;
+
+    // Limpiar params de la URL sin recargar
+    history.replaceState(null, '', window.location.pathname);
+
+    if (pago === 'ok') {
+        const numero = params.get('pedido') || '';
+        setTimeout(() => {
+            mostrarToast(`✅ Pago recibido${numero ? ' — ' + numero : ''}. ¡Tu pedido está confirmado!`, 'success');
+        }, 400);
+    } else if (pago === 'cancelado') {
+        setTimeout(() => {
+            mostrarToast('Pago cancelado. Puedes volver a intentarlo o pagar en el local.', 'error');
+        }, 400);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', checkearRetornoStripe);

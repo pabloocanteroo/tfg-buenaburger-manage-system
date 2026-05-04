@@ -209,22 +209,36 @@ function abrirModal(pedidoId) {
         </div>
         <div class="modal-section">
             <h4>Líneas del pedido</h4>
-            ${p.lineas.map(l => {
-                const nombreProd = l.producto?.nombre || l.nombre || 'Producto';
-                const sinIngr    = l.ingredientesExcluidos || [];
-                const addIngr    = l.ingredientesAnadidos || [];
-                const extras     = l.extras || [];
-                return `
-                <div class="modal-linea">
-                    <div>
-                        <div class="modal-linea-nombre">${l.cantidad}× ${escHTML(nombreProd)}</div>
-                        ${sinIngr.length ? `<div class="modal-linea-mods" style="color:#c62828">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
-                        ${addIngr.length ? `<div class="modal-linea-mods" style="color:#2E7D32">Añadir: ${escHTML(addIngr.join(', '))}</div>` : ''}
-                        ${extras.length ? `<div class="modal-linea-mods">Extras: ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
-                    </div>
-                    <div class="modal-linea-precio">${(l.precioUnitario * l.cantidad).toFixed(2)}€</div>
-                </div>`;
-            }).join('')}
+            ${(() => {
+                const lineasHtml = p.lineas.map(l => {
+                    const nombreProd = l.producto?.nombre || l.nombre || 'Producto';
+                    const sinIngr    = l.ingredientesExcluidos || [];
+                    const addIngr    = l.ingredientesAnadidos  || [];
+                    const extras     = l.extras || [];
+                    const precioL    = l.precioUnitario * l.cantidad + extras.reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
+                    return `
+                    <div class="modal-linea">
+                        <div>
+                            <div class="modal-linea-nombre">${l.cantidad}× ${escHTML(nombreProd)}</div>
+                            ${sinIngr.length ? `<div class="modal-linea-mods" style="color:#c62828">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
+                            ${addIngr.length ? `<div class="modal-linea-mods" style="color:#2E7D32">Añadir: ${escHTML(addIngr.join(', '))}</div>` : ''}
+                            ${extras.length  ? `<div class="modal-linea-mods">Extras: ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
+                        </div>
+                        <div class="modal-linea-precio">${precioL.toFixed(2)}€</div>
+                    </div>`;
+                }).join('');
+
+                const sumaLineas = p.lineas.reduce((s, l) =>
+                    s + l.precioUnitario * l.cantidad + (l.extras || []).reduce((se, e) => se + (e.precio || 0) * e.cantidad, 0), 0);
+                const descuento = +(sumaLineas - (p.total || 0)).toFixed(2);
+                const descuentoHtml = descuento > 0.01
+                    ? `<div class="modal-linea" style="color:#27ae60">
+                           <div><div class="modal-linea-nombre">🎁 Descuento (3×2 salsas)</div></div>
+                           <div class="modal-linea-precio">-${descuento.toFixed(2)}€</div>
+                       </div>`
+                    : '';
+                return lineasHtml + descuentoHtml;
+            })()}
         </div>
         <div class="modal-section">
             <h4>Resumen</h4>

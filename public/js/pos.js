@@ -707,7 +707,7 @@ function cargarModoEdicion(edit) {
             extras:            extrasLinea,
             precioBase:        linea.precioUnitario ?? prod.precio,
             precioExtraUnitario: precioExtras,
-            precioTotalItem:   (linea.precioUnitario ?? prod.precio + precioExtras) * linea.cantidad
+            precioTotalItem:   ((linea.precioUnitario ?? prod.precio) + precioExtras) * linea.cantidad
         });
     }
     renderTicket();

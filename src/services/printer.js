@@ -122,7 +122,7 @@ function generarTicketCliente(pedido) {
         txt(`TOTAL: ${(pedido.total || 0).toFixed(2)} EUR\n`),
         CMD.normalSize(),
         CMD.boldOff(),
-        txt(`Pago: ${pedido.metodoPago === 'PAGO_EN_LOCAL' ? 'Efectivo/Tarjeta en local' : pedido.metodoPago || '—'}\n`),
+        txt(`Pago: ${pedido.metodoPago === 'STRIPE' ? 'Pagado online (Stripe)' : 'Efectivo/Tarjeta en local'}\n`),
         CMD.feed(1),
         CMD.alignCenter(),
         txt('Gracias por tu pedido!\n'),
