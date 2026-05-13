@@ -81,6 +81,7 @@ app.use('/api/bloques', require('./routes/bloque.routes'));
 app.use('/api/pedidos', require('./routes/pedido.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/pagos', require('./routes/pago.routes'));
+app.use('/api/whatsapp', require('./routes/whatsapp.routes'));
 
 // ── Ruta raíz ─────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {

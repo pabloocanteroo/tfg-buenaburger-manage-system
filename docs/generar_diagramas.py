@@ -300,7 +300,7 @@ flowchart TD
 diagrams["08_componentes_arquitectura"] = """
 flowchart LR
     subgraph CLIENT["🌐 Cliente (Navegador)"]
-        FE["Frontend multipágina\nHTML / CSS / JS vanilla\nindex · pos · admin · cocina · empleados"]
+        FE["Frontend multipágina\nHTML / CSS / JS vanilla\nindex · pos · admin · empleados"]
     end
     subgraph SERVER["☁️ Servidor Node.js + Express — Render"]
         API["API REST\n/api/auth\n/api/productos\n/api/extras\n/api/bloques\n/api/pedidos\n/api/admin"]
@@ -365,7 +365,7 @@ flowchart TD
         GPT["GPT-4o API"]
     end
     subgraph LOCAL["🏠 Local del Restaurante"]
-        IPAD2["iPad — cocina.html"]
+        IPAD2["iPad — empleados.html"]
         IMPR["Impresora Térmica\nESC/POS"]
     end
 
