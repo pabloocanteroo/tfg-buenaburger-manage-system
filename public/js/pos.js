@@ -2,6 +2,7 @@
 let productos = [];
 let extras = [];
 let bloques = [];
+let _pedidosPorBloque = {};
 let ticket = [];
 let currentCategory = 'HAMBURGUESA';
 let currentMultiplier = 1;
@@ -38,7 +39,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupCategoryTabs();
     if (productos.length > 0) renderGrid();
 
-    // 4. Modo edición: restaurar pedido si viene del admin
+    // 4. Inicializar layout móvil si corresponde
+    initMobileTabs();
+
+    // 5. Modo edición: restaurar pedido si viene del admin
     const editRaw = localStorage.getItem('bb_editar_pedido');
     if (editRaw) {
         try {
@@ -125,9 +129,27 @@ async function cargarBloques(fecha) {
             const hoy = new Date();
             return `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
         })();
-        const res = await fetch(`/api/bloques?fecha=${fechaConsulta}`);
-        const data = await res.json();
-        bloques = data.bloques || [];
+        const token = localStorage.getItem('bb_token');
+        const [resBloques, resPedidos] = await Promise.all([
+            fetch(`/api/bloques?fecha=${fechaConsulta}`),
+            fetch(`/api/pedidos/todos?fecha=${fechaConsulta}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+        ]);
+        const dataBloques = await resBloques.json();
+        bloques = dataBloques.bloques || [];
+
+        // Construir mapa bloqueId → nº de pedidos para mostrarlo en los botones
+        _pedidosPorBloque = {};
+        if (resPedidos.ok) {
+            const dataPedidos = await resPedidos.json();
+            for (const p of (dataPedidos.pedidos || [])) {
+                for (const bl of (p.bloques || [])) {
+                    const id = (bl._id || bl).toString();
+                    _pedidosPorBloque[id] = (_pedidosPorBloque[id] || 0) + 1;
+                }
+            }
+        }
         renderBloques();
     } catch (e) { console.error("Error cargando bloques", e); }
 }
@@ -151,7 +173,7 @@ function setupMultipliers() {
 
 function resetMulti() {
     document.querySelectorAll('.btn-multi').forEach(b => b.classList.remove('active'));
-    document.querySelector('.btn-multi[data-val="1"]').classList.add('active');
+    document.querySelector('.btn-multi[data-val="1"]')?.classList.add('active');
     currentMultiplier = 1;
 }
 
@@ -173,7 +195,7 @@ function renderGrid() {
     const filtrados = productos.filter(p => p.activo !== false);
 
     if (filtrados.length === 0) {
-        cont.innerHTML = '<div style="color:#999; text-align:center; padding:20px; grid-column:1/-1;">No hay productos</div>';
+        cont.innerHTML = '<div style="color:#999; text-align:center; padding:20px; grid-column:1/-1;">No hay productos en esta categoría</div>';
         return;
     }
 
@@ -190,19 +212,18 @@ function addToTicket(prodId) {
     const prod = productos.find(p => p._id === prodId);
     if (!prod) return;
 
-    // Buscar si ya existe una línea con el mismo producto y SIN personalización
-    // (si se personalizó antes, mantenemos líneas separadas para no mezclar modificaciones)
+    // Solo apilar con una línea sin personalización del mismo producto (y no gratis)
     const existente = ticket.find(it =>
         it.producto._id === prodId &&
         it.excluidos.length === 0 &&
         it.anadidos.length === 0 &&
-        it.extras.length === 0
+        it.extras.length === 0 &&
+        !it.gratis
     );
 
     if (existente) {
-        // Agrupa: suma la cantidad al item existente
         existente.cantidad += currentMultiplier;
-        existente.precioTotalItem = existente.precioBase * existente.cantidad;
+        existente.precioTotalItem = (existente.precioBase + existente.precioExtraUnitario) * existente.cantidad;
     } else {
         // Nueva línea
         ticket.push({
@@ -212,6 +233,7 @@ function addToTicket(prodId) {
             excluidos: [],
             anadidos: [],
             extras: [],
+            gratis: false,
             precioBase: prod.precio,
             precioExtraUnitario: 0,
             precioTotalItem: prod.precio * currentMultiplier
@@ -229,65 +251,84 @@ function removeFromTicket(itemIndex, event) {
     renderTicket();
 }
 
+function toggleGratis(index, event) {
+    event.stopPropagation();
+    ticket[index].gratis = !ticket[index].gratis;
+    renderTicket();
+}
+
 function renderTicket() {
     const cont = document.getElementById('ticket-items');
     if (ticket.length === 0) {
         cont.innerHTML = '<div class="ticket-empty">Vacio</div>';
         document.getElementById('ticket-total').textContent = '0.00€';
+        sincronizarTotalMovil(0, 0);
         return;
     }
 
     let totalGlobal = 0;
 
+    // Pre-calcular descuento 3x2 salsas para distribuirlo en la propia línea
+    const totalSalsasUnidades = ticket
+        .filter(it => it.producto.categoria === 'SALSA' && !it.gratis)
+        .reduce((t, it) => t + it.cantidad, 0);
+    const salsasGratis = Math.floor(totalSalsasUnidades / 3);
+    const precioSalsa = ticket.find(it => it.producto.categoria === 'SALSA')?.precioBase || 0;
+    const descuentoSalsas = salsasGratis * precioSalsa;
+
     cont.innerHTML = ticket.map((item, index) => {
         // Recalcular precio por si hubo extras
-        const costoExtras = item.extras.reduce((acc, e) => acc + (e.precio * e.cantidad), 0);
-        item.precioExtraUnitario = costoExtras;
-        item.precioTotalItem = (item.precioBase + costoExtras) * item.cantidad;
+        if (item.gratis) {
+            item.precioExtraUnitario = 0;
+            item.precioTotalItem = 0;
+        } else {
+            const costoExtras = item.extras.reduce((acc, e) => acc + ((e.gratis ? 0 : e.precio) * e.cantidad), 0);
+            item.precioExtraUnitario = costoExtras;
+            item.precioTotalItem = (item.precioBase + costoExtras) * item.cantidad;
+        }
         totalGlobal += item.precioTotalItem;
 
         // Texto mods — los elementos ya pueden contener texto libre del admin (extras, ingredientes);
         // se escapan al componer y se unen con <br> literal (no se escapan ese separador).
         let modsTxt = [];
-        if (item.excluidos.length) modsTxt.push(`SIN: ${escHTML(item.excluidos.join(', '))}`);
-        if (item.anadidos.length) modsTxt.push(`+ ${escHTML(item.anadidos.join(', '))}`);
-        if (item.extras.length) modsTxt.push(escHTML(item.extras.map(e => `${e.cantidad}x ${e.nombre}`).join(' | ')));
+        item.excluidos.forEach(ing => modsTxt.push(`SIN: ${escHTML(ing)}`));
+        item.anadidos.forEach(ing => modsTxt.push(`+ ${escHTML(ing)}`));
+        item.extras.forEach(e => modsTxt.push(escHTML(`${e.cantidad}x ${e.nombre}`) + (e.gratis ? ' 🎁' : '')));
 
+        // Precio a mostrar en la línea: gratis → 0.00€, salsa con 3x2 → precio con descuento proporcional
+        let precioLinea = item.precioTotalItem;
+        let promoTag = '';
+        if (!item.gratis && item.producto.categoria === 'SALSA' && descuentoSalsas > 0 && totalSalsasUnidades > 0) {
+            const descuentoLinea = (item.cantidad / totalSalsasUnidades) * descuentoSalsas;
+            precioLinea = Math.max(0, item.precioTotalItem - descuentoLinea);
+            promoTag = `<span style="color:#2ecc71;font-size:0.75rem;margin-left:3px">🏷️3x2</span>`;
+        }
+
+        const precioDisplay = item.gratis
+            ? `<span style="color:#2ecc71;font-weight:900">🎁 0.00€</span>`
+            : `${precioLinea.toFixed(2)}€${promoTag}`;
+        const colorGratis = item.gratis ? '#27ae60' : '#444';
         return `
             <div class="t-item" onclick="abrirModalPersonalizacion(${index})">
                 <div class="t-item-info">
                     <span class="t-item-qty">${item.cantidad}x</span>
-                    <span class="t-item-name">${escHTML(item.producto.nombre)}</span>
+                    <span class="t-item-name">${escHTML(['HAMBURGUESA','PATATAS'].includes(item.producto.categoria) ? item.producto.nombre.toUpperCase() : item.producto.nombre)}</span>
                     <div class="t-item-mods">${modsTxt.join('<br>')}</div>
                 </div>
-                <div class="t-item-price">${item.precioTotalItem.toFixed(2)}€</div>
+                <div class="t-item-price">${precioDisplay}</div>
+                <button style="padding:2px 7px;font-size:.85rem;align-self:flex-start;background:${colorGratis};border:none;border-radius:4px;color:#fff;cursor:pointer;margin-right:2px" onclick="toggleGratis(${index}, event)" title="Marcar como gratis">🎁</button>
                 <button class="btn-rojo" style="padding:2px 8px; font-size:1.2rem; align-self:flex-start" onclick="removeFromTicket(${index}, event)">✕</button>
             </div>
         `;
     }).join('');
 
-    // Descuento 3x2 salsas
-    const totalSalsas = ticket
-        .filter(it => it.producto.categoria === 'SALSA')
-        .reduce((t, it) => t + it.cantidad, 0);
-    const salsasGratis = Math.floor(totalSalsas / 3);
-    const precioSalsa = ticket.find(it => it.producto.categoria === 'SALSA')?.precioBase || 1;
-    const descuentoSalsas = salsasGratis * precioSalsa;
-
     if (descuentoSalsas > 0) {
-        cont.innerHTML += `
-            <div class="t-item" style="opacity:0.75;pointer-events:none;">
-                <div class="t-item-info">
-                    <span class="t-item-qty"></span>
-                    <span class="t-item-name" style="color:#2ecc71">🏷️ Promo 3x2 salsas</span>
-                </div>
-                <div class="t-item-price" style="color:#2ecc71">-${descuentoSalsas.toFixed(2)}€</div>
-            </div>
-        `;
         totalGlobal -= descuentoSalsas;
     }
 
     document.getElementById('ticket-total').textContent = totalGlobal.toFixed(2) + '€';
+    const totalItems = ticket.reduce((s, i) => s + i.cantidad, 0);
+    sincronizarTotalMovil(totalGlobal, totalItems);
 }
 
 // ══ Bloques Horarios ══════════════════════════════════════════════════════
@@ -311,13 +352,17 @@ function renderBloques() {
         if (estaLleno) c += ' bloque-red';
         if (bloqueSeleccionado === b._id) c += ' selected';
 
+        const numPedidos = _pedidosPorBloque[b._id] || 0;
+        const pedTag = numPedidos > 0
+            ? `<span style="font-size:0.7rem;opacity:0.75">(${numPedidos} ped.)</span>` : '';
+
         let estadoLabel;
         if (estaForzado) {
-            estadoLabel = `<span style="font-size:0.78rem; font-weight:900;">⚡FORZADO</span>`;
+            estadoLabel = `<span style="font-size:0.78rem; font-weight:900;">⚡FORZADO</span> ${pedTag}`;
         } else if (estaLleno) {
-            estadoLabel = `<span style="font-size:0.85rem; font-weight:900;">LLENO</span>`;
+            estadoLabel = `<span style="font-size:0.85rem; font-weight:900;">LLENO</span> ${pedTag}`;
         } else {
-            estadoLabel = `<span style="font-size:0.85rem;">${huecosLibres} libres</span>`;
+            estadoLabel = `<span style="font-size:0.85rem;">${huecosLibres} libres</span> ${pedTag}`;
         }
 
         return `<button class="${c}" ${esPasado ? 'disabled style="opacity:0.3"' : ''} onclick="seleccionarBloque('${escAttr(b._id)}')">
@@ -405,15 +450,22 @@ function abrirModalPersonalizacion(index) {
             html += pagados.map(e => {
                 const objExtra = item.extras.find(ex => ex.extra === e._id);
                 const qty = objExtra ? objExtra.cantidad : 0;
+                const estaGratis = objExtra ? !!objExtra.gratis : false;
+                const precioTxt = estaGratis
+                    ? `<span style="color:#2ecc71">🎁 0.00€</span>`
+                    : `+${e.precio.toFixed(2)}€`;
+                const colorGratisBtn = estaGratis ? '#27ae60' : '#444';
+                const disabledGratis = qty === 0 ? 'style="opacity:0.3;pointer-events:none"' : '';
                 return `<div class="pm-extra-row${qty > 0 ? ' activo' : ''}" data-extra-id="${escAttr(e._id)}">
                     <div class="pm-extra-info">
                         <div class="pm-extra-nombre">${escHTML(e.nombre)}</div>
-                        <div class="pm-extra-precio">+${e.precio.toFixed(2)}€</div>
+                        <div class="pm-extra-precio">${precioTxt}</div>
                     </div>
                     <div class="pm-extra-stepper">
                         <button class="pm-extra-qty-btn pm-menos"${qty === 0 ? ' disabled' : ''}>−</button>
                         <span class="pm-extra-qty">${qty}</span>
                         <button class="pm-extra-qty-btn pm-mas">+</button>
+                        <button class="pm-extra-gratis" style="padding:1px 6px;font-size:.8rem;background:${colorGratisBtn};border:none;border-radius:4px;color:#fff;cursor:pointer;margin-left:4px" ${disabledGratis} title="Extra gratis">🎁</button>
                     </div>
                 </div>`;
             }).join('');
@@ -435,13 +487,15 @@ function abrirModalPersonalizacion(index) {
             });
         });
 
-        // Eventos: extras de pago +/-
+        // Eventos: extras de pago +/- y toggle gratis
         cExtras.querySelectorAll('.pm-extra-row').forEach(el => {
             const extObj = pagados.find(e => e._id === el.dataset.extraId);
             if (!extObj) return;
-            const qtyEl  = el.querySelector('.pm-extra-qty');
+            const qtyEl    = el.querySelector('.pm-extra-qty');
             const menosBtn = el.querySelector('.pm-menos');
             const masBtn   = el.querySelector('.pm-mas');
+            const gratisBtn = el.querySelector('.pm-extra-gratis');
+            const precioEl  = el.querySelector('.pm-extra-precio');
 
             const ajustar = (delta) => {
                 if (itemEditandoIndex === -1) return;
@@ -449,20 +503,42 @@ function abrirModalPersonalizacion(index) {
                 let obj = itm.extras.find(e => e.extra === extObj._id);
                 if (!obj) {
                     if (delta < 0) return;
-                    obj = { extra: extObj._id, nombre: extObj.nombre, precio: extObj.precio, cantidad: 0 };
+                    obj = { extra: extObj._id, nombre: extObj.nombre, precio: extObj.precio, cantidad: 0, gratis: false };
                     itm.extras.push(obj);
                 }
                 obj.cantidad = Math.max(0, Math.min(10, obj.cantidad + delta));
                 qtyEl.textContent = obj.cantidad;
                 menosBtn.disabled = obj.cantidad === 0;
-                if (obj.cantidad > 0) el.classList.add('activo');
-                else el.classList.remove('activo');
+                if (obj.cantidad > 0) {
+                    el.classList.add('activo');
+                    if (gratisBtn) { gratisBtn.style.opacity = '1'; gratisBtn.style.pointerEvents = 'auto'; }
+                } else {
+                    el.classList.remove('activo');
+                    if (gratisBtn) { gratisBtn.style.opacity = '0.3'; gratisBtn.style.pointerEvents = 'none'; }
+                }
                 itm.extras = itm.extras.filter(e => e.cantidad > 0);
                 actualizarResumenModal();
             };
 
             menosBtn.addEventListener('click', () => ajustar(-1));
             masBtn.addEventListener('click',   () => ajustar(1));
+
+            if (gratisBtn) {
+                gratisBtn.addEventListener('click', () => {
+                    if (itemEditandoIndex === -1) return;
+                    const itm = ticket[itemEditandoIndex];
+                    const obj = itm.extras.find(e => e.extra === extObj._id);
+                    if (!obj || obj.cantidad === 0) return;
+                    obj.gratis = !obj.gratis;
+                    gratisBtn.style.background = obj.gratis ? '#27ae60' : '#444';
+                    if (precioEl) {
+                        precioEl.innerHTML = obj.gratis
+                            ? '<span style="color:#2ecc71">🎁 0.00€</span>'
+                            : `+${extObj.precio.toFixed(2)}€`;
+                    }
+                    actualizarResumenModal();
+                });
+            }
         });
     }
 
@@ -480,7 +556,7 @@ function actualizarResumenModal() {
     if (itm.anadidos.length)
         partes.push(`<strong>+</strong> ${itm.anadidos.map(escHTML).join(', ')}`);
     if (itm.extras.length)
-        partes.push(itm.extras.map(e => `<strong>${e.cantidad}× ${escHTML(e.nombre)}</strong>`).join(', '));
+        partes.push(itm.extras.map(e => `<strong>${e.cantidad}× ${escHTML(e.nombre)}${e.gratis ? ' 🎁' : ''}</strong>`).join(', '));
     el.innerHTML = partes.join(' &nbsp;·&nbsp; ');
 }
 
@@ -524,6 +600,7 @@ function cerrarModalesPOS(guardar = false) {
     document.getElementById('modal-personalizacion').style.display = 'none';
     itemEditandoIndex = -1;
     splitCantidad = 1;
+    fusionarDuplicados();
     renderTicket();
 }
 
@@ -567,6 +644,27 @@ function adjustModalExtra(idExtra, nombre, precio, delta) {
     item.extras = item.extras.filter(e => e.cantidad > 0);
 }
 
+// Fusiona líneas del ticket que tienen el mismo producto y las mismas modificaciones
+function fusionarDuplicados() {
+    const clave = it =>
+        `${it.producto._id}|${[...it.excluidos].sort().join(',')}|${[...it.anadidos].sort().join(',')}|` +
+        it.extras.map(e => `${e.extra}:${e.cantidad}`).sort().join(',') + `|${!!it.gratis}`;
+
+    const resultado = [];
+    for (const it of ticket) {
+        const k = clave(it);
+        const existente = resultado.find(r => clave(r) === k);
+        if (existente) {
+            existente.cantidad += it.cantidad;
+            existente.precioTotalItem = (existente.precioBase + existente.precioExtraUnitario) * existente.cantidad;
+        } else {
+            resultado.push(it);
+        }
+    }
+    ticket.length = 0;
+    ticket.push(...resultado);
+}
+
 document.getElementById('btn-guardar-personalizacion').addEventListener('click', cerrarModalesPOS);
 
 // ══ Enviar Pedido Telefónico/Físico ═══════════════════════════════════════
@@ -586,10 +684,11 @@ async function cobrarPedido() {
     const lineas = ticket.map(t => ({
         producto: t.producto._id,
         cantidad: t.cantidad,
-        excluidos: t.excluidos,
-        anadidos: t.anadidos,
-        precioUnitario: t.precioBase, // Backend sumará extras
-        extras: t.extras.map(e => ({ extra: e.extra, cantidad: e.cantidad }))
+        ingredientesExcluidos: t.excluidos,
+        ingredientesAnadidos: t.anadidos,
+        precioUnitario: t.precioBase,
+        extras: t.extras.map(e => ({ extra: e.extra, cantidad: e.cantidad, gratis: e.gratis || false })),
+        gratis: t.gratis || false
     }));
 
     try {
@@ -645,6 +744,12 @@ async function cobrarPedido() {
         document.getElementById('cliente-nombre').value = '';
         document.getElementById('cliente-telefono').value = '';
         document.getElementById('check-forzar').checked = false;
+        const mN = document.getElementById('m-cliente-nombre');
+        const mT = document.getElementById('m-cliente-telefono');
+        const mF = document.getElementById('m-check-forzar');
+        if (mN) mN.value = '';
+        if (mT) mT.value = '';
+        if (mF) mF.checked = false;
         bloqueSeleccionado = null;
         renderTicket();
         cargarBloques(); // refrescar
@@ -670,11 +775,15 @@ function cargarModoEdicion(edit) {
     const btn = document.getElementById('btn-cobrar');
     if (btn) { btn.textContent = 'ACTUALIZAR PEDIDO'; btn.style.background = '#e67e22'; }
 
-    // Pre-rellenar nombre y teléfono
+    // Pre-rellenar nombre y teléfono (desktop + móvil)
     const inpNombre = document.getElementById('cliente-nombre');
     const inpTel    = document.getElementById('cliente-telefono');
     if (inpNombre) inpNombre.value = edit.nombreCliente || '';
     if (inpTel)    inpTel.value    = edit.telefonoCliente || '';
+    const mN = document.getElementById('m-cliente-nombre');
+    const mT = document.getElementById('m-cliente-telefono');
+    if (mN) mN.value = edit.nombreCliente || '';
+    if (mT) mT.value = edit.telefonoCliente || '';
 
     // Restaurar ticket desde las lineas guardadas
     ticket = [];
@@ -723,3 +832,65 @@ function cancelarEdicion() {
     localStorage.removeItem('bb_editar_pedido');
     window.location.href = '/admin.html';
 }
+
+// ══ Mobile — Pestañas ═════════════════════════════════════════════════════════
+function isMobile() { return window.innerWidth <= 640; }
+
+function initMobileTabs() {
+    if (!isMobile()) return;
+    switchTab('carta');
+}
+
+function switchTab(tab) {
+    document.querySelector('.pos-main')?.classList.remove('mobile-active');
+    document.querySelector('.pos-bloques-col')?.classList.remove('mobile-active');
+    document.querySelector('.pos-sidebar')?.classList.remove('mobile-active');
+    document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
+
+    if (tab === 'carta') {
+        document.querySelector('.pos-main')?.classList.add('mobile-active');
+        document.getElementById('tab-carta')?.classList.add('active');
+    } else if (tab === 'horario') {
+        document.querySelector('.pos-bloques-col')?.classList.add('mobile-active');
+        document.getElementById('tab-horario')?.classList.add('active');
+    } else if (tab === 'pedido') {
+        document.querySelector('.pos-sidebar')?.classList.add('mobile-active');
+        document.getElementById('tab-pedido')?.classList.add('active');
+    }
+}
+
+function sincronizarTotalMovil(total, numItems) {
+    const mTotal = document.getElementById('m-ticket-total');
+    if (mTotal) mTotal.textContent = total.toFixed(2) + '€';
+
+    const badge = document.getElementById('tab-items-count');
+    if (!badge) return;
+    if (numItems > 0) {
+        badge.textContent = numItems;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function cobrarPedidoMobile() {
+    const mN = document.getElementById('m-cliente-nombre');
+    const mT = document.getElementById('m-cliente-telefono');
+    const mF = document.getElementById('m-check-forzar');
+    if (mN) document.getElementById('cliente-nombre').value = mN.value;
+    if (mT) document.getElementById('cliente-telefono').value = mT.value;
+    if (mF) document.getElementById('check-forzar').checked = mF.checked;
+    cobrarPedido();
+}
+
+// Restaurar layout desktop si el usuario rota la pantalla
+window.addEventListener('resize', () => {
+    if (!isMobile()) {
+        document.querySelector('.pos-main')?.classList.remove('mobile-active');
+        document.querySelector('.pos-bloques-col')?.classList.remove('mobile-active');
+        document.querySelector('.pos-sidebar')?.classList.remove('mobile-active');
+    } else {
+        const hayActiva = document.querySelector('.mobile-active');
+        if (!hayActiva) switchTab('carta');
+    }
+});

@@ -55,25 +55,25 @@
 
         <!-- ── Sidebar de navegación ────────────────────────── -->
         <nav class="adm-sidebar">
-            <button class="nav-btn active" id="btn-tab-calendario" onclick="cambiarTab('calendario')">
-                <span class="nav-icon">📅</span>
-                <span>Calendario</span>
-            </button>
             <button class="nav-btn" id="btn-tab-pedidos" onclick="cambiarTab('pedidos')">
                 <span class="nav-icon">📋</span>
                 <span>Pedidos</span>
             </button>
-            <button class="nav-btn" id="btn-tab-empleados" onclick="cambiarTab('empleados')">
-                <span class="nav-icon">👥</span>
-                <span>Empleados</span>
+            <button class="nav-btn" id="btn-tab-estadisticas" onclick="cambiarTab('estadisticas')">
+                <span class="nav-icon">📊</span>
+                <span>Estadísticas</span>
             </button>
             <button class="nav-btn" id="btn-tab-carta" onclick="cambiarTab('carta')">
                 <span class="nav-icon">🍔</span>
                 <span>Carta</span>
             </button>
-            <button class="nav-btn" id="btn-tab-estadisticas" onclick="cambiarTab('estadisticas')">
-                <span class="nav-icon">📊</span>
-                <span>Estadísticas</span>
+            <button class="nav-btn" id="btn-tab-empleados" onclick="cambiarTab('empleados')">
+                <span class="nav-icon">👥</span>
+                <span>Empleados</span>
+            </button>
+            <button class="nav-btn" id="btn-tab-calendario" onclick="cambiarTab('calendario')">
+                <span class="nav-icon">📅</span>
+                <span>Calendario</span>
             </button>
         </nav>
 
@@ -143,11 +143,19 @@
                     <!-- Panel derecho: pedidos del bloque -->
                     <div class="padm-pedidos">
                         <div class="padm-pedidos-hdr">
-                            <div>
-                                <div class="padm-pedidos-titulo" id="padm-pedidos-titulo">Selecciona un bloque</div>
-                                <div class="padm-pedidos-sub" id="padm-pedidos-sub">Elige un bloque de la izquierda para ver sus pedidos</div>
+                            <div class="padm-hdr-top">
+                                <div>
+                                    <div class="padm-pedidos-titulo" id="padm-pedidos-titulo">Selecciona un bloque</div>
+                                    <div class="padm-pedidos-sub" id="padm-pedidos-sub">Elige un bloque de la izquierda para ver sus pedidos</div>
+                                </div>
+                                <span class="badge-count" id="padm-pedidos-count" style="display:none">0 pedidos</span>
                             </div>
-                            <span class="badge-count" id="padm-pedidos-count" style="display:none">0 pedidos</span>
+                            <div class="padm-search-row">
+                                <input type="search" id="padm-search" class="padm-search-input"
+                                       placeholder="Buscar por nombre o teléfono..."
+                                       oninput="buscarPedidosAdmin(this.value)">
+                                <button class="padm-btn-todos" onclick="verTodosPedidosAdmin()">Ver todos</button>
+                            </div>
                         </div>
                         <div class="padm-pedidos-list" id="padm-lista-pedidos">
                             <div class="padm-empty">

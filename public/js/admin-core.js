@@ -88,4 +88,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     await verificarAuth();
     mesActual = 0;
     await cargarDiasOperativos();
+    cambiarTab('pedidos');
 });

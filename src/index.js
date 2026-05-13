@@ -32,32 +32,41 @@ app.use(cors(corsOptions));
 
 const io = new Server(server, { cors: corsOptions });
 socketService.init(io);
+printerService.setIo(io);
 
 // ── Autenticación Socket.io ───────────────────────────────────────────────────
-// Verifica el token JWT en el handshake. Si no lleva token se permite la conexión
-// como anónimo (necesario para las páginas públicas de cliente). Si el token es
-// válido y el usuario es staff (ADMIN/EMPLEADO) se une al room 'staff', que es
-// al que van los eventos sensibles (nuevo-pedido, etc.) para no filtrárselos a
-// clientes anónimos que tengan la consola abierta.
 io.use((socket, next) => {
+    // Agente de impresión (Raspberry Pi): autentica con AGENT_SECRET
+    const agentSecret = socket.handshake.auth?.agentSecret;
+    if (agentSecret && process.env.AGENT_SECRET && agentSecret === process.env.AGENT_SECRET) {
+        socket.esAgente = true;
+        return next();
+    }
+
+    // Staff y clientes: autenticación JWT (anónimo permitido para páginas públicas)
     const token = socket.handshake.auth?.token || socket.handshake.query?.token;
     if (token) {
         try {
             const payload = jwt.verify(token, process.env.JWT_SECRET);
             socket.usuario = payload;
-            if (payload.rol === 'ADMIN' || payload.rol === 'EMPLEADO') {
-                socket.join('staff');
-            }
         } catch {
-            // Token inválido — se conecta igualmente como anónimo
+            // Token inválido — se conecta como anónimo
         }
     }
     next();
 });
 
 io.on('connection', (socket) => {
-    // Solo el staff necesita saber el tamaño de la cola de impresión pendiente.
-    if (socket.rooms.has('staff')) {
+    if (socket.esAgente) {
+        socket.join('printer-agent');
+        console.log('[Socket] Agente de impresión conectado');
+        printerService.onAgenteConectado(socket);
+        socket.on('disconnect', () => console.log('[Socket] Agente de impresión desconectado'));
+        return;
+    }
+
+    if (socket.usuario?.rol === 'ADMIN' || socket.usuario?.rol === 'EMPLEADO') {
+        socket.join('staff');
         socket.emit('cola-pendiente', { cantidad: printerService.getCola().length });
     }
 });

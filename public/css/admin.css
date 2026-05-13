@@ -1381,14 +1381,56 @@ body {
 }
 
 .padm-pedidos-hdr {
-    padding: 14px 18px;
+    padding: 12px 18px;
     border-bottom: 1.5px solid var(--gris-borde);
     background: var(--blanco);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 10px;
     flex-shrink: 0;
 }
+
+.padm-hdr-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.padm-search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.padm-search-input {
+    flex: 1;
+    height: 36px;
+    border: 1.5px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: .85rem;
+    font-family: var(--font);
+    outline: none;
+    background: var(--gris-bg);
+    transition: border-color .15s;
+}
+.padm-search-input:focus { border-color: var(--rojo); background: #fff; }
+.padm-search-input::placeholder { color: #aaa; }
+
+.padm-btn-todos {
+    height: 36px;
+    padding: 0 14px;
+    background: var(--rojo);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .12s;
+}
+.padm-btn-todos:hover { background: var(--rojo-dark); }
 
 .padm-pedidos-titulo {
     font-family: var(--font-cond);
@@ -1430,51 +1472,97 @@ body {
 
 .padm-pedido-card:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(0,0,0,.1);
-    border-color: var(--rojo);
+    box-shadow: 0 6px 20px rgba(0,0,0,.11);
 }
 
-.padm-cancelado { opacity: .55; border-left-color: #999; }
+.padm-cancelado { opacity: .5; }
 
-.padm-pedido-top {
+/* Fila 1: número + estado pill */
+.padm-pedido-row1 {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
+    align-items: center;
+    margin-bottom: 6px;
 }
 
 .padm-pedido-num {
     font-family: var(--font-cond);
-    font-size: 1.05rem;
+    font-size: .95rem;
     font-weight: 900;
-    color: var(--rojo);
+    color: #888;
+    letter-spacing: .3px;
 }
 
-.padm-pedido-hora { font-size: .76rem; color: var(--gris-texto); margin-top: 2px; }
+.padm-estado-pill {
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+}
 
-.padm-pedido-total {
+.padm-card-hora-bloque {
+    font-size: .75rem;
+    color: #888;
+    font-weight: 600;
+}
+
+/* Fila 2: nombre + total */
+.padm-pedido-row2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.padm-pedido-nombre {
     font-family: var(--font-cond);
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 900;
     color: #1a1a1a;
-}
-
-.padm-pedido-cliente {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: .82rem;
-    color: #555;
-    margin-bottom: 6px;
-}
-
-.padm-pedido-lineas {
-    font-size: .78rem;
-    color: var(--gris-texto);
-    font-style: italic;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 65%;
+}
+
+.padm-pedido-total {
+    font-family: var(--font-cond);
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #1a1a1a;
+    flex-shrink: 0;
+}
+
+/* Fila 3: teléfono + hora creación */
+.padm-pedido-row3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+}
+
+.padm-pedido-tel {
+    font-size: .8rem;
+    color: #555;
+}
+
+.padm-pedido-hora-cre {
+    font-size: .73rem;
+    color: #aaa;
+}
+
+.padm-pedido-lineas {
+    font-size: .77rem;
+    color: var(--gris-texto);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid var(--gris-borde);
+    padding-top: 7px;
+    margin-top: 2px;
 }
 
 /* Estados vacíos y errores */

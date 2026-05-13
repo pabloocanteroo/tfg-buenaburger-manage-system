@@ -1,7 +1,12 @@
 // ══════════════════════════════════════════════════════════════════
-//  printer.js — Impresión WiFi ESC/POS vía TCP (puerto 9100)
-//  El servidor se conecta directamente a la impresora en red local.
-//  Funciona desde cualquier navegador (iPad Safari incluido).
+//  printer.js — Impresión ESC/POS
+//
+//  PRINTER_MODE=socket (Render + Pi):
+//    El servidor emite 'imprimir-ticket' al agente Pi via Socket.io.
+//    El agente hace el TCP a la impresora desde la red local.
+//
+//  PRINTER_MODE=tcp (desarrollo local / red única):
+//    El servidor conecta directamente por TCP a la impresora.
 // ══════════════════════════════════════════════════════════════════
 const net = require('net');
 const {
@@ -11,6 +16,10 @@ const {
     TCP_TIMEOUT_MS,
     NOMBRE_LOCAL,
 } = require('../utils/constants');
+
+// ── Modo de transporte ───────────────────────────────────────────
+const _modoSocket = process.env.PRINTER_MODE === 'socket';
+let _io = null;
 
 // ── Configuración (override en runtime desde admin) ─────────────
 let _config = {
@@ -88,7 +97,6 @@ function generarTicketCliente(pedido) {
         CMD.line(),
         CMD.alignLeft(),
         CMD.boldOn(),
-        txt(`Pedido: BB-${num}\n`),
         CMD.boldOff(),
         txt(`Nombre: ${nombre}\n`),
         txt(`Fecha:  ${_fechaCorta(pedido)}\n`),
@@ -97,17 +105,20 @@ function generarTicketCliente(pedido) {
     );
 
     for (const l of lineas) {
-        const nomProd = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
-        const precio  = `${((l.precioUnitario || 0) * l.cantidad).toFixed(2)}EUR`;
-        const izq     = `${l.cantidad}x ${nomProd}`;
-        const lineTxt = izq.padEnd(ANCHO - precio.length) + precio + '\n';
+        const nomProd      = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
+        const extrasPorUnd = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
+        const precioLinea  = ((l.precioUnitario || 0) + extrasPorUnd) * l.cantidad;
+        const precio       = `${precioLinea.toFixed(2)}EUR`;
+        const izq          = `${l.cantidad}x ${nomProd}`;
+        const lineTxt      = izq.padEnd(ANCHO - precio.length) + precio + '\n';
         buf = cat(buf, CMD.boldOn(), txt(lineTxt), CMD.boldOff());
 
-        if (l.excluidos?.length) buf = cat(buf, txt(`   SIN: ${l.excluidos.join(', ')}\n`));
-        if (l.anadidos?.length)  buf = cat(buf, txt(`   + ${l.anadidos.join(', ')}\n`));
+        if (l.ingredientesExcluidos?.length) buf = cat(buf, txt(`   -${l.ingredientesExcluidos.join(', ')}\n`));
+        if (l.ingredientesAnadidos?.length)  buf = cat(buf, txt(`   + ${l.ingredientesAnadidos.join(', ')}\n`));
         if (l.extras?.length) {
             for (const e of l.extras) {
-                const eP = `${(e.precio * e.cantidad).toFixed(2)}EUR`;
+                const cantTotal = e.cantidad * l.cantidad;
+                const eP = `${(e.precio * cantTotal).toFixed(2)}EUR`;
                 const eL = `   + ${e.cantidad}x ${e.nombre}`;
                 buf = cat(buf, txt(eL.padEnd(ANCHO - eP.length) + eP + '\n'));
             }
@@ -122,10 +133,10 @@ function generarTicketCliente(pedido) {
         txt(`TOTAL: ${(pedido.total || 0).toFixed(2)} EUR\n`),
         CMD.normalSize(),
         CMD.boldOff(),
-        txt(`Pago: ${pedido.metodoPago === 'STRIPE' ? 'Pagado online (Stripe)' : 'Efectivo/Tarjeta en local'}\n`),
+        txt(`Pago: ${pedido.metodoPago === 'PAGO_EN_LOCAL' ? 'Efectivo/Tarjeta en local' : pedido.metodoPago || '—'}\n`),
         CMD.feed(1),
         CMD.alignCenter(),
-        txt('Gracias por tu pedido!\n'),
+        txt('gracias por contar con nosotros.\n'),
         txt('Te avisamos cuando este listo\n'),
         CMD.feed(3),
         CMD.cut(),
@@ -135,60 +146,90 @@ function generarTicketCliente(pedido) {
 // ── Generar ticket COCINA ────────────────────────────────────────
 function generarTicketCocina(pedido) {
     const lineas = pedido.lineas || [];
-    const nombre = (pedido.nombreCliente || 'CLIENTE').toUpperCase();
+    const nombre = pedido.nombreCliente || 'Cliente';
     const num    = _numPedido(pedido);
-    const hora   = _horaRecogida(pedido);
 
     let buf = cat(
         CMD.init(),
         CMD.alignCenter(),
         CMD.boldOn(),
         CMD.textSize(2, 2),
-        txt(`BB-${num}\n`),
-        CMD.normalSize(),
-        CMD.textSize(1, 2),
-        txt(`RECOG: ${hora}\n`),
+        txt('BUENA BURGER\n'),
         CMD.normalSize(),
         CMD.boldOff(),
+        txt(`${NOMBRE_LOCAL}\n`),
+        CMD.feed(1),
         CMD.line(),
         CMD.alignLeft(),
-        CMD.boldOn(),
-        CMD.textSize(2, 2),
-        txt(`${nombre}\n`),
-        CMD.normalSize(),
-        CMD.boldOff(),
+        txt(`Nombre: ${nombre}\n`),
+        txt(`Fecha:  ${_fechaCorta(pedido)}\n`),
+        txt(`Recog.: ${_horaRecogida(pedido)}\n`),
         CMD.line(),
     );
 
     for (const l of lineas) {
-        const nomProd = (l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto').toUpperCase();
+        const nomProd      = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
+        const extrasPorUnd = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
+        const precioLinea  = ((l.precioUnitario || 0) + extrasPorUnd) * l.cantidad;
+        const precio       = `${precioLinea.toFixed(2)}EUR`;
+
+        // Producto + precio en la misma línea, todo en letra grande
+        const cabecera = `${l.cantidad}x ${nomProd}`;
+        const lineaTxt = cabecera.padEnd(ANCHO - precio.length) + precio + '\n';
         buf = cat(
             buf,
             CMD.boldOn(),
             CMD.textSize(1, 2),
-            txt(`${l.cantidad}x ${nomProd}\n`),
+            txt(lineaTxt),
             CMD.normalSize(),
             CMD.boldOff(),
         );
-        if (l.excluidos?.length) buf = cat(buf, txt(`  SIN: ${l.excluidos.join(', ')}\n`));
-        if (l.anadidos?.length)  buf = cat(buf, txt(`  + ${l.anadidos.join(', ')}\n`));
+
+        // Modificaciones en letra grande también
+        if (l.ingredientesExcluidos?.length) buf = cat(buf,
+            CMD.textSize(1, 2),
+            txt(`  -${l.ingredientesExcluidos.join(', ')}\n`),
+            CMD.normalSize(),
+        );
+        if (l.ingredientesAnadidos?.length) buf = cat(buf,
+            CMD.textSize(1, 2),
+            txt(`  + ${l.ingredientesAnadidos.join(', ')}\n`),
+            CMD.normalSize(),
+        );
+
         if (l.extras?.length) {
-            for (const e of l.extras)
-                buf = cat(buf, txt(`  ${e.cantidad}x ${e.nombre}\n`));
+            for (const e of l.extras) {
+                const cantTotal = e.cantidad * l.cantidad;
+                const eP        = `${(e.precio * cantTotal).toFixed(2)}EUR`;
+                const eLinea    = `  + ${e.cantidad}x ${e.nombre}`;
+                buf = cat(buf,
+                    CMD.textSize(1, 2),
+                    txt(eLinea.padEnd(ANCHO - eP.length) + eP + '\n'),
+                    CMD.normalSize(),
+                );
+            }
         }
     }
 
     return cat(
         buf,
         CMD.line(),
+        CMD.boldOn(),
+        CMD.textSize(1, 2),
+        txt(`TOTAL: ${(pedido.total || 0).toFixed(2)} EUR\n`),
+        CMD.normalSize(),
+        CMD.boldOff(),
+        txt(`Pago: ${pedido.metodoPago === 'PAGO_EN_LOCAL' ? 'Efectivo/Tarjeta en local' : pedido.metodoPago || '—'}\n`),
+        CMD.feed(1),
         CMD.alignCenter(),
-        txt(`${_horaCreacion(pedido)} | ${pedido.canal || 'TELEFONO'}\n`),
+        txt('gracias por contar con nosotros.\n'),
+        txt('Nos vemos pronto!\n'),
         CMD.feed(3),
         CMD.cut(),
     );
 }
 
-// ── Enviar bytes por TCP ─────────────────────────────────────────
+// ── Enviar bytes por TCP (modo desarrollo / red local) ───────────
 function enviarTCP(bytes) {
     return new Promise((resolve, reject) => {
         if (!_config.ip) return reject(new Error('IP de impresora no configurada'));
@@ -206,19 +247,33 @@ function enviarTCP(bytes) {
     });
 }
 
+// ── Enviar bytes al agente Pi via Socket.io ──────────────────────
+async function enviarSocket(bytes) {
+    if (!_io) throw new Error('Socket.io no inicializado');
+    const agentes = await _io.in('printer-agent').fetchSockets();
+    if (!agentes.length) throw new Error('Agente de impresión no conectado');
+    _io.to('printer-agent').emit('imprimir-ticket', { bytes: bytes.toString('base64') });
+}
+
+// ── Transporte unificado ─────────────────────────────────────────
+function _enviar(bytes) {
+    return _modoSocket ? enviarSocket(bytes) : enviarTCP(bytes);
+}
+
 // ── API pública ──────────────────────────────────────────────────
 
-/** Imprime ambos tickets (cocina + cliente) para un pedido */
+/** Registra la instancia de Socket.io (llamar desde index.js) */
+exports.setIo = (io) => { _io = io; };
+
+/** Imprime solo el ticket de cocina para un pedido */
 exports.imprimirPedido = async (pedido) => {
-    await enviarTCP(generarTicketCocina(pedido));
-    await new Promise(r => setTimeout(r, PRINTER_PAUSE_MS));
-    await enviarTCP(generarTicketCliente(pedido));
+    await _enviar(generarTicketCocina(pedido));
 };
 
 /** Imprime un solo ticket: 'cliente' | 'cocina' */
 exports.imprimirTicket = async (pedido, tipo) => {
     const bytes = tipo === 'cocina' ? generarTicketCocina(pedido) : generarTicketCliente(pedido);
-    await enviarTCP(bytes);
+    await _enviar(bytes);
 };
 
 /** Intenta imprimir; si falla, encola para reintento manual */
@@ -240,11 +295,23 @@ exports.imprimirCola = async () => {
             await exports.imprimirPedido(pedido);
             await new Promise(r => setTimeout(r, 400));
         } catch (err) {
-            errores.push(pedido); // devolver a la cola si falla
+            errores.push(pedido);
         }
     }
     _cola.push(...errores);
     return { impresos: pendientes.length - errores.length, fallidos: errores.length };
+};
+
+/** Vuelca la cola al agente recién conectado */
+exports.onAgenteConectado = async (socket) => {
+    const pendientes = _cola.splice(0);
+    for (const pedido of pendientes) {
+        try {
+            socket.emit('imprimir-ticket', { bytes: generarTicketCocina(pedido).toString('base64') });
+        } catch {
+            _cola.push(pedido);
+        }
+    }
 };
 
 exports.getCola   = ()          => _cola;

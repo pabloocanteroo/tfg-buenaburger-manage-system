@@ -55,18 +55,6 @@
 
             <!-- ── COL 1: Multiplicadores + Productos + Form abajo ── -->
             <main class="pos-main">
-                <div class="pos-multipliers">
-                    <button class="btn-multi active" data-val="1">1</button>
-                    <button class="btn-multi" data-val="2">2</button>
-                    <button class="btn-multi" data-val="3">3</button>
-                    <button class="btn-multi" data-val="4">4</button>
-                    <button class="btn-multi" data-val="5">5</button>
-                    <button class="btn-multi" data-val="6">6</button>
-                    <button class="btn-multi" data-val="7">7</button>
-                    <button class="btn-multi" data-val="8">8</button>
-                    <button class="btn-multi" data-val="9">9</button>
-                    <button class="btn-multi btn-reset-multi" onclick="resetMulti()">✕</button>
-                </div>
                 <div class="pos-grid" id="pos-grid">
                     <div class="pos-loading">Cargando catálogo...</div>
                 </div>
@@ -111,9 +99,44 @@
                 <div class="ticket-items" id="ticket-items">
                     <div class="ticket-empty">El ticket está vacío</div>
                 </div>
+                <!-- Formulario solo visible en móvil (pestaña Pedido) -->
+                <div class="pos-sidebar-form">
+                    <div class="sidebar-form-inputs">
+                        <input type="text" id="m-cliente-nombre" placeholder="👤 Nombre" autocomplete="off">
+                        <input type="tel"  id="m-cliente-telefono" placeholder="📞 Teléfono" autocomplete="off">
+                    </div>
+                    <div class="sidebar-form-bottom">
+                        <div class="sidebar-total">
+                            <span class="sidebar-total-label">TOTAL</span>
+                            <span class="sidebar-total-valor" id="m-ticket-total">0.00€</span>
+                        </div>
+                        <label class="check-forzar" style="flex-shrink:0;font-size:.72rem">
+                            <input type="checkbox" id="m-check-forzar">
+                            ⚡ FORZAR
+                        </label>
+                        <button class="btn-cobrar" onclick="cobrarPedidoMobile()">ENVIAR</button>
+                    </div>
+                </div>
             </aside>
 
         </div>
+
+        <!-- Barra de navegación móvil (oculta en desktop) -->
+        <nav class="mobile-tab-bar">
+            <button class="mobile-tab-btn active" id="tab-carta" onclick="switchTab('carta')">
+                <span class="mobile-tab-icon">🍔</span>
+                Carta
+            </button>
+            <button class="mobile-tab-btn" id="tab-horario" onclick="switchTab('horario')">
+                <span class="mobile-tab-icon">🕐</span>
+                Horario
+            </button>
+            <button class="mobile-tab-btn" id="tab-pedido" onclick="switchTab('pedido')">
+                <span class="mobile-tab-icon">🧾<span class="tab-badge" id="tab-items-count" style="display:none"></span></span>
+                Pedido
+            </button>
+        </nav>
+
     </div>
 
     <!-- Modal Personalización -->

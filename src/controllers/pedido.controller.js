@@ -18,11 +18,13 @@ const contarHamburguesas = (lineas, productos) =>
         return total;
     }, 0);
 
-/** Suma el total económico de las líneas de un pedido */
+/** Suma el total económico de las líneas de un pedido.
+ *  e.cantidad = cantidad del extra POR UNIDAD de producto.
+ *  Por eso se multiplica por l.cantidad igual que el frontend. */
 const calcularTotal = (lineas) =>
     lineas.reduce((sum, l) => {
-        const extrasTotal = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
-        return sum + l.precioUnitario * l.cantidad + extrasTotal;
+        const extrasPorUnidad = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
+        return sum + (l.precioUnitario + extrasPorUnidad) * l.cantidad;
     }, 0);
 
 /**
@@ -70,7 +72,7 @@ const desnormalizarLineas = (lineas, productos) =>
  * Carga los extras necesarios en una única query (`$in`) para no multiplicar
  * round-trips a Atlas.
  */
-const validarYReconstruirLineas = async (lineasInput, productos) => {
+const validarYReconstruirLineas = async (lineasInput, productos, esStaff = false) => {
     if (!Array.isArray(lineasInput) || lineasInput.length === 0) {
         throw new Error('El pedido debe tener al menos una línea');
     }
@@ -100,6 +102,7 @@ const validarYReconstruirLineas = async (lineasInput, productos) => {
         }
 
         // Extras validados contra catálogo: precio y nombre SIEMPRE del servidor
+        // Excepción: staff puede marcar un extra como gratis individualmente (e.gratis === true)
         const extrasValidados = Array.isArray(l.extras) ? l.extras.map((e, j) => {
             if (!e || !e.extra) throw new Error(`Línea ${i + 1} extra ${j + 1}: falta id`);
             const ext = extrasCatalogo.find(x => x._id.toString() === String(e.extra));
@@ -109,23 +112,25 @@ const validarYReconstruirLineas = async (lineasInput, productos) => {
             if (!Number.isInteger(cantExtra) || cantExtra < 1 || cantExtra > (ext.cantidadMaxima || 10)) {
                 throw new Error(`Línea ${i + 1} extra "${ext.nombre}": cantidad inválida`);
             }
+            const extraGratis = esStaff && (l.gratis === true || e.gratis === true);
             return {
                 extra:    ext._id,
-                nombre:   ext.nombre,   // ← del servidor, nunca del body
-                precio:   ext.precio,   // ← del servidor, nunca del body
+                nombre:   ext.nombre,
+                precio:   extraGratis ? 0 : ext.precio,
                 cantidad: cantExtra,
             };
         }) : [];
 
+        const lineaGratis = esStaff && l.gratis === true;
         return {
             producto:              prod._id,
-            nombre:                prod.nombre,    // ← del servidor
-            precio:                prod.precio,    // ← del servidor (desnormalizado para el ticket)
-            precioUnitario:        prod.precio,    // ← del servidor (usado por calcularTotal)
+            nombre:                prod.nombre,
+            precio:                lineaGratis ? 0 : prod.precio,
+            precioUnitario:        lineaGratis ? 0 : prod.precio,
             cantidad,
             ingredientesExcluidos: Array.isArray(l.ingredientesExcluidos) ? l.ingredientesExcluidos.slice(0, 20) : [],
             ingredientesAnadidos:  Array.isArray(l.ingredientesAnadidos)  ? l.ingredientesAnadidos.slice(0, 20)  : [],
-            extras:                extrasValidados,
+            extras:                extrasValidados, // gratis por extra ya integrado arriba
         };
     });
 };
@@ -255,6 +260,8 @@ const liberarBloques = async (reservas) => {
     for (const r of reservas) {
         if (!r.cantidad) continue;
         await BloqueProduccion.findByIdAndUpdate(r.id, { $inc: { hamburgesasOcupadas: -r.cantidad } });
+        // Clamp to 0: $max sets the field to max(current, 0), preventing negatives
+        await BloqueProduccion.findByIdAndUpdate(r.id, { $max: { hamburgesasOcupadas: 0 } });
     }
 };
 
@@ -500,6 +507,8 @@ exports.modificarPedido = async (req, res) => {
                         pedido.cantidadPorBloque[i] = Math.max(0, (pedido.cantidadPorBloque[i] || 0) + delta);
                     }
                 }
+                // Direct array index assignment is not tracked by Mongoose by default
+                pedido.markModified('cantidadPorBloque');
             }
         }
 
@@ -564,7 +573,9 @@ exports.crearPedidoTelefonico = async (req, res) => {
         // Aunque la ruta es solo para staff, reescribimos precios desde el catálogo
         // para evitar que un error del POS (o una versión antigua del frontend) meta
         // líneas con precio equivocado en la BD.
-        const lineasValidadas = await validarYReconstruirLineas(lineas, productos);
+        // Staff puede marcar líneas como gratis (gratis: true en el body).
+        // El tercer argumento activa ese permiso solo en esta ruta de TPV.
+        const lineasValidadas = await validarYReconstruirLineas(lineas, productos, true);
         const numHamburguesas = contarHamburguesas(lineasValidadas, productos);
 
         ({ reservas, horaRecogida } = await reservarBloques(bloqueId, numHamburguesas, forzar));

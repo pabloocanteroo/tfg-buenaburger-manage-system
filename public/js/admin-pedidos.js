@@ -4,16 +4,32 @@ let _pedidosCache   = [];
 let _bloquesAdm     = [];
 let _bloqueSelAdm   = null;
 let _pedidoModalAdm = null;
+let _busqueda       = '';
+let _modoTodos      = false;
+
+// ── Colores por estado ─────────────────────────────────────────────────────────
+const ESTADO_CFG = {
+    'PENDIENTE_PAGO': { color: '#e67e22', label: 'Pdte. pago' },
+    'CONFIRMADO':     { color: '#27ae60', label: 'Confirmado' },
+    'EN_PREPARACION': { color: '#2980b9', label: 'En cocina'  },
+    'LISTO':          { color: '#8e44ad', label: '¡Listo!'    },
+    'ENTREGADO':      { color: '#7f8c8d', label: 'Entregado'  },
+    'CANCELADO':      { color: '#bbb',    label: 'Cancelado'  },
+};
 
 // ── Carga principal ────────────────────────────────────────────────────────────
 async function cargarPedidosAdmin() {
     const fecha = document.getElementById('pedidos-fecha').value;
     if (!fecha) return;
 
-    // Reset estado
     _bloqueSelAdm = null;
     _bloquesAdm   = [];
     _pedidosCache = [];
+    _busqueda     = '';
+    _modoTodos    = false;
+    const el = document.getElementById('padm-search');
+    if (el) el.value = '';
+
     renderBloquesAdmin();
     renderPedidosAdmin([]);
 
@@ -32,7 +48,7 @@ async function cargarPedidosAdmin() {
         renderBloquesAdmin();
     } catch (err) {
         document.getElementById('padm-lista-bloques').innerHTML =
-            `<div class="padm-error">❌ Error: ${escHTML(err.message)}</div>`;
+            `<div class="padm-error">Error: ${escHTML(err.message)}</div>`;
     }
 }
 
@@ -81,8 +97,8 @@ function renderBloquesAdmin() {
             p.bloques.some(bl => (bl._id || bl).toString() === b._id.toString())
         ).length;
 
-        const sel      = _bloqueSelAdm === b._id ? ' selected' : '';
-        const cerrado  = b.cerrado;
+        const sel     = _bloqueSelAdm === b._id ? ' selected' : '';
+        const cerrado = b.cerrado;
 
         return `<div class="padm-bloque-card${sel}${cerrado ? ' padm-bloque-cerrado' : ''}"
                     ${!cerrado ? `onclick="seleccionarBloqueAdmin('${escAttr(b._id)}','${escAttr(b.horaInicio)}')"` : ''}>
@@ -104,74 +120,115 @@ function renderBloquesAdmin() {
 // ── Seleccionar Bloque ─────────────────────────────────────────────────────────
 function seleccionarBloqueAdmin(id, hora) {
     _bloqueSelAdm = id;
+    _busqueda     = '';
+    _modoTodos    = false;
+    const el = document.getElementById('padm-search');
+    if (el) el.value = '';
     renderBloquesAdmin();
 
     const lista = _pedidosCache.filter(p =>
         p.bloques.some(bl => (bl._id || bl).toString() === id)
     );
 
-    const titulo  = document.getElementById('padm-pedidos-titulo');
-    const sub     = document.getElementById('padm-pedidos-sub');
-    const badge   = document.getElementById('padm-pedidos-count');
+    const titulo = document.getElementById('padm-pedidos-titulo');
+    const sub    = document.getElementById('padm-pedidos-sub');
+    const badge  = document.getElementById('padm-pedidos-count');
 
     if (titulo) titulo.textContent = `Pedidos de las ${hora}`;
     if (sub)    sub.textContent    = `${lista.length} pedido${lista.length !== 1 ? 's' : ''} en este bloque`;
-    if (badge) {
-        badge.textContent    = `${lista.length} pedidos`;
-        badge.style.display  = 'inline-flex';
-    }
+    if (badge) { badge.textContent = `${lista.length} pedidos`; badge.style.display = 'inline-flex'; }
 
-    renderPedidosAdmin(lista);
+    renderPedidosAdmin(lista, false);
+}
+
+// ── Búsqueda ───────────────────────────────────────────────────────────────────
+function buscarPedidosAdmin(texto) {
+    _busqueda     = texto.trim().toLowerCase();
+    _modoTodos    = false;
+    _bloqueSelAdm = null;
+    renderBloquesAdmin();
+    _aplicarFiltro();
+}
+
+function verTodosPedidosAdmin() {
+    _busqueda     = '';
+    _modoTodos    = true;
+    _bloqueSelAdm = null;
+    const el = document.getElementById('padm-search');
+    if (el) el.value = '';
+    renderBloquesAdmin();
+    _aplicarFiltro();
+}
+
+function _aplicarFiltro() {
+    let lista;
+    const titulo = document.getElementById('padm-pedidos-titulo');
+    const sub    = document.getElementById('padm-pedidos-sub');
+    const badge  = document.getElementById('padm-pedidos-count');
+
+    if (_busqueda) {
+        lista = _pedidosCache.filter(p =>
+            (p.nombreCliente || '').toLowerCase().includes(_busqueda) ||
+            (p.telefonoCliente || '').includes(_busqueda)
+        );
+        if (titulo) titulo.textContent = `Búsqueda: "${_busqueda}"`;
+        if (sub)    sub.textContent    = `${lista.length} resultado${lista.length !== 1 ? 's' : ''}`;
+    } else {
+        lista = _pedidosCache;
+        if (titulo) titulo.textContent = 'Todos los pedidos';
+        if (sub)    sub.textContent    = `${lista.length} pedido${lista.length !== 1 ? 's' : ''} en total`;
+    }
+    if (badge) { badge.textContent = sub?.textContent || ''; badge.style.display = 'inline-flex'; }
+
+    renderPedidosAdmin(lista, true);
 }
 
 // ── Render Pedidos ─────────────────────────────────────────────────────────────
-function renderPedidosAdmin(lista = []) {
+function renderPedidosAdmin(lista = [], mostrarBloque = false) {
     const cont = document.getElementById('padm-lista-pedidos');
     if (!cont) return;
 
     if (!lista.length) {
         cont.innerHTML = `<div class="padm-empty">
-            <div class="padm-empty-icon">${_bloqueSelAdm ? '✅' : '📋'}</div>
-            <p>${_bloqueSelAdm ? 'No hay pedidos en este bloque' : 'Selecciona un bloque horario para ver sus pedidos'}</p>
+            <div class="padm-empty-icon">${_busqueda ? '🔍' : _bloqueSelAdm ? '✅' : '📋'}</div>
+            <p>${_busqueda ? 'Ningún pedido coincide con la búsqueda' : _bloqueSelAdm ? 'No hay pedidos en este bloque' : 'Selecciona un bloque o usa el buscador'}</p>
         </div>`;
         return;
     }
 
     cont.innerHTML = lista.map(p => {
-        const hora  = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-        const canal = p.canal || '—';
-        const canalColor = canal === 'TELEFONO' ? '#1976D2'
-                         : canal === 'WEB'      ? '#2E7D32'
-                         : canal === 'WHATSAPP' ? '#25D366'
-                         : '#888';
-        const canalLabel = canal === 'TELEFONO' ? '📞 Teléfono'
-                         : canal === 'WEB'      ? '🌐 Web'
-                         : canal === 'WHATSAPP' ? '💬 WhatsApp'
-                         : `📍 ${canal}`;
+        const horaCreacion = new Date(p.fechaCreacion).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        const horaBloque   = p.bloques?.[0]?.horaInicio;
+        const cancelado    = p.estado === 'CANCELADO';
+        const est          = ESTADO_CFG[p.estado] || { color: '#aaa', label: p.estado || '—' };
+        const canalIcon    = p.canal === 'TELEFONO' ? '📞' : p.canal === 'WEB' ? '🌐' : p.canal === 'WHATSAPP' ? '💬' : '📍';
 
-        const lineas    = p.lineas.map(l =>
+        const lineas = p.lineas.map(l =>
             `${l.cantidad}× ${escHTML(l.producto?.nombre || l.nombre || '?')}`
         ).join(' · ');
 
-        const cancelado = p.estado === 'CANCELADO';
+        const bloqueTag = mostrarBloque && horaBloque
+            ? `<span class="padm-card-hora-bloque">⏰ ${escHTML(horaBloque)}</span>` : '';
 
         return `<div class="padm-pedido-card${cancelado ? ' padm-cancelado' : ''}"
+                    style="border-left-color:${est.color}"
                     onclick="abrirModalAdmin('${escAttr(p._id)}')">
-            <div class="padm-pedido-top">
-                <div>
-                    <div class="padm-pedido-num">${escHTML(p.numero || p._id.slice(-6).toUpperCase())}</div>
-                    <div class="padm-pedido-hora">Creado: ${hora}</div>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-                    <div class="padm-pedido-total">${p.total?.toFixed(2)}€</div>
-                    <span style="font-size:.7rem;font-weight:700;color:${canalColor};background:#f5f5f5;padding:2px 8px;border-radius:10px">${escHTML(canalLabel)}</span>
+            <div class="padm-pedido-row1">
+                <span class="padm-pedido-num">${escHTML(p.numero || p._id.slice(-6).toUpperCase())}</span>
+                <div style="display:flex;align-items:center;gap:6px">
+                    ${bloqueTag}
+                    <span class="padm-estado-pill" style="background:${est.color}1a;color:${est.color};border-color:${est.color}40">${escHTML(est.label)}</span>
                 </div>
             </div>
-            <div class="padm-pedido-cliente">
-                <span>👤 ${escHTML(p.nombreCliente || 'Sin nombre')}</span>
-                <span>📞 ${escHTML(p.telefonoCliente || 'Sin teléfono')}</span>
+            <div class="padm-pedido-row2">
+                <span class="padm-pedido-nombre">${escHTML(p.nombreCliente || 'Sin nombre')}</span>
+                <span class="padm-pedido-total">${p.total?.toFixed(2)}€</span>
             </div>
-            <div class="padm-pedido-lineas">${lineas}</div>
+            <div class="padm-pedido-row3">
+                <span class="padm-pedido-tel">${canalIcon} ${escHTML(p.telefonoCliente || 'Sin teléfono')}</span>
+                <span class="padm-pedido-hora-cre">creado ${horaCreacion}</span>
+            </div>
+            ${lineas ? `<div class="padm-pedido-lineas">${lineas}</div>` : ''}
         </div>`;
     }).join('');
 }
@@ -189,7 +246,7 @@ function abrirModalAdmin(pedidoId) {
         : (p.horaRecogida ? new Date(p.horaRecogida).toLocaleDateString('es-ES') : '—');
 
     const horaCreacion = new Date(p.fechaCreacion).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
-    const estadoColor  = cancelado ? '#e74c3c' : p.estado === 'CONFIRMADO' ? '#27ae60' : '#f39c12';
+    const est          = ESTADO_CFG[p.estado] || { color: '#aaa', label: p.estado || '—' };
 
     document.getElementById('padm-modal-titulo').textContent =
         `Pedido ${p.numero || pedidoId.slice(-6).toUpperCase()}`;
@@ -208,48 +265,30 @@ function abrirModalAdmin(pedidoId) {
 
         <div class="padm-modal-seccion">
             <div class="padm-modal-sec-titulo">LÍNEAS DEL PEDIDO</div>
-            ${(() => {
-                const lineasHtml = p.lineas.map(l => {
-                    const nombre   = l.producto?.nombre || l.nombre || 'Producto';
-                    const sinIngr  = l.ingredientesExcluidos || [];
-                    const addIngr  = l.ingredientesAnadidos  || [];
-                    const extras   = l.extras || [];
-                    const precioL  = l.precioUnitario * l.cantidad + extras.reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
-                    return `<div class="padm-modal-linea">
-                        <div>
-                            <div class="padm-modal-linea-nombre">${l.cantidad}× ${escHTML(nombre)}</div>
-                            ${sinIngr.length ? `<div class="padm-modal-linea-mod mod-sin">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
-                            ${addIngr.length ? `<div class="padm-modal-linea-mod mod-add">+ ${escHTML(addIngr.join(', '))}</div>` : ''}
-                            ${extras.length  ? `<div class="padm-modal-linea-mod mod-ext">Extras: ${escHTML(extras.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
-                        </div>
-                        <div class="padm-modal-linea-precio">${precioL.toFixed(2)}€</div>
-                    </div>`;
-                }).join('');
-
-                const sumaLineas = p.lineas.reduce((s, l) => {
-                    return s + l.precioUnitario * l.cantidad + (l.extras || []).reduce((se, e) => se + (e.precio || 0) * e.cantidad, 0);
-                }, 0);
-                const descuento = +(sumaLineas - (p.total || 0)).toFixed(2);
-                const descuentoHtml = descuento > 0.01
-                    ? `<div class="padm-modal-linea" style="color:#27ae60">
-                           <div><div class="padm-modal-linea-nombre">🎁 Descuento (3×2 salsas)</div></div>
-                           <div class="padm-modal-linea-precio">-${descuento.toFixed(2)}€</div>
-                       </div>`
-                    : '';
-
-                return lineasHtml + descuentoHtml;
-            })()}
+            ${p.lineas.map(l => {
+                const nombre       = l.producto?.nombre || l.nombre || 'Producto';
+                const sinIngr      = l.ingredientesExcluidos || [];
+                const addIngr      = l.ingredientesAnadidos  || [];
+                const extrasLinea  = l.extras || [];
+                const extrasPorUnd = extrasLinea.reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
+                const precioLinea  = ((l.precioUnitario || 0) + extrasPorUnd) * l.cantidad;
+                return `<div class="padm-modal-linea">
+                    <div>
+                        <div class="padm-modal-linea-nombre">${l.cantidad}× ${escHTML(nombre)}</div>
+                        ${sinIngr.length ? `<div class="padm-modal-linea-mod mod-sin">Sin: ${escHTML(sinIngr.join(', '))}</div>` : ''}
+                        ${addIngr.length ? `<div class="padm-modal-linea-mod mod-add">+ ${escHTML(addIngr.join(', '))}</div>` : ''}
+                        ${extrasLinea.length ? `<div class="padm-modal-linea-mod mod-ext">Extras: ${escHTML(extrasLinea.map(e => `${e.cantidad}× ${e.nombre || 'Extra'}`).join(', '))}</div>` : ''}
+                    </div>
+                    <div class="padm-modal-linea-precio">${precioLinea.toFixed(2)}€</div>
+                </div>`;
+            }).join('')}
         </div>
 
         <div class="padm-modal-resumen">
             <div>
                 Canal: <strong>${escHTML(p.canal || '—')}</strong>
                 &nbsp;·&nbsp;
-                <span style="font-weight:700;color:${estadoColor}">${escHTML(p.estado || '—')}</span>
-                &nbsp;·&nbsp;
-                ${p.metodoPago === 'STRIPE'
-                    ? `<span style="color:${p.stripePagado ? '#27ae60' : '#e67e22'};font-weight:700">💳 ${p.stripePagado ? 'Pagado online ✓' : 'Pago online pendiente'}</span>`
-                    : `<span style="color:#555">💵 Pago en local</span>`}
+                <span style="font-weight:700;color:${est.color}">${escHTML(est.label)}</span>
             </div>
             <div class="padm-modal-total">${p.total?.toFixed(2)}€</div>
         </div>`;
@@ -262,7 +301,7 @@ function abrirModalAdmin(pedidoId) {
         <button class="btn-reimprimir" onclick="reimprimirTicket('${idAttr}','cocina')">🖨 Cocina</button>
         ${!cancelado ? `
             <button class="btn-modificar-pedido" onclick="cerrarModalAdmin();_modificarDesdeModal('${idAttr}')">✏️ Modificar</button>
-            <button class="btn-eliminar-pedido"  onclick="cerrarModalAdmin();eliminarPedidoAdmin('${idAttr}','${numAttr}')">🗑 Cancelar pedido</button>
+            <button class="btn-eliminar-pedido"  onclick="cerrarModalAdmin();eliminarPedidoAdmin('${idAttr}','${numAttr}')">🗑 Cancelar</button>
         ` : ''}
         <button class="btn-refresh" style="margin-left:auto" onclick="cerrarModalAdmin()">Cerrar</button>`;
 
@@ -289,7 +328,6 @@ function _modificarDesdeModal(pedidoId) {
     window.location.href = '/pos.html';
 }
 
-// Mantener compatibilidad con código anterior que usa índice
 function modificarPedidoAdmin(idx) {
     _modificarDesdeModal(_pedidosCache[idx]?._id);
 }
@@ -306,7 +344,6 @@ async function eliminarPedidoAdmin(id, numero) {
         if (!data.ok) throw new Error(data.mensaje);
         mostrarToast(`Pedido ${numero} cancelado`, 'verde');
         await cargarPedidosAdmin();
-        // Reseleccionar el mismo bloque tras recargar
         if (bloqueAnterior) {
             const b = _bloquesAdm.find(x => x._id === bloqueAnterior);
             if (b) seleccionarBloqueAdmin(bloqueAnterior, b.horaInicio);
