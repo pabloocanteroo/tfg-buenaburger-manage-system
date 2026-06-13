@@ -25,3 +25,9 @@ Thumbs.db
 
 # Build
 dist/
+
+# Scripts de generación de diagramas (no se publican)
+scripts/
+
+# Copias de seguridad
+*.bak

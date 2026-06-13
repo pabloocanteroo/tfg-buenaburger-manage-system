@@ -50,7 +50,6 @@ Sistema web de gestión integral de pedidos *take away* para **Buena Burger**, u
 - [Diagrama de navegación](docs/diagramas/capitulo4/01_diagrama_navegacion.png)
 - [Solución de impresión (servidor → agente Raspberry Pi → impresora)](docs/diagramas/capitulo4/02_solucion_impresion.png)
 - [Secuencia — Pedido web (detallada)](docs/diagramas/capitulo4/03_secuencia_pedido_web.png)
-- [Notas de implementación](docs/NOTAS_IMPLEMENTACION.md)
 - [Cumplimiento VERI*FACTU](docs/VERIFACTU.md)
 - [Guía de arranque](docs/ARRANQUE.md)
 - [Guía de despliegue](docs/DEPLOY.md)
