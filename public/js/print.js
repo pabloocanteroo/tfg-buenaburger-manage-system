@@ -7,7 +7,7 @@
 
 // ── Estado global de impresión ──────────────────────────────────
 const BB_PRINT = {
-    socket: null,   // referencia al socket (para que admin.js pueda escuchar)
+    socket: null,   // referencia al socket (para que los módulos admin-*.js puedan escuchar)
 };
 
 // ── Sonido de alerta (funciona en Safari/iOS) ───────────────────

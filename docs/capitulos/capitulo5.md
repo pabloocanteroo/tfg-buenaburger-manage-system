@@ -80,9 +80,9 @@ La elección de MongoDB Atlas como sistema de persistencia ha demostrado ser ade
 
 No obstante, esta flexibilidad tiene un coste: la ausencia de joins nativos hace que algunas consultas de estadísticas requieran pipelines de agregación complejos (`$group`, `$unwind`, `$lookup`) que son más difíciles de leer y mantener que sus equivalentes SQL.
 
-### 5.2.4 Cambio de proveedor de IA durante la implementación
+### 5.2.4 Encapsulación del proveedor de IA
 
-Durante la fase de diseño se planificó el uso de la API de OpenAI para el asistente conversacional de WhatsApp. En la fase de implementación se tomó la decisión de usar el SDK de Anthropic (`@anthropic-ai/sdk`, modelo Claude) por su capacidad para gestionar contextos de conversación más largos con mayor coherencia. Este cambio no afectó a la arquitectura del sistema ni a los contratos de la API, ya que el módulo de IA estaba encapsulado en un servicio independiente (`ia.service.js`), y la sustitución fue transparente para el resto de la aplicación. Este episodio ilustra el valor de diseñar con separación de responsabilidades desde el inicio.
+El asistente conversacional de WhatsApp se apoya en el SDK de Anthropic (`@anthropic-ai/sdk`, modelo Claude), elegido por su capacidad para gestionar contextos de conversación largos con mayor coherencia. Una decisión de diseño clave fue **encapsular toda la lógica de IA en un servicio independiente** (`ia.service.js`), de modo que el proveedor concreto queda aislado del resto de la aplicación: los controladores no conocen detalles del modelo, solo invocan el servicio. Esto mantiene estables los contratos de la API y permitiría sustituir el proveedor de IA en el futuro sin impacto en la arquitectura. Este episodio ilustra el valor de diseñar con separación de responsabilidades desde el inicio.
 
 ### 5.2.5 Consideraciones sobre la validación y las decisiones de implementación
 
@@ -212,8 +212,6 @@ GitHub. (s. f.). *GitHub documentation and collaboration platform*. https://gith
 Meta Platforms, Inc. (s. f.). *WhatsApp Business Platform documentation*. https://developers.facebook.com/docs/whatsapp
 
 MongoDB Inc. (s. f.). *MongoDB Atlas documentation*. https://www.mongodb.com
-
-OpenAI. (s. f.). *OpenAI API documentation*. https://platform.openai.com/docs
 
 Raspberry Pi Foundation. (s. f.). *Raspberry Pi Zero 2W product page*. https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/
 

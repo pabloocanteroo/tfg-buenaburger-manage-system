@@ -307,4 +307,4 @@ Los servicios externos integrados en la solución final son:
 | **Socket.IO** | Notificaciones tiempo real + impresión remota | WebSocket sobre HTTP |
 | **Impresora térmica ESC/POS** | Impresión física de tickets | TCP puerto 9100 |
 
-> **Nota sobre la IA:** durante el diseño del sistema (Capítulo 3) se contempló el uso de la API de OpenAI. En la fase de implementación se optó finalmente por el SDK de Anthropic (`@anthropic-ai/sdk`), ya que ofrecía mayor flexibilidad en el control del contexto de la conversación y una integración más directa con los requisitos de construcción del prompt del sistema para el agente conversacional.
+> **Nota sobre la IA:** la interpretación de los mensajes de WhatsApp se realiza con el SDK de Anthropic (`@anthropic-ai/sdk`, modelo Claude), elegido por su flexibilidad en el control del contexto de la conversación y su integración directa con la construcción del prompt del sistema del agente conversacional.

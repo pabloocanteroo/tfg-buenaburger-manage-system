@@ -70,7 +70,7 @@ El flujo conversacional funciona así:
    - Se notifica al administrador mediante un **correo electrónico** indicando que un cliente necesita atención.
    - El administrador contacta al cliente para ayudarle a completar el pedido.
 
-**Tecnología:** Meta Cloud API (WhatsApp Business oficial) + OpenAI API para interpretación en lenguaje natural.
+**Tecnología:** Meta Cloud API (WhatsApp Business oficial) + Anthropic API (Claude) para interpretación en lenguaje natural.
 
 ### 3. Sistema de bloques de producción ⚙️ *(funcionalidad diferencial)*
 - La producción se organiza en **bloques de 5 minutos**, con un máximo de **10 hamburguesas** por bloque.
@@ -190,7 +190,7 @@ Personal interno (empleado o admin). Atributos: nombre, email, passwordHash, `ro
 | Autenticación | JWT |
 | Pagos | Stripe |
 | WhatsApp | Meta Cloud API |
-| IA | OpenAI API |
+| IA | Anthropic API (Claude) |
 | Impresión en tiempo real | WebSocket |
 | Control de versiones | Git + GitHub |
 
@@ -200,7 +200,7 @@ Personal interno (empleado o admin). Atributos: nombre, email, passwordHash, `ro
 
 La aplicación sigue una arquitectura **cliente-servidor** con una API REST en el backend (Node.js/Express) y un frontend multipágina en HTML/CSS/JS vanilla. La base de datos es **MongoDB Atlas** (documental, NoSQL), elegida por su flexibilidad para modelar pedidos con personalizaciones variables.
 
-Los servicios externos (Stripe, Meta Cloud API, OpenAI) se integran en el backend. La impresión de tickets usa WebSocket para comunicación en tiempo real con el navegador del local.
+Los servicios externos (Stripe, Meta Cloud API, Anthropic) se integran en el backend. La impresión de tickets usa WebSocket para comunicación en tiempo real con el navegador del local.
 
 ---
 

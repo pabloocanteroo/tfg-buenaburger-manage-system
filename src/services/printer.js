@@ -59,6 +59,16 @@ function txt(str) {
 
 function cat(...bufs) { return Buffer.concat(bufs); }
 
+// ── 3x2 salsas ──────────────────────────────────────────────────
+function _descuentoSalsas(lineas) {
+    const total = lineas.reduce((s, l) =>
+        l.producto?.categoria === 'SALSA' ? s + l.cantidad : s, 0);
+    const gratis = Math.floor(total / 3);
+    if (gratis === 0) return 0;
+    const primera = lineas.find(l => l.producto?.categoria === 'SALSA');
+    return gratis * (primera?.precioUnitario || 1);
+}
+
 // ── Helpers de formato ───────────────────────────────────────────
 function _horaRecogida(p) {
     return p.bloques?.[0]?.horaInicio || '—';
@@ -105,11 +115,16 @@ function generarTicketCliente(pedido) {
     );
 
     for (const l of lineas) {
-        const nomProd      = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
+        const nomProd       = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
+        const esHamburguesa = l.producto?.categoria === 'HAMBURGUESA';
+        const esGorda       = esHamburguesa && (l.extras || []).some(e => e.nombre?.toLowerCase() === 'gorda');
+        const nombreDisplay = esHamburguesa
+            ? (nomProd + (esGorda ? ' GORDA' : '')).toUpperCase()
+            : nomProd;
         const extrasPorUnd = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
         const precioLinea  = ((l.precioUnitario || 0) + extrasPorUnd) * l.cantidad;
         const precio       = `${precioLinea.toFixed(2)}EUR`;
-        const izq          = `${l.cantidad}x ${nomProd}`;
+        const izq          = `${l.cantidad}x ${nombreDisplay}`;
         const lineTxt      = izq.padEnd(ANCHO - precio.length) + precio + '\n';
         buf = cat(buf, CMD.boldOn(), txt(lineTxt), CMD.boldOff());
 
@@ -117,12 +132,20 @@ function generarTicketCliente(pedido) {
         if (l.ingredientesAnadidos?.length)  buf = cat(buf, txt(`   + ${l.ingredientesAnadidos.join(', ')}\n`));
         if (l.extras?.length) {
             for (const e of l.extras) {
-                const cantTotal = e.cantidad * l.cantidad;
-                const eP = `${(e.precio * cantTotal).toFixed(2)}EUR`;
-                const eL = `   + ${e.cantidad}x ${e.nombre}`;
+                const cantTotal  = e.cantidad * l.cantidad;
+                const eP         = `${(e.precio * cantTotal).toFixed(2)}EUR`;
+                const eNombre    = esHamburguesa ? e.nombre.toUpperCase() : e.nombre;
+                const eL         = `   + ${e.cantidad}x ${eNombre}`;
                 buf = cat(buf, txt(eL.padEnd(ANCHO - eP.length) + eP + '\n'));
             }
         }
+    }
+
+    const dto = _descuentoSalsas(lineas);
+    if (dto > 0) {
+        const dtoStr = `-${dto.toFixed(2)}EUR`;
+        const dtoLabel = '  Dto. 3x2 salsas';
+        buf = cat(buf, txt(dtoLabel.padEnd(ANCHO - dtoStr.length) + dtoStr + '\n'));
     }
 
     return cat(
@@ -168,13 +191,18 @@ function generarTicketCocina(pedido) {
     );
 
     for (const l of lineas) {
-        const nomProd      = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
+        const nomProd       = l.producto?.nombre || l.nombreProducto || l.nombre || 'Producto';
+        const esHamburguesa = l.producto?.categoria === 'HAMBURGUESA';
+        const esGorda       = esHamburguesa && (l.extras || []).some(e => e.nombre?.toLowerCase() === 'gorda');
+        const nombreDisplay = esHamburguesa
+            ? (nomProd + (esGorda ? ' GORDA' : '')).toUpperCase()
+            : nomProd;
         const extrasPorUnd = (l.extras || []).reduce((s, e) => s + (e.precio || 0) * e.cantidad, 0);
         const precioLinea  = ((l.precioUnitario || 0) + extrasPorUnd) * l.cantidad;
         const precio       = `${precioLinea.toFixed(2)}EUR`;
 
         // Producto + precio en la misma línea, todo en letra grande
-        const cabecera = `${l.cantidad}x ${nomProd}`;
+        const cabecera = `${l.cantidad}x ${nombreDisplay}`;
         const lineaTxt = cabecera.padEnd(ANCHO - precio.length) + precio + '\n';
         buf = cat(
             buf,
@@ -201,7 +229,8 @@ function generarTicketCocina(pedido) {
             for (const e of l.extras) {
                 const cantTotal = e.cantidad * l.cantidad;
                 const eP        = `${(e.precio * cantTotal).toFixed(2)}EUR`;
-                const eLinea    = `  + ${e.cantidad}x ${e.nombre}`;
+                const eNombre   = esHamburguesa ? e.nombre.toUpperCase() : e.nombre;
+                const eLinea    = `  + ${e.cantidad}x ${eNombre}`;
                 buf = cat(buf,
                     CMD.textSize(1, 2),
                     txt(eLinea.padEnd(ANCHO - eP.length) + eP + '\n'),
@@ -209,6 +238,13 @@ function generarTicketCocina(pedido) {
                 );
             }
         }
+    }
+
+    const dtoCocina = _descuentoSalsas(lineas);
+    if (dtoCocina > 0) {
+        const dtoStr = `-${dtoCocina.toFixed(2)}EUR`;
+        const dtoLabel = '  Dto. 3x2 salsas';
+        buf = cat(buf, txt(dtoLabel.padEnd(ANCHO - dtoStr.length) + dtoStr + '\n'));
     }
 
     return cat(

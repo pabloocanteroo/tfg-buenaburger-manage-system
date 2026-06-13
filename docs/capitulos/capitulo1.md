@@ -72,7 +72,7 @@ Son herramientas potentes y profesionales, pero para este caso presentan bastant
 
 La integración de la API de WhatsApp Business con chatbots impulsados por inteligencia artificial, se está usando cada vez más en este sector. Estas soluciones son útiles en muchos restaurantes, sobre todo grandes y medianos, ya que se puede prescindir de una persona que se dedique a coger los pedidos. Estas soluciones permiten automatizar la toma de pedidos, mostrando menús digitales, guiando al cliente en su selección y confirmando los pedidos de forma autónoma. También tienen la opción de derivar a un agente humano, en caso de que fuese necesario.
 
-Las herramientas que ofrecen este servicio son Qamarero, OlaClick (OlaClick, s.f.) o IntelliChat entre otras. Estas herramientas ofrecen módulos de chatbot para WhatsApp, aunque normalmente su alcance se limita generalmente a flujos que ya están definidos con respuestas simples. Con la incorporación de modelos de lenguaje avanzados como puede ser ChatGPT se permiten conversaciones más naturales y la capacidad de interpretar pedidos más complejos con personalizaciones de ingredientes.
+Las herramientas que ofrecen este servicio son Qamarero, OlaClick (OlaClick, s.f.) o IntelliChat entre otras. Estas herramientas ofrecen módulos de chatbot para WhatsApp, aunque normalmente su alcance se limita generalmente a flujos que ya están definidos con respuestas simples. Con la incorporación de modelos de lenguaje avanzados (LLM) se permiten conversaciones más naturales y la capacidad de interpretar pedidos más complejos con personalizaciones de ingredientes.
 
 Esta solución, si no está conectada con una base de datos sigue sin cumplir lo que necesitamos, debido a que seguimos teniendo el mismo problema de que no tenemos bloques de producción.
 
@@ -130,7 +130,7 @@ Un portal web accesible desde todos los dispositivos que permita a los clientes:
 
 ### 1.4.2 Gestión de pedidos vía WhatsApp con inteligencia artificial
 
-Un asistente conversacional integrado con la API oficial de WhatsApp Business (Meta Platforms, Inc, s.f.) que, mediante un modelo de lenguaje de OpenAI (OpenAI, s.f.), sea capaz de:
+Un asistente conversacional integrado con la API oficial de WhatsApp Business (Meta Platforms, Inc, s.f.) que, mediante un modelo de lenguaje de Anthropic (Anthropic, s.f.), sea capaz de:
 
 - Recibir productos en lenguaje natural, y saber interpretar a qué productos se refiere el cliente, con sus respectivas personalizaciones.
 - Consultar la disponibilidad de capacidad en los bloques de producción y sugerir otras alternativas en caso de que no se disponga de hueco a la hora que el cliente desea.
@@ -193,7 +193,7 @@ Los objetivos específicos del trabajo se estructuran en correspondencia con los
 | Objetivo específico | Capítulo |
 |---|---|
 | **OE1.** Recopilar y analizar los requisitos funcionales y no funcionales del sistema de gestión de pedidos, incluyendo la interacción multicanal mediante web y WhatsApp Business, identificando el modelo del dominio del negocio, actores y casos de uso. | Capítulo 2 |
-| **OE2.** Diseñar la arquitectura del sistema y el modelo de datos, las interfaces de los tres usuarios y la integración con los servicios externos que se usarán en la aplicación. Estos son Stripe, WhatsApp Business API y OpenAI. | Capítulo 3 |
+| **OE2.** Diseñar la arquitectura del sistema y el modelo de datos, las interfaces de los tres usuarios y la integración con los servicios externos que se usarán en la aplicación. Estos son Stripe, WhatsApp Business API y Anthropic (Claude). | Capítulo 3 |
 | **OE3.** Desarrollar e implementar la aplicación web y el asistente inteligente, asegurando que los pedidos quedan registrados de manera correcta en el sistema, tanto a través de la aplicación web como a través de WhatsApp. También se necesitará comprobar que los bloques de producción funcionan tal y como está previsto. Se harán test para comprobar el funcionamiento correcto de toda la aplicación. | Capítulo 4 |
 | **OE4.** Evaluar el desempeño y la fiabilidad del sistema, midiendo la reducción de errores humanos y la mejora en la eficiencia de la gestión de pedidos, para poder validar el cumplimiento de los objetivos previamente planteados. | Capítulo 5 |
 
@@ -244,7 +244,7 @@ La selección de tecnologías se corresponde con tecnologías usadas y aprendida
 | Autenticación | JWT | Estándar de autenticación stateless, seguro y ligero. Competencia adquirida en la asignatura de Programación Web. |
 | Pagos | Stripe (Stripe Inc, s.f.) | Pasarela de pagos con buena documentación y modo de pruebas gratuito. |
 | WhatsApp | Meta Cloud API (Meta Platforms, Inc, s.f.) | API oficial de WhatsApp Business para comunicación automatizada. |
-| Inteligencia artificial | OpenAI API (OpenAI, s.f.) | Modelo de lenguaje para la interpretación de pedidos en lenguaje natural. |
+| Inteligencia artificial | Anthropic API – Claude (Anthropic, s.f.) | Modelo de lenguaje para la interpretación de pedidos en lenguaje natural. |
 | Impresión | WebSocket | Comunicación en tiempo real para la impresión automática de tickets, cuando un pedido se confirme. |
 | Control de versiones | Github (Github, s.f.) | Trazabilidad total del trabajo, así como su proceso de desarrollo. |
 
@@ -276,6 +276,8 @@ PATIL, L. N., AGRAWAL, V. K., DHANDE, K. K., KHATAVKAR, S. D., MANDE, G. D., PAT
 
 ### Documentación de tecnologías utilizadas
 
+Anthropic. (s. f.). *Claude API documentation*. https://docs.anthropic.com
+
 Express.js. (s. f.). *Express web framework documentation*. https://expressjs.com
 
 GitHub. (s. f.). *GitHub documentation and collaboration platform*. https://github.com
@@ -283,8 +285,6 @@ GitHub. (s. f.). *GitHub documentation and collaboration platform*. https://gith
 Meta Platforms, Inc. (s. f.). *WhatsApp Business Platform documentation*. https://developers.facebook.com/docs/whatsapp
 
 MongoDB Inc. (s. f.). *MongoDB Atlas documentation*. https://www.mongodb.com
-
-OpenAI. (s. f.). *OpenAI API documentation*. https://platform.openai.com/docs
 
 Stripe Inc. (s. f.). *Stripe payments API documentation*. https://stripe.com/docs
 

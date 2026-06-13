@@ -86,7 +86,7 @@ El diagrama de contexto define los límites del sistema, así como los actores q
 - **MongoDB Atlas:** una base de datos en la nube donde se persiste toda la información del sistema.
 - **Impresora térmica (TCP/ESC-POS):** el servidor se conecta con la impresora a través del puerto de la impresora para imprimir tickets físicos.
 - **Stripe:** pasarela de pago online, que permite a los pedidos web pagar de forma anticipada.
-- **WhatsApp Business API + OpenAI API:** combinación que permite al sistema recibir pedidos en lenguaje natural y procesarlos automáticamente.
+- **WhatsApp Business API + Anthropic API (Claude):** combinación que permite al sistema recibir pedidos en lenguaje natural y procesarlos automáticamente.
 - **Email SMTP:** servidor de correo para enviar notificaciones sobre confirmación del pedido, así como modificaciones y cancelaciones.
 
 ---
@@ -300,13 +300,13 @@ A continuación, se procede a detallar los casos de uso de alta prioridad y los 
 |---|---|
 | **Actor principal** | Cliente WhatsApp |
 | **Descripción** | El cliente escribe al WhatsApp del negocio en lenguaje normal. La IA interpreta el mensaje, comprueba si hay hueco a la hora que pide en el sistema y registra el pedido. El pago siempre es en local. |
-| **Precondiciones** | WhatsApp Business API y OpenAI API activas y configuradas. Bloques disponibles para la hora pedida. |
+| **Precondiciones** | WhatsApp Business API y Anthropic API (Claude) activas y configuradas. Bloques disponibles para la hora pedida. |
 | **Postcondiciones** | Pedido registrado con canal WHATSAPP y pago en local. Ticket impreso en cocina. |
 
 **Flujo principal:**
 
 1. El cliente escribe al número del negocio. *"Quiero dos Buena Burger con extra de queso para las 21:30"*
-2. La integración con OpenAI lee el mensaje y extrae productos, cantidades, personalizaciones, hora y día.
+2. La integración con Anthropic (Claude) lee el mensaje y extrae productos, cantidades, personalizaciones, hora y día.
 3. Se comprueba en el sistema si ese bloque tiene disponibilidad.
 4. Si hay hueco, el pedido se confirma y el sistema responde al cliente con su número de pedido y la hora de recogida.
 5. En cocina se imprime el ticket, igual que con cualquier otro canal.
