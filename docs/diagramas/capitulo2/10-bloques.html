@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10 · configurarBloques() — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+    .notes { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; margin-top: 22px; font-size: 0.85rem; }
+    .notes h3 { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
+    .notes ul { padding-left: 18px; }
+    .notes li { margin-bottom: 5px; color: #555; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 10</span>
+    <h1>configurarBloques()</h1>
+  </div>
+
+  <div class="card">
+    <p class="desc">
+      El administrador gestiona los bloques de producción. El scheduler genera automáticamente 30 bloques de 5 minutos por noche operativa (viernes, sábados y domingos, 20:30–23:00). El admin puede cerrar bloques o días completos en tiempo real.
+    </p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+
+    <div class="notes">
+      <h3>Detalles de implementación</h3>
+      <ul>
+        <li><strong>30 bloques por noche:</strong> 20:30–23:00 = 150 minutos ÷ 5 min/bloque = 30 bloques. Capacidad máxima teórica: 30 × 10 = 300 hamburguesas/noche.</li>
+        <li><strong>Generación automática:</strong> al arrancar el servidor y cada medianoche (cron <code>0 0 * * *</code>), el scheduler genera bloques para los próximos 60 días. Usa <code>insertMany</code> con índice único <code>(fecha, horaInicio)</code> para ignorar duplicados.</li>
+        <li><strong>Intervalo y capacidad:</strong> actualmente fijos en 5 min y 10 hamburguesas en <code>bloqueScheduler.js</code>. La configuración personalizada desde el panel admin es una mejora planificada.</li>
+        <li><strong>Cierre de día:</strong> marca todos los bloques del día como <code>cerrado: true</code>. Se puede reabrir con <code>POST /api/bloques/abrir-dia</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam defaultFontName Segoe UI
+title configurarBloques() — Administrador
+
+|Servidor (Automatico)|
+start
+
+fork
+  :Al arrancar el servidor;
+fork again
+  :Cron diario a medianoche\\n(0 0 * * *);
+end fork
+
+:generarProximosDiasOperativos();
+note right
+  Loop 60 dias desde hoy
+  Solo viernes, sabados y domingos
+end note
+:Por cada dia operativo:\\ngenerarBloquesParaDia(fecha);
+note right
+  30 bloques por noche:
+  20:30 → 23:00
+  Intervalo: 5 min
+  Capacidad: 10 hamburguesas/bloque
+  (150 min / 5 = 30 bloques)
+  Maximo teorico: 300 burgers/noche
+
+  insertMany con indice unico
+  (fecha, horaInicio) — ignora duplicados
+end note
+:Persiste bloques en MongoDB Atlas;
+
+|Administrador|
+:Accede al panel de administracion;
+
+fork
+  :Cierra un bloque concreto manualmente;
+  note right
+    PATCH /api/bloques/:id/cerrar
+    bloque.cerrado = true
+  end note
+fork again
+  :Cierra el dia completo de operacion;
+  note right
+    POST /api/bloques/cerrar-dia
+    Marca todos los bloques del dia
+    como cerrado = true
+  end note
+fork again
+  :Reabre un dia previamente cerrado;
+  note right
+    POST /api/bloques/abrir-dia
+    Marca todos los bloques del dia
+    como cerrado = false
+  end note
+end fork
+
+|Sistema|
+:Disponibilidad actualizada en tiempo real;
+:Web y WhatsApp reflejan los cambios al instante;
+stop
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagramas UML — Buena Burger</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      padding: 30px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 6px;
+      font-size: 1.8rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 0.9rem;
+    }
+
+    .card {
+      background: white;
+      padding: 28px;
+      border-radius: 12px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      font-size: 1.15rem;
+      margin-bottom: 5px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8e8e8;
+    }
+
+    .desc {
+      color: #777;
+      font-size: 0.85rem;
+      margin-bottom: 18px;
+      font-style: italic;
+    }
+
+    .diagram-wrap {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    .diagram-wrap svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .loading {
+      color: #aaa;
+      font-size: 0.9rem;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .error {
+      color: #c00;
+      font-size: 0.88rem;
+      padding: 10px 14px;
+      background: #fff0f0;
+      border-radius: 6px;
+      border-left: 4px solid #c00;
+      margin-top: 10px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .nav a {
+      text-decoration: none;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: #444;
+      transition: all 0.2s;
+    }
+
+    .nav a:hover {
+      background: #333;
+      color: #fff;
+      border-color: #333;
+    }
+
+    .rules {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 20px;
+      font-size: 0.85rem;
+    }
+
+    .rules h3 {
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .rules ul {
+      padding-left: 18px;
+    }
+
+    .rules li {
+      margin-bottom: 4px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>📐 Diagramas UML — Buena Burger</h1>
+  <p class="subtitle">Capítulo 2 · Requisitos · Renderizado con Kroki.io (requiere internet)</p>
+
+  <nav class="nav">
+    <a href="#dominio">1. Modelo del Dominio</a>
+    <a href="#contexto">2. Diagrama de Contexto</a>
+    <a href="#casosuso">3. Casos de Uso</a>
+    <a href="#pedidoweb">4. realizarPedidoWeb()</a>
+    <a href="#pedidowhatsapp">5. realizarPedidoWhatsApp()</a>
+    <a href="#modificar">6. modificarPedido()</a>
+    <a href="#cancelar">7. cancelarPedido()</a>
+    <a href="#pos">8. crearPedidoTelefonico()</a>
+    <a href="#ticket">9. imprimirTicket()</a>
+    <a href="#bloques">10. configurarBloques()</a>
+  </nav>
+
+  <!-- 1. MODELO DEL DOMINIO -->
+  <div class="card" id="dominio">
+    <h2>1. Modelo del Dominio</h2>
+    <p class="desc">Entidades del negocio y sus relaciones. Sin decisiones tecnológicas.</p>
+    <div class="diagram-wrap" id="wrap-dominio">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+    <div class="rules">
+      <h3>📋 Reglas de negocio</h3>
+      <ul>
+        <li><strong>RN-01:</strong> Un BloqueProduccion admite máximo 10 hamburguesas (patatas y bebidas no cuentan)
+        </li>
+        <li><strong>RN-02:</strong> Bloques de 5 min entre 20:30 y 23:00 (viernes, sábados y domingos)</li>
+        <li><strong>RN-03:</strong> Un pedido con más de 10 hamburguesas ocupa bloques consecutivos automáticamente</li>
+        <li><strong>RN-04:</strong> Modificación y cancelación: solo en los primeros 15 min desde la creación del pedido
+        </li>
+        <li><strong>RN-05:</strong> Cualquier modificación o cancelación envía correo automático al administrador</li>
+        <li><strong>RN-06:</strong> Si se modifica pedido pagado: el admin gestiona cobro o devolución de la diferencia
+        </li>
+        <li><strong>RN-07:</strong> Si se cancela pedido pagado con Stripe: el admin gestiona el reembolso</li>
+        <li><strong>RN-08:</strong> WhatsApp y Teléfono: siempre pago en local (nunca Stripe)</li>
+        <li><strong>RN-09:</strong> Solo empleados y admin pueden forzar un bloque lleno</li>
+        <li><strong>RN-10:</strong> Extras solo para hamburguesas y patatas; las bebidas no tienen extras</li>
+        <li><strong>RN-11:</strong> Al confirmar cualquier pedido → ticket impreso automáticamente en cocina</li>
+        <li><strong>RN-12:</strong> rehacerUltimoPedido() solo para Cliente registrado; añade contenido al carrito</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2. CONTEXTO -->
+  <div class="card" id="contexto">
+    <h2>2. Diagrama de Contexto</h2>
+    <p class="desc">Límites del sistema, actores humanos y sistemas externos.</p>
+    <div class="diagram-wrap" id="wrap-contexto">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 3. CASOS DE USO -->
+  <div class="card" id="casosuso">
+    <h2>3. Diagrama de Casos de Uso</h2>
+    <p class="desc">Qué puede hacer cada actor con el sistema.</p>
+    <div class="diagram-wrap" id="wrap-casosuso">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 4. PEDIDO WEB -->
+  <div class="card" id="pedidoweb">
+    <h2>4. Detalle CU: realizarPedidoWeb()</h2>
+    <p class="desc">Flujo completo: carta → personalización → bloque(s) → pago → confirmación. Registrado o invitado,
+      Stripe o en local.</p>
+    <div class="diagram-wrap" id="wrap-pedidoweb">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 5. PEDIDO WHATSAPP -->
+  <div class="card" id="pedidowhatsapp">
+    <h2>5. Detalle CU: realizarPedidoWhatsApp()</h2>
+    <p class="desc">La IA pide nombre, hora y pedido. Comprueba bloques. Siempre pago en local. Escalada al admin si el
+      cliente no se apaña.</p>
+    <div class="diagram-wrap" id="wrap-pedidowhatsapp">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 6. MODIFICAR PEDIDO -->
+  <div class="card" id="modificar">
+    <h2>6. Detalle CU: modificarPedido()</h2>
+    <p class="desc">Solo en los primeros 15 min. Siempre correo al admin. El admin gestiona diferencia económica si hay
+      pago previo.</p>
+    <div class="diagram-wrap" id="wrap-modificar">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 7. CANCELAR PEDIDO -->
+  <div class="card" id="cancelar">
+    <h2>7. Detalle CU: cancelarPedido()</h2>
+    <p class="desc">Solo en los primeros 15 min. Siempre correo al admin. El admin gestiona el reembolso si el pedido
+      estaba pagado.</p>
+    <div class="diagram-wrap" id="wrap-cancelar">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 8. POS -->
+  <div class="card" id="pos">
+    <h2>8. Detalle CU: crearPedidoTelefonico()</h2>
+    <p class="desc">Interfaz tipo TPV de restaurante. El empleado/admin crea pedidos telefónicos rápidos. Siempre pago
+      en local.</p>
+    <div class="diagram-wrap" id="wrap-pos">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 9. TICKET -->
+  <div class="card" id="ticket">
+    <h2>9. Detalle CU: imprimirTicket()</h2>
+    <p class="desc">Automático al confirmarse cualquier pedido. Llega a la impresora de cocina vía WebSocket.</p>
+    <div class="diagram-wrap" id="wrap-ticket">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <!-- 10. BLOQUES -->
+  <div class="card" id="bloques">
+    <h2>10. Detalle CU: configurarBloques()</h2>
+    <p class="desc">El administrador define horario y capacidad de los bloques de producción.</p>
+    <div class="diagram-wrap" id="wrap-bloques">
+      <p class="loading">⏳ Cargando...</p>
+    </div>
+  </div>
+
+  <script>
+    const diagrams = {
+
+      // ─── 1. MODELO DEL DOMINIO ────────────────────────────────────────────────────
+      'wrap-dominio': `@startuml
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam defaultFontName Segoe UI
+skinparam linetype ortho
+
+abstract class Cliente {
+  nombre: String
+  telefono: String
+  email: String
+}
+
+class ClienteRegistrado {
+  passwordHash: String
+  rehacerUltimoPedido(): Pedido
+}
+
+class ClienteInvitado {
+}
+
+class BloqueProduccion {
+  fecha: Date
+  horaInicio: Time
+  horaFin: Time
+  capacidadMax: Integer = 10
+  hamburgesasOcupadas(): Integer
+  disponible(): Boolean
+}
+
+class Pedido {
+  numero: String
+  canal: CanalPedido
+  estado: EstadoPedido
+  metodoPago: MetodoPago
+  total: Decimal
+  fechaCreacion: DateTime
+  modificable(): Boolean
+  cancelable(): Boolean
+}
+
+class LineaPedido {
+  cantidad: Integer
+  precioUnitario: Decimal
+  ingredientesExcluidos: String[]
+  ingredientesAnadidos: String[]
+}
+
+class ExtraLinea {
+  cantidad: Integer
+}
+
+class Producto {
+  nombre: String
+  descripcion: String
+  precio: Decimal
+  categoria: CategoriaProducto
+  ingredientesPorDefecto: String[]
+  imagen: String
+  activo: Boolean
+}
+
+class Extra {
+  nombre: String
+  precio: Decimal
+  cantidadMaxima: Integer = 10
+  activo: Boolean
+}
+
+class Usuario {
+  nombre: String
+  email: String
+  passwordHash: String
+  rol: RolUsuario
+}
+
+enum CanalPedido {
+  WEB
+  WHATSAPP
+  TELEFONO
+}
+
+enum EstadoPedido {
+  PENDIENTE_PAGO
+  CONFIRMADO
+  EN_PREPARACION
+  LISTO
+  ENTREGADO
+  CANCELADO
+}
+
+enum MetodoPago {
+  STRIPE
+  PAGO_EN_LOCAL
+}
+
+enum CategoriaProducto {
+  HAMBURGUESA
+  PATATAS
+  BEBIDA
+}
+
+enum RolUsuario {
+  EMPLEADO
+  ADMIN
+}
+
+Cliente <|-- ClienteRegistrado
+Cliente <|-- ClienteInvitado
+
+Cliente "0..1" --> "*" Pedido : realiza
+BloqueProduccion "1..*" <-- "*" Pedido : ocupa
+Pedido "1" *-- "1..*" LineaPedido : contiene
+LineaPedido "*" --> "1" Producto : refiere_a
+LineaPedido "1" *-- "*" ExtraLinea : incluye
+ExtraLinea "*" --> "1" Extra : refiere_a
+Usuario "1" --> "*" Pedido : gestiona
+
+Pedido ..> CanalPedido
+Pedido ..> EstadoPedido
+Pedido ..> MetodoPago
+Producto ..> CategoriaProducto
+Usuario ..> RolUsuario
+@enduml`,
+
+      // ─── 2. DIAGRAMA DE CONTEXTO ─────────────────────────────────────────────────
+      'wrap-contexto': `@startuml
+skinparam defaultFontName Segoe UI
+skinparam componentStyle rectangle
+left to right direction
+
+actor "Cliente Registrado" as CR
+actor "Cliente Invitado" as CI
+actor "Cliente WhatsApp" as CWA
+actor "Empleado / Admin" as E
+
+rectangle "Buena Burger\\nManagement System" as SYS {
+}
+
+database "MongoDB Atlas" as DB
+component "Stripe" as STRIPE
+component "Email SMTP\\n(cuenta admin)" as EMAIL
+component "WhatsApp\\nBusiness API" as WA
+component "OpenAI API" as AI
+component "Impresora Termica\\n(WebSocket)" as PRINTER
+
+CR --> SYS : pedido web + historial
+CI --> SYS : pedido web (sin cuenta)
+CWA --> WA : mensaje en lenguaje natural
+WA --> SYS : webhook
+E --> SYS : POS interno + panel admin
+
+SYS --> DB : persistencia
+SYS --> STRIPE : pago online (solo pedidos web que elijan Stripe)
+SYS --> EMAIL : confirmacion / mod. / cancelacion (admin en copia)
+SYS --> AI : interpretar pedido WhatsApp
+SYS --> WA : confirmacion automatica al cliente
+SYS --> PRINTER : ticket cocina (WebSocket)
+@enduml`,
+
+      // ─── 3. CASOS DE USO ─────────────────────────────────────────────────────────
+      'wrap-casosuso': `@startuml
+skinparam defaultFontName Segoe UI
+left to right direction
+
+actor "ClienteRegistrado" as CR
+actor "ClienteInvitado" as CI
+actor "Cliente WhatsApp" as CWA
+actor "Empleado" as E
+actor "Administrador" as A
+
+E <|-- A
+
+rectangle "Buena Burger System" {
+
+  package "Canal Web" {
+    usecase "Consultar Carta" as UC1
+    usecase "Realizar Pedido Web" as UC2
+    usecase "Ver Historial de Pedidos" as UC3
+    usecase "Rehacer Ultimo Pedido" as UC4
+    usecase "Modificar Pedido" as UC5
+    usecase "Cancelar Pedido" as UC6
+  }
+
+  package "Canal WhatsApp" {
+    usecase "Realizar Pedido WhatsApp" as UC7
+    usecase "Escalar a Empleado" as UC8
+  }
+
+  package "POS Interno (Empleado y Admin)" {
+    usecase "Crear Pedido Telefonico" as UC9
+    usecase "Forzar Bloque Lleno" as UC10
+    usecase "Imprimir Ticket" as UC11
+  }
+
+  package "Panel de Administracion (solo Admin)" {
+    usecase "Gestionar Carta" as UC12
+    usecase "Gestionar Extras" as UC13
+    usecase "Configurar Bloques" as UC14
+    usecase "Ver Estadisticas" as UC15
+    usecase "Gestionar Empleados" as UC16
+    usecase "Cerrar Dia de Operacion" as UC17
+    usecase "Gestionar Dif. Economica" as UC18
+  }
+}
+
+CR --> UC1
+CR --> UC2
+CR --> UC3
+CR --> UC4
+CR --> UC5
+CR --> UC6
+
+CI --> UC1
+CI --> UC2
+
+CWA --> UC7
+UC7 ..> UC8 : extend
+
+E --> UC9
+E --> UC10
+E --> UC11
+
+A --> UC12
+A --> UC13
+A --> UC14
+A --> UC15
+A --> UC16
+A --> UC17
+A --> UC18
+
+UC2 ..> UC11 : include
+UC7 ..> UC11 : include
+UC9 ..> UC11 : include
+UC4 ..> UC2 : extend
+UC5 ..> UC18 : include
+UC6 ..> UC18 : include
+@enduml`,
+
+      // ─── 4. PEDIDO WEB ───────────────────────────────────────────────────────────
+      'wrap-pedidoweb': `@startuml
+skinparam defaultFontName Segoe UI
+title realizarPedidoWeb()
+
+|Cliente|
+start
+:Consulta la carta digital;
+:Selecciona productos y cantidades;
+note right
+  Hamburguesa: añade/quita ingredientes
+  Patatas: añade extras con precio
+  Bebida: sin personalizacion
+end note
+
+if (Tiene cuenta?) then (Si — Cliente Registrado)
+  :Inicia sesion (JWT);
+else (No — Cliente Invitado)
+  :Introduce nombre, telefono y email;
+endif
+
+:Selecciona bloque horario disponible;
+
+|Sistema|
+:Calcula numero de hamburguesas del pedido;
+
+if (Pedido > 10 hamburguesas?) then (si)
+  :Calcula bloques consecutivos necesarios;
+  :Verifica que todos estan disponibles;
+  :Reserva los bloques consecutivos;
+else (no)
+  :Verifica disponibilidad del bloque;
+  :Reserva el bloque seleccionado;
+endif
+
+|Cliente|
+:Elige metodo de pago;
+
+if (Pago con Stripe?) then (si)
+  |Sistema|
+  :Crea sesion de pago en Stripe;
+  |Cliente|
+  :Completa pago en Stripe;
+  |Sistema|
+  :Recibe webhook de Stripe;
+  :Marca pedido CONFIRMADO (pagado online);
+else (Pago en establecimiento)
+  |Sistema|
+  :Marca pedido CONFIRMADO (paga en local);
+endif
+
+|Sistema|
+:Actualiza hamburgesasOcupadas en cada bloque reservado;
+:Envia email de confirmacion al cliente;
+:Imprime ticket en cocina (WebSocket);
+
+|Cliente|
+:Recibe email de confirmacion;
+stop
+@enduml`,
+
+      // ─── 5. PEDIDO WHATSAPP ──────────────────────────────────────────────────────
+      'wrap-pedidowhatsapp': `@startuml
+skinparam defaultFontName Segoe UI
+title realizarPedidoWhatsApp()
+
+|Cliente WhatsApp|
+start
+:Escribe al WhatsApp de Buena Burger;
+
+|Sistema / IA|
+:Responde: "Hola, soy la IA de Buena Burger.\\nDime tu nombre, la hora de recogida\\ny que quieres pedir.";
+
+|Cliente WhatsApp|
+:Responde con nombre, hora y pedido en lenguaje natural;
+
+|Sistema / IA|
+:Envia mensaje a OpenAI API;
+:OpenAI devuelve JSON estructurado;
+note right
+  productos, cantidades,
+  ingredientes excluidos,
+  extras, hora solicitada
+end note
+
+:Calcula hamburguesas totales;
+:Verifica disponibilidad de bloque(s) a la hora solicitada;
+
+if (Hay hueco en el bloque?) then (si)
+  :Muestra resumen del pedido al cliente;
+  |Cliente WhatsApp|
+  :Confirma el pedido;
+  |Sistema / IA|
+  :Crea Pedido (WHATSAPP, pago LOCAL);
+  :Reserva bloque(s) de produccion;
+  :Confirma por WhatsApp al cliente;
+  :Imprime ticket en cocina (WebSocket);
+else (no hay hueco)
+  :Busca el bloque libre mas cercano;
+  :Responde: "A esa hora no hay disponible.\\nTenemos libre a las HH:MM ¿te lo apunto?";
+  |Cliente WhatsApp|
+  if (Acepta la hora alternativa?) then (si)
+    |Sistema / IA|
+    :Crea Pedido con bloque alternativo;
+    :Reserva bloque(s);
+    :Confirma por WhatsApp;
+    :Imprime ticket en cocina (WebSocket);
+  else (prefiere hablar con una persona)
+    |Sistema / IA|
+    :Responde: "Enseguida te atiende un empleado.";
+    :Envia correo al administrador;
+    note right
+      Asunto: "Cliente necesita ayuda en WhatsApp"
+      Incluye nombre y mensajes del hilo
+    end note
+    |Administrador|
+    :Recibe correo y contacta al cliente;
+    :Gestiona el pedido manualmente;
+  endif
+endif
+stop
+@enduml`,
+
+      // ─── 6. MODIFICAR PEDIDO ─────────────────────────────────────────────────────
+      'wrap-modificar': `@startuml
+skinparam defaultFontName Segoe UI
+title modificarPedido()
+
+|Cliente Registrado|
+start
+:Accede a su historial y selecciona el pedido;
+:Solicita modificarlo;
+
+|Sistema|
+:Comprueba que han pasado menos de 15 min\\ndesde la creacion del pedido;
+
+if (Dentro de los 15 min?) then (si)
+  :Calcula total original (A);
+  |Cliente Registrado|
+  :Realiza cambios:\\nÑade/quita productos o ajusta ingredientes;
+  |Sistema|
+  :Calcula nuevo total (B);
+  :Actualiza el pedido y los bloques reservados;
+  :Envia correo al administrador con el cambio;
+
+  if (B > A?) then (diferencia a cobrar)
+    note right
+      "El cliente ha aumentado su pedido.
+      Diferencia: B - A euros.
+      Contactar para cobrar."
+    end note
+    |Administrador|
+    :Contacta al cliente para cobrar la diferencia;
+  else if (B < A?) then (diferencia a devolver)
+    note right
+      "El cliente ha reducido su pedido.
+      Diferencia: A - B euros.
+      Gestionar devolucion."
+    end note
+    |Administrador|
+    :Contacta al cliente para devolver la diferencia;
+  else (mismo importe)
+    note right
+      Sin cambio economico.
+    end note
+  endif
+
+  |Sistema|
+  :Envia email de confirmacion de modificacion al cliente;
+else (han pasado mas de 15 min)
+  :Rechaza la modificacion;
+  :Notifica: "Solo se puede modificar\\nen los primeros 15 minutos.";
+endif
+stop
+@enduml`,
+
+      // ─── 7. CANCELAR PEDIDO ──────────────────────────────────────────────────────
+      'wrap-cancelar': `@startuml
+skinparam defaultFontName Segoe UI
+title cancelarPedido()
+
+|Cliente o Personal del Local|
+start
+:Solicita cancelar el pedido;
+
+|Sistema|
+:Comprueba que han pasado menos de 15 min\\ndesde la creacion del pedido;
+
+if (Dentro de los 15 min?) then (si)
+  :Cancela el pedido;
+  :Libera hamburgesasOcupadas en todos los bloques reservados;
+  :Marca estado: CANCELADO;
+  :Envia correo al administrador;
+  note right
+    Asunto: "Pedido cancelado #{numero}"
+    Incluye: nombre, importe, metodo de pago
+  end note
+
+  if (Pago fue con Stripe?) then (si)
+    |Administrador|
+    :Recibe correo con aviso de reembolso;
+    :Contacta al cliente para gestionar la devolucion;
+    |Sistema|
+    :Envia email al cliente:\\n"Pedido cancelado. El admin te contactara.";
+  else (sin pago previo)
+    |Sistema|
+    :Envia email de cancelacion simple al cliente;
+  endif
+else (han pasado mas de 15 min)
+  :Rechaza la cancelacion;
+  :Notifica: "Solo se puede cancelar\\nen los primeros 15 minutos.";
+endif
+stop
+@enduml`,
+
+      // ─── 8. POS TELEFONICO ───────────────────────────────────────────────────────
+      'wrap-pos': `@startuml
+skinparam defaultFontName Segoe UI
+title crearPedidoTelefonico() — POS Interno
+
+|Empleado o Admin|
+start
+:Accede al POS interno\\n(interfaz tipo TPV de restaurante);
+:Introduce nombre y telefono del cliente;
+:Selecciona productos y cantidades;
+note right
+  Hamburguesa: añade/quita ingredientes
+  Patatas: añade extras con precio
+  Bebida: sin personalizacion
+end note
+:Selecciona hora de recogida;
+
+|Sistema|
+:Calcula hamburguesas totales;
+:Verifica disponibilidad del bloque (o bloques consecutivos);
+
+if (Hay hueco?) then (si)
+  :Reserva bloque(s) necesarios;
+else (bloque lleno)
+  |Empleado o Admin|
+  :Ve que el bloque esta lleno;
+
+  if (Fuerza el bloque?) then (si)
+    |Sistema|
+    :Crea pedido ignorando el limite de capacidad;
+  else (elige otra hora)
+    |Empleado o Admin|
+    :Selecciona un bloque disponible distinto;
+    |Sistema|
+    :Reserva ese bloque;
+  endif
+endif
+
+|Sistema|
+:Crea Pedido (TELEFONO, pago LOCAL);
+:Actualiza hamburgesasOcupadas en los bloques;
+:Imprime ticket en cocina (WebSocket);
+stop
+@enduml`,
+
+      // ─── 9. IMPRIMIR TICKET ──────────────────────────────────────────────────────
+      'wrap-ticket': `@startuml
+skinparam defaultFontName Segoe UI
+title imprimirTicket() — Automatico al confirmar pedido
+
+|Sistema|
+start
+:Pedido confirmado;
+note right
+  Via: Web (registrado o invitado),
+  WhatsApp o Telefono
+end note
+:Genera contenido del ticket;
+note right
+  Numero de pedido
+  Hora de recogida
+  Nombre del cliente
+  Telefono del cliente
+  ─────────────────
+  Por cada ArticuloPedido:
+    Nombre del producto
+    Cantidad
+    Ingredientes excluidos
+    Ingredientes añadidos
+    Extras añadidos (con cantidad)
+  ─────────────────
+  Total
+  PAGADO (Stripe) / PAGA EN LOCAL
+end note
+:Envia ticket via WebSocket al navegador del local;
+:Impresora termica imprime el ticket;
+
+|Cocina|
+:Recibe ticket fisico;
+:Prepara el pedido segun ticket;
+stop
+@enduml`,
+
+      // ─── 10. CONFIGURAR BLOQUES ──────────────────────────────────────────────────
+      'wrap-bloques': `@startuml
+skinparam defaultFontName Segoe UI
+title configurarBloques() — Administrador
+
+|Administrador|
+start
+:Accede al panel de administracion;
+
+if (Usar configuracion estandar?) then (si)
+  :Confirma horario estandar;
+  note right
+    Viernes, Sabados y Domingos
+    20:30 — 23:00
+    Intervalo: 5 min por bloque
+    Capacidad: 10 hamburguesas/bloque
+    Total: 31 bloques x 10 = 310 max/noche
+  end note
+else (configuracion personalizada)
+  :Define dias de operacion;
+  :Define hora de apertura y cierre;
+  :Define intervalo entre bloques (min);
+  :Define capacidad maxima por bloque;
+endif
+
+|Sistema|
+:Genera todos los bloques automaticamente;
+:Persiste la configuracion en MongoDB;
+
+|Administrador|
+fork
+  :Puede cerrar un bloque concreto manualmente;
+fork again
+  :Puede cerrar el dia completo de operacion;
+  note right
+    Bloquea todos los bloques
+    restantes del dia
+  end note
+end fork
+
+|Sistema|
+:Actualiza disponibilidad en tiempo real;
+:Web y WhatsApp reflejan los cambios al instante;
+stop
+@enduml`
+
+    };
+
+    async function renderDiagram(wrapperId, pumlCode) {
+      const wrap = document.getElementById(wrapperId);
+      try {
+        const response = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: pumlCode
+        });
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errText.substring(0, 300)}`);
+        }
+        const svg = await response.text();
+        wrap.innerHTML = svg;
+      } catch (err) {
+        wrap.innerHTML = `<p class="error">⚠️ Error: ${err.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+
+    for (const [id, code] of Object.entries(diagrams)) {
+      renderDiagram(id, code);
+    }
+  </script>
+</body>
+
+</html>

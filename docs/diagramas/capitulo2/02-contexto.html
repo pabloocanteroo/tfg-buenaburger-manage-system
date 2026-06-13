@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 · Diagrama de Contexto — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+    .legend { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; margin-top: 22px; font-size: 0.85rem; }
+    .legend h3 { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
+    .legend ul { padding-left: 18px; }
+    .legend li { margin-bottom: 5px; color: #555; }
+    .badge { display: inline-block; font-size: 0.72rem; padding: 1px 7px; border-radius: 8px; background: #fff3cd; color: #856404; margin-left: 6px; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 02</span>
+    <h1>Diagrama de Contexto</h1>
+  </div>
+
+  <div class="card">
+    <p class="desc">Límites del sistema, actores humanos y sistemas externos. Las integraciones marcadas como «planificado» están diseñadas pero aún no implementadas.</p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+
+    <div class="legend">
+      <h3>Notas de implementación</h3>
+      <ul>
+        <li><strong>Impresora térmica:</strong> comunicación directa del servidor al dispositivo vía <em>TCP puerto 9100</em> con protocolo ESC/POS. No pasa por el navegador.</li>
+        <li><strong>Pantalla cocina (iPad):</strong> recibe notificación de nuevo pedido mediante <em>WebSocket (Socket.io)</em> para reproducir alerta sonora y actualizar la lista en tiempo real.</li>
+        <li><strong>Stripe, Email SMTP, WhatsApp + OpenAI:</strong> <span class="badge">planificado</span> — arquitectura diseñada, integración pendiente de implementar.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam defaultFontName Segoe UI
+skinparam componentStyle rectangle
+left to right direction
+
+actor "Cliente\\nRegistrado" as CR
+actor "Cliente\\nInvitado" as CI
+actor "Cliente\\nWhatsApp" as CWA
+actor "Empleado / Admin" as E
+actor "Pantalla Cocina\\n(iPad)" as IPAD
+
+rectangle "Buena Burger\\nManagement System" as SYS {
+}
+
+database "MongoDB Atlas" as DB
+component "Stripe" as STRIPE
+component "Email SMTP" as EMAIL
+component "WhatsApp\\nBusiness API" as WA
+component "OpenAI API" as AI
+component "Impresora Termica\\n(TCP / ESC-POS)" as PRINTER
+
+CR --> SYS : pedido web + historial
+CI --> SYS : pedido web (sin cuenta)
+CWA --> WA : mensaje en lenguaje natural
+WA --> SYS : webhook <<planificado>>
+E --> SYS : POS interno + panel admin
+
+SYS --> DB : persistencia
+SYS --> STRIPE : pago online <<planificado>>
+SYS --> EMAIL : notificaciones <<planificado>>
+SYS --> AI : interpretar pedido WhatsApp <<planificado>>
+SYS --> WA : confirmacion al cliente <<planificado>>
+SYS --> PRINTER : ticket cocina\\n(TCP:9100 / ESC-POS)
+SYS --> IPAD : nuevo pedido\\n(WebSocket / Socket.io)
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

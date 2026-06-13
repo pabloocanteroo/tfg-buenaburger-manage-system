@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>07 · cancelarPedido() — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 07</span>
+    <h1>cancelarPedido()</h1>
+  </div>
+
+  <div class="card">
+    <p class="desc">
+      Clientes registrados pueden cancelar en los primeros 15 minutos. El staff (EMPLEADO/ADMIN) puede cancelar cualquier pedido en cualquier momento. Los bloques se liberan inmediatamente. Si hubo pago con Stripe, el reembolso lo gestiona el admin manualmente.
+    </p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam defaultFontName Segoe UI
+title cancelarPedido()
+
+|Solicitante|
+start
+:Solicita cancelar el pedido;
+
+|Sistema|
+if (Es staff (ADMIN o EMPLEADO)?) then (si)
+  :Permite cancelacion sin restriccion temporal;
+else (no — es Cliente Registrado)
+  :Comprueba tiempo transcurrido\\ndesde la creacion del pedido;
+  if (Han pasado mas de 15 min?) then (si)
+    :Rechaza la solicitud;
+    :Responde: "Solo se puede cancelar\\nen los primeros 15 minutos.";
+    |Solicitante|
+    stop
+  endif
+endif
+
+:Marca el pedido como CANCELADO;
+:Libera hamburgesasOcupadas en todos los bloques reservados;
+note right
+  Notificacion al administrador\\ncon datos del pedido cancelado
+  <<planificado>>
+end note
+
+if (El pedido estaba pagado con Stripe?) then (si)
+  |Administrador|
+  :Recibe notificacion de cancelacion\\ncon importe pagado;
+  :Gestiona el reembolso manualmente en Stripe;
+  note right
+    Reembolso automatico via Stripe API
+    <<planificado>>
+  end note
+  |Sistema|
+  note right
+    Email al cliente: "Pedido cancelado.\\nEl admin gestionara el reembolso."
+    <<planificado>>
+  end note
+else (sin pago previo o pago en local)
+  |Sistema|
+  note right
+    Email de confirmacion de cancelacion al cliente
+    <<planificado>>
+  end note
+endif
+
+stop
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

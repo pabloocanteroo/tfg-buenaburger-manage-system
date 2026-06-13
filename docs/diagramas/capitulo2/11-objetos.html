@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>11 · Diagrama de Objetos — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+    .notes { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; margin-top: 22px; font-size: 0.85rem; }
+    .notes h3 { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
+    .notes ul { padding-left: 18px; }
+    .notes li { margin-bottom: 5px; color: #555; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 11</span>
+    <h1>Diagrama de Objetos</h1>
+  </div>
+
+  <div class="card">
+    <p class="desc">
+      Instantánea del sistema en un momento concreto: un pedido web real del viernes 28/03/2026 a las 21:12 h.
+      Muestra los valores reales de cada objeto y las relaciones entre instancias, verificando que el Modelo del Dominio es coherente con los datos que maneja el sistema.
+    </p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+
+    <div class="notes">
+      <h3>Lectura del diagrama</h3>
+      <ul>
+        <li><strong>maría</strong> es una instancia de <em>ClienteRegistrado</em> que realiza el pedido a través del canal web.</li>
+        <li><strong>pedido003</strong> ocupa el bloque de las 21:15 porque contiene 2 hamburguesas (por debajo del límite de 10).</li>
+        <li><strong>linea1</strong> referencia al producto <em>Buena Burger</em>, excluye los pepinillos y añade el extra <em>Carne extra</em> (2,00 €).</li>
+        <li><strong>linea2</strong> referencia al producto <em>Buenas Fries</em> y añade el extra <em>Salsa picante</em> (0,00 €).</li>
+        <li>El total del pedido es <strong>19,00 €</strong>: Buena Burger (12,00) + Carne extra (2,00) + Buenas Fries (5,00) + Salsa picante (0,00).</li>
+        <li>El bloque pasa de tener 1 hamburguesa ocupada a <strong>3</strong> tras reservarse este pedido (había un pedido previo con 1 hamburguesa).</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam objectAttributeIconSize 0
+skinparam defaultFontName Segoe UI
+skinparam objectFontSize 11
+skinparam linetype ortho
+
+object "maría : ClienteRegistrado" as maria {
+  nombre = "María López"
+  telefono = "612 345 678"
+  email = "maria@email.com"
+}
+
+object "pedido003 : Pedido" as pedido {
+  numero = "BB-20260328-0003"
+  canal = WEB
+  estado = CONFIRMADO
+  metodoPago = PAGO_EN_LOCAL
+  total = 19.00 €
+  fechaCreacion = 2026-03-28 21:12:34
+}
+
+object "bloque2115 : BloqueProduccion" as bloque {
+  fecha = "2026-03-28"
+  horaInicio = "21:15"
+  horaFin = "21:20"
+  capacidadMax = 10
+  hamburgesasOcupadas = 1
+  cerrado = false
+}
+
+object "linea1 : LineaPedido" as linea1 {
+  cantidad = 1
+  precioUnitario = 12.00 €
+  ingredientesExcluidos = ["pepinillos"]
+  ingredientesAnadidos = []
+}
+
+object "linea2 : LineaPedido" as linea2 {
+  cantidad = 1
+  precioUnitario = 5.00 €
+  ingredientesExcluidos = []
+  ingredientesAnadidos = []
+}
+
+object "extraLinea1 : ExtraLinea" as el1 {
+  nombre = "Carne extra"
+  precio = 2.00 €
+  cantidad = 1
+}
+
+object "extraLinea2 : ExtraLinea" as el2 {
+  nombre = "Salsa picante"
+  precio = 0.00 €
+  cantidad = 1
+}
+
+object "buenaBurger : Producto" as p1 {
+  nombre = "Buena Burger"
+  precio = 12.00 €
+  categoria = HAMBURGUESA
+}
+
+object "buenasFries : Producto" as p2 {
+  nombre = "Buenas Fries"
+  precio = 5.00 €
+  categoria = PATATAS
+}
+
+maria --> pedido       : realiza
+pedido --> bloque      : ocupa
+pedido *-- linea1      : contiene
+pedido *-- linea2      : contiene
+linea1 --> p1          : refiere_a
+linea2 --> p2          : refiere_a
+linea1 *-- el1         : incluye
+linea2 *-- el2         : incluye
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

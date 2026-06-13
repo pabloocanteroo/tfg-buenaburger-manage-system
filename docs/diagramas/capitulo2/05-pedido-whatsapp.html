@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05 · realizarPedidoWhatsApp() — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .badge-planned { display: inline-block; font-size: 0.78rem; padding: 3px 10px; border-radius: 10px; background: #fff3cd; color: #856404; margin-left: 10px; font-weight: 600; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .planned-banner { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.85rem; color: #664d03; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+    .notes { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; margin-top: 22px; font-size: 0.85rem; }
+    .notes h3 { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
+    .notes ul { padding-left: 18px; }
+    .notes li { margin-bottom: 5px; color: #555; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 05</span>
+    <h1>realizarPedidoWhatsApp() <span class="badge-planned">Planificado</span></h1>
+  </div>
+
+  <div class="card">
+    <div class="planned-banner">
+      ⚠️ Esta funcionalidad está <strong>diseñada pero no implementada</strong>. El diagrama representa el comportamiento previsto una vez integradas la WhatsApp Business API y la OpenAI API.
+    </div>
+    <p class="desc">La IA recoge nombre, hora y pedido en lenguaje natural. Comprueba disponibilidad de bloques. Siempre pago en local. Escalada al admin si el cliente no se apaña.</p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+
+    <div class="notes">
+      <h3>Componentes necesarios para implementar</h3>
+      <ul>
+        <li><strong>Meta WhatsApp Business API:</strong> recibir y enviar mensajes mediante webhook.</li>
+        <li><strong>OpenAI API (GPT-4o):</strong> interpretar el mensaje en lenguaje natural y devolver JSON estructurado con productos, cantidades, ingredientes y hora.</li>
+        <li><strong>Endpoint webhook POST /api/whatsapp:</strong> recibir el mensaje, llamar a OpenAI, verificar bloques, crear pedido.</li>
+        <li>Siempre <code>metodoPago = PAGO_EN_LOCAL</code> y <code>canal = WHATSAPP</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam defaultFontName Segoe UI
+title realizarPedidoWhatsApp() <<planificado>>
+
+|Cliente WhatsApp|
+start
+:Escribe al WhatsApp de Buena Burger;
+
+|Sistema / IA|
+:Responde:\\n"Hola, soy la IA de Buena Burger.\\nDime tu nombre, la hora de recogida\\ny que quieres pedir.";
+
+|Cliente WhatsApp|
+:Responde con nombre, hora y pedido\\nen lenguaje natural;
+
+|Sistema / IA|
+:Envia mensaje a OpenAI API;
+:OpenAI devuelve JSON estructurado;
+note right
+  {
+    nombre: "...",
+    horaRecogida: "HH:MM",
+    lineas: [
+      { producto, cantidad,
+        ingredientesExcluidos,
+        ingredientesAnadidos,
+        extras }
+    ]
+  }
+end note
+
+:Calcula numero de hamburguesas totales;
+:Busca bloque(s) disponible(s) para la hora solicitada;
+
+if (Hay hueco disponible?) then (si)
+  :Muestra resumen del pedido al cliente por WhatsApp;
+
+  |Cliente WhatsApp|
+  if (Confirma el pedido?) then (si)
+    |Sistema / IA|
+    :Crea Pedido\\n(canal=WHATSAPP, metodoPago=PAGO_EN_LOCAL);
+    :Reserva bloque(s) de produccion;
+    :Incrementa hamburgesasOcupadas;
+    :Confirma por WhatsApp al cliente\\ncon numero de pedido y hora;
+    :Emite evento WebSocket a pantalla cocina;
+    :Imprime ticket en cocina via TCP/ESC-POS;
+  else (no confirma o quiere cambiar algo)
+    :Permite al cliente corregir el pedido;
+  endif
+
+else (no hay hueco a esa hora)
+  :Busca el bloque libre mas cercano;
+  :Responde: "A esa hora no hay disponible.\\nTe puedo apuntar a las HH:MM. ¿Lo hacemos?";
+
+  |Cliente WhatsApp|
+  if (Acepta la hora alternativa?) then (si)
+    |Sistema / IA|
+    :Crea Pedido con bloque alternativo;
+    :Reserva bloque(s);
+    :Confirma por WhatsApp al cliente;
+    :Imprime ticket en cocina via TCP/ESC-POS;
+  else (prefiere hablar con una persona)
+    |Sistema / IA|
+    :Responde: "Enseguida te atiende alguien del local.";
+    :Envia correo al administrador;
+    note right
+      Asunto: "Cliente necesita atencion en WhatsApp"
+      Incluye nombre y mensajes del hilo
+    end note
+    |Administrador|
+    :Recibe correo y contacta al cliente;
+    :Gestiona el pedido manualmente desde el POS;
+  endif
+endif
+stop
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

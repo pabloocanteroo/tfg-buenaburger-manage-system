@@ -1,0 +1,30 @@
+sequenceDiagram
+    actor C as Cliente WhatsApp
+    participant M as Meta Cloud API
+    participant B as Backend Node.js
+    participant IA as Anthropic API (Claude)
+    participant DB as MongoDB
+    actor A as Administrador
+    C->>M: 1. Envia mensaje de WhatsApp
+    M->>B: 2. POST /api/whatsapp/webhook {from, message}
+    B->>DB: 3. Recuperar historial de conversacion (by phone)
+    DB-->>B: mensajes anteriores
+    B->>IA: 4. messages.create(systemPrompt<carta+historial+mensaje)
+    Note right of IA: systemPrompt incluye carta actual,<br/>reglas de bloques e instrucciones
+    IA-->>B: 5. {respuesta, accion}
+    alt Accion: crear pedido
+        B->>DB: 6. Crear pedido (canal: WHATSAPP)
+        DB-->>B: pedido creado
+        B->>C: 7. Confirmar pedido al cliente
+    else Accion: consultar disponibilidad
+        B->>DB: 6. Consultar bloques disponibles
+        DB-->>B: bloques
+        B->>C: 7. Informar franjas horarias disponibles
+    else Escalar a humano
+        B->>A: 6. Email con historial y telefono del cliente
+        B->>C: 7. Avisar al cliente que un agente le contactara
+    else Respuesta conversacional
+        B->>C: 6. Enviar respuesta al cliente
+    end
+    B->>C: Mensaje de respuesta
+    B->>DB: 8. Guardar turno en historial

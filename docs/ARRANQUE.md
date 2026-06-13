@@ -16,16 +16,6 @@ node src/index.js
 
 ---
 
-## Utilidades
-
-### Borrar conversaciones de WhatsApp (para pruebas)
-```
-cd C:\Users\PabloCantero\Desktop\TFG\tfg-buenaburger-manage-system
-node reset-conv.js
-```
-
----
-
 ## Requisitos previos (solo la primera vez)
 - MongoDB Atlas conectado (ya configurado en .env)
 - ngrok autenticado (`ngrok config add-authtoken <tu-token>`)

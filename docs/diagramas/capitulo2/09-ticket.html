@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09 · imprimirTicket() — Buena Burger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 30px; color: #333; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .back { text-decoration: none; color: #555; font-size: 0.85rem; padding: 6px 12px; background: white; border-radius: 20px; border: 1px solid #ddd; }
+    .back:hover { background: #333; color: white; border-color: #333; }
+    .num { font-size: 0.75rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+    h1 { font-size: 1.4rem; }
+    .card { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .desc { color: #777; font-size: 0.85rem; margin-bottom: 20px; font-style: italic; }
+    .diagram-wrap { display: flex; justify-content: center; overflow-x: auto; }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+    .loading { color: #aaa; font-size: 0.9rem; padding: 40px; text-align: center; }
+    .error { color: #c00; font-size: 0.88rem; padding: 10px 14px; background: #fff0f0; border-radius: 6px; border-left: 4px solid #c00; }
+    .notes { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; margin-top: 22px; font-size: 0.85rem; }
+    .notes h3 { margin-bottom: 10px; font-size: 0.95rem; color: #555; }
+    .notes ul { padding-left: 18px; }
+    .notes li { margin-bottom: 5px; color: #555; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a class="back" href="index.html">← Índice</a>
+    <span class="num">Diagrama 09</span>
+    <h1>imprimirTicket()</h1>
+  </div>
+
+  <div class="card">
+    <p class="desc">
+      Proceso automático al confirmar cualquier pedido. El servidor se conecta directamente a la impresora térmica por TCP/ESC-POS. En paralelo, notifica la pantalla de cocina (iPad) por WebSocket para alerta sonora y actualización de la lista.
+    </p>
+    <div class="diagram-wrap" id="wrap">
+      <p class="loading">⏳ Cargando diagrama...</p>
+    </div>
+
+    <div class="notes">
+      <h3>Dos mecanismos independientes</h3>
+      <ul>
+        <li><strong>Impresión (TCP/ESC-POS):</strong> el servidor (<code>printer.js</code>) abre una conexión TCP al puerto 9100 de la impresora WiFi y envía los comandos ESC/POS directamente. Si la impresora está offline, el pedido se encola y se reintenta.</li>
+        <li><strong>Notificación cocina (WebSocket):</strong> el servidor emite el evento <code>nuevo-pedido</code> vía Socket.io al navegador del iPad de cocina. El iPad reproduce un sonido y actualiza la lista de pedidos pendientes.</li>
+        <li>Ambos mecanismos son independientes: si la impresora falla, la notificación al iPad sigue funcionando y viceversa.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const puml = `@startuml
+skinparam defaultFontName Segoe UI
+title imprimirTicket() — Automatico al confirmar pedido
+
+|Servidor (Node.js)|
+start
+:Pedido confirmado;
+note right
+  Via: Web (registrado o invitado),
+  WhatsApp o Telefono
+end note
+
+fork
+  :--- Impresion ---\\nGenera bytes ESC/POS del ticket;
+  note right
+    Ticket CLIENTE:
+    - Numero de pedido
+    - Hora de recogida
+    - Nombre del cliente
+    ---
+    Por cada LineaPedido:
+      cantidad x producto
+      Ingredientes excluidos
+      Ingredientes añadidos
+      Extras añadidos (cantidad)
+    ---
+    Total
+    PAGADO (Stripe) / PAGA EN LOCAL
+
+    Ticket COCINA (compacto):
+    - Numero de pedido (grande)
+    - Hora de recogida (grande)
+    - Nombre del cliente
+    ---
+    Por cada LineaPedido:
+      cantidad x PRODUCTO (mayusculas)
+      Ingredientes excluidos
+      Ingredientes añadidos
+      Extras
+    ---
+    Canal: WEB / WHATSAPP / TELEFONO
+  end note
+
+  if (Impresora accesible por TCP?) then (si)
+    :Abre conexion TCP al puerto 9100\\nde la impresora WiFi;
+    :Envia comandos ESC/POS;
+    :Cierra conexion TCP;
+    |Impresora Termica|
+    :Imprime ticket fisico;
+  else (no — impresora offline)
+    |Servidor (Node.js)|
+    :Encola el pedido para reintento;
+    note right
+      Se reintenta al recuperar
+      la impresora o manualmente
+      desde el panel admin
+    end note
+  endif
+
+fork again
+  :--- Notificacion cocina ---\\nEmite evento 'nuevo-pedido'\\nvia Socket.io;
+  |Pantalla Cocina (iPad)|
+  :Recibe evento WebSocket;
+  :Reproduce alerta sonora;
+  :Actualiza lista de pedidos en pantalla;
+end fork
+
+stop
+@enduml`;
+
+    async function render() {
+      const wrap = document.getElementById('wrap');
+      try {
+        const res = await fetch('https://kroki.io/plantuml/svg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: puml
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        wrap.innerHTML = await res.text();
+      } catch (e) {
+        wrap.innerHTML = `<p class="error">⚠️ Error al cargar: ${e.message}<br><small>Comprueba tu conexión a internet.</small></p>`;
+      }
+    }
+    render();
+  </script>
+</body>
+</html>
