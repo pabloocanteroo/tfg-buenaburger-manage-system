@@ -48,42 +48,59 @@ Cliente
 
 ### [Capítulo 3. Análisis y diseño](docs/capitulos/capitulo3.docx)
 
-- [Arquitectura en capas](docs/diagramas/capitulo3/01_capas_arquitectura.png)
-- [Clases de análisis (MVC)](docs/diagramas/capitulo3/06_clases_analisis_mvc.png)
-- [Modelo de datos (ERD)](docs/diagramas/capitulo3/10_modelo_datos_erd.png)
-- [Diagrama de despliegue](docs/diagramas/capitulo3/09_despliegue_sistema.png)
-- [Secuencia — Pago con Stripe](docs/diagramas/capitulo3/12_secuencia_stripe.png) · [Asistente WhatsApp (IA)](docs/diagramas/capitulo3/13_secuencia_whatsapp.png)
+- Arquitectura, clases de análisis y diseño, modelo de datos (ERD) y secuencias (Stripe, WhatsApp) → ver [Diagramas principales](#diagramas-principales)
 
 ### [Capítulo 4. Implementación y solución](docs/capitulos/capitulo4.md)
 
-- [Diagrama de navegación](docs/diagramas/capitulo4/01_diagrama_navegacion.png)
-- [Solución de impresión (servidor → agente Raspberry Pi → impresora)](docs/diagramas/capitulo4/02_solucion_impresion.png)
-- [Secuencia detallada del pedido web](docs/diagramas/capitulo4/03_secuencia_pedido_web.png)
+- Diagrama de navegación, secuencia detallada del pedido web y solución de impresión → ver [Diagramas principales](#diagramas-principales)
 - [Cumplimiento VERI*FACTU](docs/VERIFACTU.md)
 - [Guía de arranque](docs/ARRANQUE.md) · [Guía de despliegue](docs/DEPLOY.md)
 
 ### [Capítulo 5. Evaluación y conclusiones](docs/capitulos/capitulo5.md)
 
-## Elementos principales
+## Diagramas principales
 
-| Elemento | Evidencia |
-| --- | --- |
-| Contexto, motivación y objetivos | [Capítulo 1](docs/capitulos/capitulo1.md) |
-| Modelo del dominio | [Documento](docs/modeloDelDominio.md) |
-| Casos de uso | [Diagrama de casos de uso](docs/diagramas/capitulo2/03-casos-uso.html) |
-| Estados del pedido | [Diagrama de estados](docs/diagramas/capitulo2/12-estados.html) |
-| Arquitectura | [Arquitectura en capas](docs/diagramas/capitulo3/01_capas_arquitectura.png) · [Componentes](docs/diagramas/capitulo3/08_componentes_arquitectura.png) |
-| Sistema de bloques de producción | [Colaboración UC-14](docs/diagramas/capitulo3/05_colaboracion_uc14_bloques_produccion.png) |
-| Asistente de WhatsApp con IA | [Secuencia WhatsApp (Claude)](docs/diagramas/capitulo3/13_secuencia_whatsapp.png) |
-| Pago con Stripe | [Secuencia Stripe](docs/diagramas/capitulo3/12_secuencia_stripe.png) |
-| Solución de impresión | [Servidor → Raspberry Pi → impresora](docs/diagramas/capitulo4/02_solucion_impresion.png) |
-| Despliegue | [Render + MongoDB Atlas + Raspberry Pi](docs/diagramas/capitulo3/09_despliegue_sistema.png) |
+| Diagrama de componentes | Despliegue del sistema |
+| :---: | :---: |
+| [![Componentes](docs/diagramas/capitulo3/08_componentes_arquitectura.png)](docs/diagramas/capitulo3/08_componentes_arquitectura.png) | [![Despliegue](docs/diagramas/capitulo3/09_despliegue_sistema.png)](docs/diagramas/capitulo3/09_despliegue_sistema.png) |
+
+| Sistema de bloques de producción (UC-14) | Asistente de WhatsApp con IA (Claude) |
+| :---: | :---: |
+| [![Bloques de producción](docs/diagramas/capitulo3/05_colaboracion_uc14_bloques_produccion.png)](docs/diagramas/capitulo3/05_colaboracion_uc14_bloques_produccion.png) | [![Secuencia WhatsApp](docs/diagramas/capitulo3/13_secuencia_whatsapp.png)](docs/diagramas/capitulo3/13_secuencia_whatsapp.png) |
+
+| Pago con Stripe | Solución de impresión |
+| :---: | :---: |
+| [![Secuencia Stripe](docs/diagramas/capitulo3/12_secuencia_stripe.png)](docs/diagramas/capitulo3/12_secuencia_stripe.png) | [![Solución de impresión](docs/diagramas/capitulo4/02_solucion_impresion.png)](docs/diagramas/capitulo4/02_solucion_impresion.png) |
+
+| Modelo de datos (ERD) | Clases de diseño |
+| :---: | :---: |
+| [![Modelo de datos](docs/diagramas/capitulo3/10_modelo_datos_erd.png)](docs/diagramas/capitulo3/10_modelo_datos_erd.png) | [![Clases de diseño](docs/diagramas/capitulo3/11_clases_diseno.png)](docs/diagramas/capitulo3/11_clases_diseno.png) |
+
+| Clases de análisis (MVC) | Diagrama de navegación |
+| :---: | :---: |
+| [![Clases de análisis](docs/diagramas/capitulo3/06_clases_analisis_mvc.png)](docs/diagramas/capitulo3/06_clases_analisis_mvc.png) | [![Navegación](docs/diagramas/capitulo4/01_diagrama_navegacion.png)](docs/diagramas/capitulo4/01_diagrama_navegacion.png) |
+
+| Colaboración — Pedido web (UC-02) | Colaboración — Imprimir ticket (UC-11) |
+| :---: | :---: |
+| [![Colaboración pedido web](docs/diagramas/capitulo3/02_colaboracion_uc02_pedido_web.png)](docs/diagramas/capitulo3/02_colaboracion_uc02_pedido_web.png) | [![Colaboración imprimir ticket](docs/diagramas/capitulo3/04_colaboracion_uc11_imprimir_ticket.png)](docs/diagramas/capitulo3/04_colaboracion_uc11_imprimir_ticket.png) |
+
+| Secuencia detallada del pedido web | Paquetes de análisis |
+| :---: | :---: |
+| [![Secuencia pedido web](docs/diagramas/capitulo4/03_secuencia_pedido_web.png)](docs/diagramas/capitulo4/03_secuencia_pedido_web.png) | [![Paquetes de análisis](docs/diagramas/capitulo3/07_paquetes_analisis.png)](docs/diagramas/capitulo3/07_paquetes_analisis.png) |
+
+### Documentación y diagramas interactivos
+
+Los diagramas del Capítulo 2 son interactivos (se abren en el navegador), por lo que se enlazan en lugar de incrustarse:
+
+- [Modelo del dominio](docs/modeloDelDominio.md) · [Proceso de requisitos](docs/ProcesoRequisitos.md)
+- [Casos de uso](docs/diagramas/capitulo2/03-casos-uso.html) · [Estados del pedido](docs/diagramas/capitulo2/12-estados.html)
+- Secuencias: [Pedido web](docs/diagramas/capitulo2/04-pedido-web.html) · [WhatsApp](docs/diagramas/capitulo2/05-pedido-whatsapp.html) · [Teléfono](docs/diagramas/capitulo2/08-telefonico.html) · [Reserva de bloques](docs/diagramas/capitulo2/10-bloques.html)
 
 ## Solución
 
 | Carta y carrito | Prototipos de interfaz | Solución de impresión |
 | --- | --- | --- |
-| [![Carta](docs/diagramas/capitulo3/15_ui_carta_carrito.png)](docs/diagramas/capitulo3/15_ui_carta_carrito.png) | [![Interfaces](docs/diagramas/capitulo3/15_interfaces_usuario.png)](docs/diagramas/capitulo3/15_interfaces_usuario.png) | [![Impresión](docs/diagramas/capitulo4/02_solucion_impresion.png)](docs/diagramas/capitulo4/02_solucion_impresion.png) |
+| [![Carta y carrito](docs/diagramas/capturas/carta_carrito.png)](docs/diagramas/capturas/carta_carrito.png) | [![Interfaces](docs/diagramas/capitulo3/15_interfaces_usuario.png)](docs/diagramas/capitulo3/15_interfaces_usuario.png) | [![Impresión](docs/diagramas/capitulo4/02_solucion_impresion.png)](docs/diagramas/capitulo4/02_solucion_impresion.png) |
 
 ### Funcionalidad
 
@@ -99,19 +116,15 @@ Cliente
 
 ## Arquitectura
 
-```mermaid
-flowchart LR
-    W[Cliente web] --> API[Express API]
-    WA[WhatsApp + IA] --> API
-    T[Teléfono / POS] --> API
-    API --> SRV[Servicios de dominio<br/>bloques · precios · pedidos]
-    SRV --> M[(MongoDB Atlas)]
-    SRV --> ST[Stripe]
-    SRV --> IA[Claude / Anthropic]
-    SRV -->|Socket.io| K[Cocina]
-    SRV -->|Socket.io| PI[Agente Raspberry Pi]
-    PI --> IMP[Impresora ESC/POS]
-```
+<div align="center">
+
+[![Arquitectura en capas](docs/diagramas/capitulo3/01_capas_arquitectura.png)](docs/diagramas/capitulo3/01_capas_arquitectura.png)
+
+</div>
+
+> **Arquitectura de producción.** El sistema en explotación funciona desplegado en **Render**, con **MongoDB Atlas** y un **agente en Raspberry Pi** que imprime en la red local del negocio. Esta es la configuración que se usa actualmente y la prevista a futuro.
+>
+> **Demostración ante el tribunal.** La defensa se realiza ejecutando todo **en local sobre un único equipo** (sin Render y sin la Raspberry Pi), tal como se describe en [Ejecución en local](#ejecución-en-local-demostración). Es el mismo código; solo cambia dónde se ejecuta y el transporte de impresión.
 
 | Área | Tecnología |
 | --- | --- |
@@ -124,7 +137,9 @@ flowchart LR
 | IA y mensajería | Claude (Anthropic) + Meta Cloud API (WhatsApp) |
 | Impresión | ESC/POS por TCP + agente en Raspberry Pi |
 
-## Ejecución
+## Ejecución en local (demostración)
+
+Esta es la forma de arrancar el sistema **en un solo equipo**, que es la que se utiliza para la demostración ante el tribunal. **No requiere Render ni la Raspberry Pi.**
 
 ```bash
 git clone <url-del-repositorio>
@@ -140,7 +155,13 @@ node src/seed.js --force    # datos iniciales (admin + carta de ejemplo)
 | Panel de administración | `http://localhost:3000/admin.html` |
 | Panel de empleados (POS) | `http://localhost:3000/empleados.html` |
 
-Variables de entorno en `.env` (ver [`.env.example`](.env.example)): `MONGODB_URI`, `JWT_SECRET`, `STRIPE_*`, `WHATSAPP_*`, `ANTHROPIC_API_KEY`. La configuración de arranque y despliegue está documentada en [arranque](docs/ARRANQUE.md) y [despliegue](docs/DEPLOY.md).
+Variables de entorno en `.env` (ver [`.env.example`](.env.example)): `MONGODB_URI`, `JWT_SECRET`, `STRIPE_*`, `WHATSAPP_*`, `ANTHROPIC_API_KEY`.
+
+**Impresión en la demo.** En local la impresión no pasa por la Raspberry Pi: con `PRINTER_MODE=tcp` el propio servidor imprime directamente sobre la impresora de la red local. Si en la demostración no hay impresora conectada, el sistema funciona igualmente —el pedido se crea y se notifica a cocina— y la impresión simplemente se omite o queda en cola.
+
+## Despliegue en producción
+
+En explotación el sistema corre en **Render + MongoDB Atlas**, y la impresión la realiza el **agente de la Raspberry Pi** (`PRINTER_MODE=socket`) dentro de la red del local. El procedimiento completo está en las guías de [arranque](docs/ARRANQUE.md) y [despliegue](docs/DEPLOY.md).
 
 ## Estructura del repositorio
 
