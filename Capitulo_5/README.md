@@ -25,6 +25,17 @@ La hipótesis se considera **verificada**:
 | **OE3** Web + asistente IA + bloques | [Capítulo 4](../Capitulo_4/README.md): 5 vistas, 3 canales, impresión, bloques | ✅ |
 | **OE4** Evaluación y validación | Sprint Reviews con el cliente + `buenaburger-pos-v1` en uso real | ✅ |
 
+### Validación: una parte del sistema ya está en producción
+
+La validación del sistema se apoyó en dos vías complementarias:
+
+1. **Sprint Reviews con el propietario** de Buena Burger como *Product Owner*, verificando sobre datos reales los flujos de los casos de uso de mayor prioridad en cada incremento.
+2. **Despliegue real de `buenaburger-pos-v1`** —el núcleo de TPV y lógica de bloques de producción—, que **lleva en uso en el local gestionando los pedidos de cada noche de servicio**. Esta es la evidencia de validación más sólida: ha permitido detectar y corregir, bajo carga y uso reales, comportamientos no previstos en el análisis inicial.
+
+> **Matiz importante.** Lo que está en producción es **solo el núcleo** (POS + bloques de producción + impresión), **no** el portal web público ni el asistente de WhatsApp con IA. El sistema completo aún no se ha desplegado por **motivos legales** —RGPD y la adaptación pendiente a **VERI\*FACTU**—, que es precisamente la [primera línea de trabajo futuro](#511-adaptación-al-reglamento-verifactu-prioridad-alta).
+
+Esta validación en producción es la respuesta a la ausencia de una suite de pruebas automatizadas: el núcleo crítico se ha probado en condiciones reales de servicio, no solo en entorno de desarrollo.
+
 ## 3. Discusión de resultados (decisiones defendibles)
 
 - **Bloques de producción como diferencial:** formaliza matemáticamente lo que antes era intuición del empleado. Generación automática por cron (60 días) en lugar de a demanda → mejor respuesta y menos contención de escritura.

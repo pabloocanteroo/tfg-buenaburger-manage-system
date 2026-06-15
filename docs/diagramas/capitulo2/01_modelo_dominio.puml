@@ -1,0 +1,38 @@
+@startuml
+hide circle
+hide empty members
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam nodesep 55
+skinparam ranksep 55
+skinparam class {
+  BackgroundColor #D9D9D9
+  BorderColor #707070
+  FontColor #000000
+  FontStyle bold
+  FontSize 15
+}
+skinparam classBorderThickness 1
+
+class Cliente
+class ClienteRegistrado
+class ClienteInvitado
+class Usuario
+class Pedido
+class LineaPedido
+class ExtraLinea
+class Producto
+class Extra
+class BloqueProduccion
+
+ClienteRegistrado --|> Cliente
+ClienteInvitado  --|> Cliente
+
+Cliente "0..1" -- "*" Pedido : realiza
+Usuario  "1"    -- "*" Pedido : gestiona
+Pedido   "1"    -- "1..*" LineaPedido : contiene
+Pedido   "*"    -- "1..*" BloqueProduccion : ocupa
+LineaPedido "*" -- "1" Producto : refiere
+LineaPedido "1" -- "*" ExtraLinea : incluye
+ExtraLinea  "*" -- "1" Extra : refiere
+@enduml
