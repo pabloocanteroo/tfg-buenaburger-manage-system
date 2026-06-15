@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam actorBorderColor #333333
+skinparam rectangleBackgroundColor #DDF2E5
+skinparam rectangleBorderColor #287A4D
+skinparam databaseBackgroundColor #EEF6FF
+skinparam databaseBorderColor #146B8C
+skinparam nodeBackgroundColor #F7F7F7
+skinparam nodeBorderColor #333333
+
+actor "Cliente\nRegistrado" as CR
+actor "Cliente\nInvitado" as CI
+actor "Cliente\nWhatsApp" as CW
+actor "Empleado / Admin" as EA
+actor "Pantalla Cocina\n(iPad)" as COC
+
+rectangle "**Buena Burger**\nManagement System" as SYS
+
+database "MongoDB Atlas" as DB
+node "WhatsApp\nBusiness API" as WA
+node "Anthropic API\n(Claude)" as AI
+node "Stripe" as ST
+node "Email SMTP" as EM
+node "Impresora Termica\n(TCP / ESC-POS)" as PR
+
+CR --> SYS : pedido web + historial
+CI --> SYS : pedido web (sin cuenta)
+EA --> SYS : POS interno + panel admin
+CW --> WA : mensaje en lenguaje natural <<planificado>>
+
+SYS --> DB : persistencia
+SYS --> WA : confirmacion al cliente <<planificado>>
+WA --> SYS : webhook <<planificado>>
+SYS --> AI : interpretar pedido WhatsApp <<planificado>>
+SYS --> ST : pago online <<planificado>>
+SYS --> EM : notificaciones <<planificado>>
+SYS --> COC : nuevo pedido (WebSocket / Socket.io)
+SYS --> PR : ticket cocina (TCP:9100 / ESC-POS)
+@enduml

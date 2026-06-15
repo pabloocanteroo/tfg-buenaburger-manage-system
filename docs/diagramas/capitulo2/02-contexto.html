@@ -84,6 +84,40 @@ SYS --> AI : interpretar pedido WhatsApp <<planificado>>
 SYS --> WA : confirmacion al cliente <<planificado>>
 SYS --> PRINTER : ticket cocina\\n(TCP:9100 / ESC-POS)
 SYS --> IPAD : nuevo pedido\\n(WebSocket / Socket.io)
+@endum@startuml
+skinparam defaultFontName Segoe UI
+skinparam componentStyle rectangle
+left to right direction
+
+actor "Cliente\\nRegistrado" as CR
+actor "Cliente\\nInvitado" as CI
+actor "Cliente\\nWhatsApp" as CWA
+actor "Empleado / Admin" as E
+actor "Pantalla Cocina\\n(iPad)" as IPAD
+
+rectangle "Buena Burger\\nManagement System" as SYS {
+}
+
+database "MongoDB Atlas" as DB
+component "Stripe" as STRIPE
+component "Email SMTP" as EMAIL
+component "WhatsApp\\nBusiness API" as WA
+component "OpenAI API" as AI
+component "Impresora Termica\\n(TCP / ESC-POS)" as PRINTER
+
+CR --> SYS : pedido web + historial
+CI --> SYS : pedido web (sin cuenta)
+CWA --> WA : mensaje en lenguaje natural
+WA --> SYS : webhook <<planificado>>
+E --> SYS : POS interno + panel admin
+
+SYS --> DB : persistencia
+SYS --> STRIPE : pago online <<planificado>>
+SYS --> EMAIL : notificaciones <<planificado>>
+SYS --> AI : interpretar pedido WhatsApp <<planificado>>
+SYS --> WA : confirmacion al cliente <<planificado>>
+SYS --> PRINTER : ticket cocina\\n(TCP:9100 / ESC-POS)
+SYS --> IPAD : nuevo pedido\\n(WebSocket / Socket.io)
 @enduml`;
 
     async function render() {

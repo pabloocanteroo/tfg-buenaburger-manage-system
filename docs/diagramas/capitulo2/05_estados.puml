@@ -1,0 +1,37 @@
+@startuml
+title Diagrama de estados - Ciclo de vida de un Pedido
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam state {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+  FontColor #222222
+}
+
+[*] --> Validando : cliente realiza pedido (UC-02 / UC-07 / UC-09)
+
+Validando --> SinHueco : bloque lleno
+Validando --> PendientePago : pago con Stripe (web)
+Validando --> Confirmado : pago en local\n(web / WhatsApp / telefono)
+
+SinHueco --> Validando : cliente elige otra franja
+SinHueco --> Confirmado : staff fuerza bloque (UC-10)
+
+PendientePago --> Confirmado : pago completado (webhook Stripe)
+PendientePago --> Cancelado : pago no completado
+
+Confirmado --> Confirmado : modificar pedido (UC-05, >15 min)
+Confirmado --> EnPreparacion : empleado inicia preparacion
+Confirmado --> Cancelado : cancelar (UC-06, >15 min)\nlibera bloques
+
+EnPreparacion --> Listo : empleado marca listo
+Listo --> Entregado : cliente recoge
+
+note right of Confirmado
+  Al entrar en CONFIRMADO se
+  imprime el ticket en cocina (UC-11)
+end note
+
+Entregado --> [*]
+Cancelado --> [*]
+@enduml
