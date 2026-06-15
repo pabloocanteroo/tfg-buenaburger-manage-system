@@ -21,15 +21,13 @@ Trabajo Fin de Grado en Ingeniería Informática<br>
 
 Este repositorio **no documenta solo un producto, documenta el proceso de ingeniería de software** que llevó a él. Está organizado para recorrer ese proceso de principio a fin —del **modelo del dominio** al **código**— de forma que cada decisión quede trazada hasta el artefacto que la justifica.
 
-> **Cómo usar este repositorio en la defensa.** La exposición se hace **de memoria**, explicando el análisis. El repositorio se usa para **mostrar los diagramas y las tablas** que respaldan cada afirmación, no para leer de él. La sección [Ruta de defensa](#ruta-de-defensa-el-hilo-conductor) indica, para cada artefacto, **en qué capítulo y archivo está**.
-
 **El sistema.** Buena Burger digitaliza la toma y gestión de pedidos *take away* de una hamburguesería artesanal de Oruña de Piélagos (Cantabria) que opera viernes, sábado y domingo. Combina una web pública de pedidos, un asistente de WhatsApp con IA (Claude/Anthropic), un TPV, un panel de administración, una API Node.js/Express, persistencia MongoDB Atlas y notificación en tiempo real a cocina. La decisión central del sistema separa la conversación de la integridad:
 
 > La IA y la web **ayudan a recoger** el pedido; el servidor **valida** los precios, **comprueba** la capacidad y **reserva** los bloques de producción.
 
 ---
 
-## Ruta de defensa: el hilo conductor
+## Hilo conductor: del dominio al código
 
 El proceso de ingeniería se recorre en este orden. Cada fila enlaza al lugar exacto del repositorio donde vive el artefacto.
 
@@ -76,7 +74,7 @@ El sistema sigue el patrón **Modelo–Vista–Controlador** sobre una arquitect
 
 ```text
 tfg-buenaburger-manage-system/
-├── Capitulo_1/ … Capitulo_5/   Guía de defensa por capítulo (este repositorio)
+├── Capitulo_1/ … Capitulo_5/   Documentación del proceso por capítulo
 ├── src/
 │   ├── config/        Conexión a MongoDB Atlas
 │   ├── models/        Modelos Mongoose  ← derivan del modelo del dominio
@@ -105,7 +103,7 @@ tfg-buenaburger-manage-system/
 
 > **Arquitectura de producción.** En explotación el sistema funciona desplegado en **Render**, con **MongoDB Atlas** y un **agente en Raspberry Pi** que imprime en la red local del negocio. Es la configuración actual y la prevista a futuro.
 >
-> **Demostración ante el tribunal.** La defensa se ejecuta **en local sobre un único equipo** (sin Render y sin Raspberry Pi). Es el mismo código; solo cambia dónde se ejecuta y el transporte de impresión.
+> **Demostración en local.** La demostración se ejecuta **en un único equipo** (sin Render y sin Raspberry Pi). Es el mismo código; solo cambia dónde se ejecuta y el transporte de impresión.
 
 | Área | Tecnología |
 |---|---|
@@ -120,7 +118,7 @@ tfg-buenaburger-manage-system/
 
 ---
 
-## Ejecución en local (demostración ante el tribunal)
+## Ejecución en local (demostración)
 
 Forma de arrancar el sistema **en un solo equipo**. **No requiere Render ni la Raspberry Pi.**
 

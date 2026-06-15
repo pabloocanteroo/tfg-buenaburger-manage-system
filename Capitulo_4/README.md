@@ -3,7 +3,7 @@
 [◄ Volver al README principal](../README.md) · [Memoria completa del capítulo](../docs/capitulos/capitulo4.md)
 
 > **Disciplina:** construcción. Es la **solución implementada**, recorrida en el orden lógico del diagrama de contexto y navegando por los casos de uso del Capítulo 2.
-> **Qué se defiende aquí:** las vistas reales, cómo se navega entre ellas, cómo se imprime y cómo se mapea todo al código.
+> **Qué se muestra aquí:** las vistas reales, cómo se navega entre ellas, cómo se imprime y cómo se mapea todo al código.
 
 **Recorrido:** [1. Navegación](#1-diagrama-de-navegación) → [2. Portal del cliente](#2-portal-web-del-cliente) → [3. TPV](#3-sistema-tpv--uc-09) → [4. Panel de empleados](#4-panel-de-empleados) → [5. Panel de administración](#5-panel-de-administración) → [6. Impresión](#6-solución-de-impresión-uc-11) → [7. WhatsApp IA](#7-asistente-whatsapp-con-ia-uc-07) → [8. Módulos de código](#8-vistas-y-módulos-de-código)
 

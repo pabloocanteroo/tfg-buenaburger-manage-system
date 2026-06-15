@@ -3,7 +3,7 @@
 [◄ Volver al README principal](../README.md) · [Memoria completa del capítulo](../docs/capitulos/capitulo3.docx)
 
 > **Disciplina:** análisis y diseño. Traduce los requisitos del Capítulo 2 en una **estructura de software**.
-> **Qué se defiende aquí:** cómo el modelo del dominio se convierte en clases MVC, cómo colaboran para resolver cada caso de uso, y cómo se organiza el sistema en capas, componentes y datos.
+> **Qué se muestra aquí:** cómo el modelo del dominio se convierte en clases MVC, cómo colaboran para resolver cada caso de uso, y cómo se organiza el sistema en capas, componentes y datos.
 
 **Recorrido:** [1. MVC (análisis)](#1-clases-de-análisis-mvc) → [2. Colaboración por caso de uso](#2-realización-de-casos-de-uso-colaboración) → [3. Arquitectura](#3-arquitectura) → [4. Modelo de datos](#4-modelo-de-datos) → [5. Clases de diseño](#5-clases-de-diseño) → [6. Secuencias de integración](#6-secuencias-de-integración)
 
@@ -31,7 +31,7 @@ En la fase de análisis, cada caso de uso se reparte entre tres responsabilidade
 
 </div>
 
-> **Clave de defensa:** «invocar» o «presentar» van en la **Vista**; el caso de uso siempre vive en el **Controlador**; las entidades del **Modelo** son las mismas del dominio. Esta separación es la que luego se ve 1:1 en las carpetas del código (`public/` ↔ Vista, `src/controllers/` ↔ Controlador, `src/models/` ↔ Modelo).
+> **Clave:** «invocar» o «presentar» van en la **Vista**; el caso de uso siempre vive en el **Controlador**; las entidades del **Modelo** son las mismas del dominio. Esta separación es la que luego se ve 1:1 en las carpetas del código (`public/` ↔ Vista, `src/controllers/` ↔ Controlador, `src/models/` ↔ Modelo).
 
 ---
 

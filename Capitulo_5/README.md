@@ -3,7 +3,7 @@
 [◄ Volver al README principal](../README.md) · [Memoria completa del capítulo](../docs/capitulos/capitulo5.md)
 
 > **Disciplina:** evaluación y cierre. Verifica la hipótesis y el cumplimiento de los objetivos.
-> **Qué se defiende aquí:** que el sistema resuelve el problema real, qué decisiones de diseño se sostienen, y hacia dónde sigue.
+> **Qué se muestra aquí:** que el sistema resuelve el problema real, qué decisiones de diseño se sostienen, y hacia dónde sigue.
 
 ---
 

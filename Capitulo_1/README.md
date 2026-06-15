@@ -3,7 +3,7 @@
 [◄ Volver al README principal](../README.md) · [Memoria completa del capítulo](../docs/capitulos/capitulo1.md) · [Contexto ampliado](../docs/CONTEXTO.md)
 
 > **Disciplina:** contextualización del problema y definición de objetivos.
-> **Qué se defiende aquí:** por qué este sistema existe, qué hueco real cubre que ninguna solución del mercado cubría, y qué se propuso construir.
+> **Qué se muestra aquí:** por qué este sistema existe, qué hueco real cubre que ninguna solución del mercado cubría, y qué se propuso construir.
 
 ---
 
@@ -35,7 +35,7 @@ El análisis de las soluciones existentes demuestra que **ninguna cubre la gesti
 | Integración de pagos | ✅ | ✅ | ✅ | ❌ |
 | Impresión automática de tickets | ✅ | ❌ | ✅ | ❌ |
 
-> **Clave de defensa:** la columna que ninguna solución marca (bloques de producción) es el diferencial del TFG. Todo lo demás existe en el mercado; esto no.
+> **Clave:** la columna que ninguna solución marca (bloques de producción) es el diferencial del proyecto. Todo lo demás existe en el mercado; esto no.
 
 Detalle por categoría (McDonald's MyOrder, Glovo/Uber Eats/Just Eat, Ágora/Qamarero, chatbots OlaClick…) en la [memoria §1.2](../docs/capitulos/capitulo1.md#12-estado-del-arte).
 

@@ -3,7 +3,7 @@
 [◄ Volver al README principal](../README.md) · [Memoria completa del capítulo](../docs/capitulos/capitulo2.md)
 
 > **Disciplina:** análisis del problema. **Punto de partida de todo el proceso.**
-> **Qué se defiende aquí:** del vocabulario del negocio (modelo del dominio) salen los requisitos; de los requisitos, los casos de uso; y de ahí, todo el diseño del Capítulo 3.
+> **Qué se muestra aquí:** del vocabulario del negocio (modelo del dominio) salen los requisitos; de los requisitos, los casos de uso; y de ahí, todo el diseño del Capítulo 3.
 
 **Recorrido del capítulo:** [1. Modelo del dominio](#1-modelo-del-dominio) → [2. Requisitos](#2-requisitos) → [3. Diagrama de contexto](#3-diagrama-de-contexto) → [4. Casos de uso](#4-casos-de-uso) → [5. Prototipos de vistas](#5-prototipos-de-vistas)
 
@@ -96,8 +96,6 @@ Los requisitos transforman los conceptos del dominio en **comportamientos del si
 | RS-10 | Compatibilidad | Chrome, Firefox y Safari, en escritorio y móvil. |
 | RS-11 | Escalabilidad | Incorporar nuevos canales sin tocar modelos ni la lógica de bloques. |
 
-> **Restricciones impuestas (a revisar antes de la defensa):** si el cliente o la empresa fijaron tecnologías obligatorias (lenguaje, librerías, despliegue concreto), deben figurar aquí como requisitos no funcionales de tipo *restricción*. Ver [nota al final del capítulo](#nota-restricciones-tecnológicas).
-
 ### 2.2 Casos de uso priorizados
 
 | Código | Caso de uso | Actor | Prioridad |
@@ -117,7 +115,7 @@ Los requisitos transforman los conceptos del dominio en **comportamientos del si
 | **UC-14** | **Configurar bloques** | Admin | **Alta** |
 | UC-15 / 16 / 17 / 18 | Estadísticas, empleados, cierre de día, diferencia económica | Admin | Media/Baja |
 
-Detalle completo de cada caso de uso (precondiciones, flujo principal, alternativos) en la [memoria §2.4.3](../docs/capitulos/capitulo2.md#243-detalle-de-casos-de-uso).
+📋 **Descripción detallada de cada caso de uso** (actor, precondiciones, postcondiciones y flujos): **[casos-de-uso.md](casos-de-uso.md)**. También en la [memoria §2.4.3](../docs/capitulos/capitulo2.md#243-detalle-de-casos-de-uso).
 
 ### 2.3 Matriz de trazabilidad RS ↔ UC
 
@@ -173,7 +171,7 @@ El ciclo de vida del `Pedido` se recorre **navegando por los casos de uso** que 
 
 El diagrama agrupa los casos de uso por canal (Web, POS interno, Panel de Administración y Canal WhatsApp «planificado») y refleja las relaciones `«include»` (p. ej. *Realizar Pedido* → *Imprimir Ticket*) y `«extend»` (p. ej. *Forzar Bloque Lleno* sobre *Crear Pedido Telefónico*).
 
-El **detalle de cada caso de uso** (precondiciones, flujo principal, flujos alternativos) está desarrollado en texto en la [memoria §2.4.3](../docs/capitulos/capitulo2.md#243-detalle-de-casos-de-uso). Los flujos interactivos por caso de uso (versión navegable) están disponibles en [`docs/diagramas/capitulo2/`](../docs/diagramas/capitulo2) (`04-pedido-web.html`, `05-pedido-whatsapp.html`, `08-telefonico.html`, `09-ticket.html`, `10-bloques.html`).
+👉 **El detalle de cada caso de uso** (actor, precondiciones, postcondiciones, flujo principal y flujos alternativos) está en **[casos-de-uso.md](casos-de-uso.md)**. Los flujos interactivos por caso de uso están en [`docs/diagramas/capitulo2/`](../docs/diagramas/capitulo2) (`04-pedido-web.html`, `05-pedido-whatsapp.html`, `08-telefonico.html`, `09-ticket.html`, `10-bloques.html`).
 
 ---
 
@@ -190,12 +188,6 @@ Antes de diseñar e implementar, se prototiparon las pantallas clave de cada cas
 | [![Modal de personalización](../docs/diagramas/capturas/modal_personalizacion.png)](../docs/diagramas/capturas/modal_personalizacion.png) | [![Carrito](../docs/diagramas/capturas/carta_carrito.png)](../docs/diagramas/capturas/carta_carrito.png) |
 
 > El recorrido completo de todas las vistas (checkout en 3 pasos, TPV, paneles de empleado y administración, perfil del cliente y WhatsApp) está en el **[Capítulo 4 — Descripción de la solución](../Capitulo_4/README.md)**.
-
----
-
-### Nota: restricciones tecnológicas
-
-Si durante el proyecto el cliente o la empresa impusieron alguna tecnología obligatoria (lenguaje, librería, plataforma de despliegue), conviene recogerla explícitamente como **requisito no funcional de tipo restricción** en §2.1, además de la justificación técnica que ya figura en el [stack del Capítulo 1](../Capitulo_1/README.md#5-stack-tecnológico-y-su-justificación).
 
 ---
 
