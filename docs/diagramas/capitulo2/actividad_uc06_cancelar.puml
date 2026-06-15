@@ -1,0 +1,51 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title cancelarPedido()
+
+|Solicitante|
+start
+:Solicita cancelar el pedido;
+
+|Sistema|
+if (Es staff (ADMIN o EMPLEADO)?) then (si)
+  :Permite cancelacion sin restriccion temporal;
+else (no — es Cliente Registrado)
+  :Comprueba tiempo transcurrido\\ndesde la creacion del pedido;
+  if (Han pasado mas de 15 min?) then (si)
+    :Rechaza la solicitud;
+    :Responde: "Solo se puede cancelar\\nen los primeros 15 minutos.";
+    |Solicitante|
+    stop
+  endif
+endif
+
+:Marca el pedido como CANCELADO;
+:Libera hamburgesasOcupadas en todos los bloques reservados;
+note right
+  Notificacion al administrador\\ncon datos del pedido cancelado
+  <<planificado>>
+end note
+
+if (El pedido estaba pagado con Stripe?) then (si)
+  |Administrador|
+  :Recibe notificacion de cancelacion\\ncon importe pagado;
+  :Gestiona el reembolso manualmente en Stripe;
+  note right
+    Reembolso automatico via Stripe API
+    <<planificado>>
+  end note
+  |Sistema|
+  note right
+    Email al cliente: "Pedido cancelado.\\nEl admin gestionara el reembolso."
+    <<planificado>>
+  end note
+else (sin pago previo o pago en local)
+  |Sistema|
+  note right
+    Email de confirmacion de cancelacion al cliente
+    <<planificado>>
+  end note
+endif
+
+stop
+@enduml

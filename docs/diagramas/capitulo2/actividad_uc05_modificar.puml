@@ -1,0 +1,55 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title modificarPedido()
+
+|Solicitante|
+start
+:Solicita modificar el pedido;
+
+|Sistema|
+if (Es staff (ADMIN o EMPLEADO)?) then (si)
+  :Permite modificacion sin restriccion temporal;
+else (no — es Cliente Registrado)
+  :Comprueba tiempo transcurrido\\ndesde la creacion del pedido;
+  if (Han pasado mas de 15 min?) then (si)
+    :Rechaza la solicitud;
+    :Responde: "Solo se puede modificar\\nen los primeros 15 minutos.";
+    |Solicitante|
+    stop
+  endif
+endif
+
+:Recupera el pedido y calcula total original (A);
+
+|Solicitante|
+:Realiza los cambios:\\nañade/quita lineas o ajusta ingredientes;
+
+|Sistema|
+:Recalcula el nuevo total (B);
+:Actualiza lineas del pedido en base de datos;
+:Actualiza hamburgesasOcupadas en los bloques afectados;
+note right
+  Notificacion al administrador
+  con resumen del cambio
+  <<planificado>>
+end note
+
+if (B > A?) then (hay importe adicional a cobrar)
+  |Administrador|
+  :Recibe notificacion de diferencia a cobrar (B - A);
+  :Contacta al cliente para gestionar el cobro;
+else if (B < A?) then (hay importe a devolver)
+  |Administrador|
+  :Recibe notificacion de diferencia a devolver (A - B);
+  :Contacta al cliente para gestionar la devolucion;
+else (mismo importe — sin cambio economico)
+endif
+
+|Sistema|
+note right
+  Email de confirmacion de modificacion
+  al cliente
+  <<planificado>>
+end note
+stop
+@enduml

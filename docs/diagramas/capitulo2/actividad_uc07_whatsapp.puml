@@ -1,0 +1,75 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title realizarPedidoWhatsApp() <<planificado>>
+
+|Cliente WhatsApp|
+start
+:Escribe al WhatsApp de Buena Burger;
+
+|Sistema / IA|
+:Responde:\\n"Hola, soy la IA de Buena Burger.\\nDime tu nombre, la hora de recogida\\ny que quieres pedir.";
+
+|Cliente WhatsApp|
+:Responde con nombre, hora y pedido\\nen lenguaje natural;
+
+|Sistema / IA|
+:Envia mensaje a Anthropic API (Claude);
+:Claude devuelve JSON estructurado;
+note right
+  {
+    nombre: "...",
+    horaRecogida: "HH:MM",
+    lineas: [
+      { producto, cantidad,
+        ingredientesExcluidos,
+        ingredientesAnadidos,
+        extras }
+    ]
+  }
+end note
+
+:Calcula numero de hamburguesas totales;
+:Busca bloque(s) disponible(s) para la hora solicitada;
+
+if (Hay hueco disponible?) then (si)
+  :Muestra resumen del pedido al cliente por WhatsApp;
+
+  |Cliente WhatsApp|
+  if (Confirma el pedido?) then (si)
+    |Sistema / IA|
+    :Crea Pedido\\n(canal=WHATSAPP, metodoPago=PAGO_EN_LOCAL);
+    :Reserva bloque(s) de produccion;
+    :Incrementa hamburgesasOcupadas;
+    :Confirma por WhatsApp al cliente\\ncon numero de pedido y hora;
+    :Emite evento WebSocket a pantalla cocina;
+    :Imprime ticket en cocina via TCP/ESC-POS;
+  else (no confirma o quiere cambiar algo)
+    :Permite al cliente corregir el pedido;
+  endif
+
+else (no hay hueco a esa hora)
+  :Busca el bloque libre mas cercano;
+  :Responde: "A esa hora no hay disponible.\\nTe puedo apuntar a las HH:MM. ¿Lo hacemos?";
+
+  |Cliente WhatsApp|
+  if (Acepta la hora alternativa?) then (si)
+    |Sistema / IA|
+    :Crea Pedido con bloque alternativo;
+    :Reserva bloque(s);
+    :Confirma por WhatsApp al cliente;
+    :Imprime ticket en cocina via TCP/ESC-POS;
+  else (prefiere hablar con una persona)
+    |Sistema / IA|
+    :Responde: "Enseguida te atiende alguien del local.";
+    :Envia correo al administrador;
+    note right
+      Asunto: "Cliente necesita atencion en WhatsApp"
+      Incluye nombre y mensajes del hilo
+    end note
+    |Administrador|
+    :Recibe correo y contacta al cliente;
+    :Gestiona el pedido manualmente desde el POS;
+  endif
+endif
+stop
+@enduml

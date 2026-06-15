@@ -3,7 +3,8 @@ hide circle
 hide empty members
 skinparam shadowing false
 skinparam defaultFontName Helvetica
-skinparam nodesep 55
+skinparam linetype ortho
+skinparam nodesep 50
 skinparam ranksep 55
 skinparam class {
   BackgroundColor #D9D9D9
@@ -28,11 +29,11 @@ class BloqueProduccion
 ClienteRegistrado --|> Cliente
 ClienteInvitado  --|> Cliente
 
-Cliente "0..1" -- "*" Pedido : realiza
-Usuario  "1"    -- "*" Pedido : gestiona
-Pedido   "1"    -- "1..*" LineaPedido : contiene
-Pedido   "*"    -- "1..*" BloqueProduccion : ocupa
-LineaPedido "*" -- "1" Producto : refiere
-LineaPedido "1" -- "*" ExtraLinea : incluye
-ExtraLinea  "*" -- "1" Extra : refiere
+Cliente     -- Pedido : realiza
+Usuario     -- Pedido : gestiona
+Pedido      -- LineaPedido : contiene
+Pedido      -- BloqueProduccion : ocupa
+LineaPedido -- Producto : refiere
+LineaPedido -- ExtraLinea : incluye
+ExtraLinea  -- Extra : refiere
 @enduml

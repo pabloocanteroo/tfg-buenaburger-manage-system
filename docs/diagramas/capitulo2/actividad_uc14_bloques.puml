@@ -1,0 +1,62 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title configurarBloques() — Administrador
+
+|Servidor (Automatico)|
+start
+
+fork
+  :Al arrancar el servidor;
+fork again
+  :Cron diario a medianoche\\n(0 0 * * *);
+end fork
+
+:generarProximosDiasOperativos();
+note right
+  Loop 60 dias desde hoy
+  Solo viernes, sabados y domingos
+end note
+:Por cada dia operativo:\\ngenerarBloquesParaDia(fecha);
+note right
+  30 bloques por noche:
+  20:30 → 23:00
+  Intervalo: 5 min
+  Capacidad: 10 hamburguesas/bloque
+  (150 min / 5 = 30 bloques)
+  Maximo teorico: 300 burgers/noche
+
+  insertMany con indice unico
+  (fecha, horaInicio) — ignora duplicados
+end note
+:Persiste bloques en MongoDB Atlas;
+
+|Administrador|
+:Accede al panel de administracion;
+
+fork
+  :Cierra un bloque concreto manualmente;
+  note right
+    PATCH /api/bloques/:id/cerrar
+    bloque.cerrado = true
+  end note
+fork again
+  :Cierra el dia completo de operacion;
+  note right
+    POST /api/bloques/cerrar-dia
+    Marca todos los bloques del dia
+    como cerrado = true
+  end note
+fork again
+  :Reabre un dia previamente cerrado;
+  note right
+    POST /api/bloques/abrir-dia
+    Marca todos los bloques del dia
+    como cerrado = false
+  end note
+end fork
+
+|Sistema|
+:Disponibilidad actualizada en tiempo real;
+:Web y WhatsApp reflejan los cambios al instante;
+stop
+@enduml

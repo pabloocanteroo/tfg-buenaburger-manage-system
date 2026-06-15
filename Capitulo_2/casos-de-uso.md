@@ -75,6 +75,10 @@ Descripción detallada de los casos de uso del sistema (actor, descripción, pre
 - *FA-01:* Si entre que elige la franja y confirma, otro pedido ocupa el bloque, el sistema avisa y pide elegir otra hora.
 - *FA-02:* Si el volumen necesita varios bloques seguidos y no los hay, se informa; el cliente puede reducir cantidad o cambiar de horario.
 
+**Diagrama de actividad:**
+
+[![Actividad UC-02](../docs/diagramas/capitulo2/actividad_uc02_pedido_web.png)](../docs/diagramas/capitulo2/actividad_uc02_pedido_web.png)
+
 ---
 
 ## UC-03 · Ver Historial de Pedidos
@@ -137,6 +141,10 @@ Descripción detallada de los casos de uso del sistema (actor, descripción, pre
 **Flujos alternativos:**
 - *FA-01:* Si quedan menos de 15 minutos, el sistema no permite modificar.
 
+**Diagrama de actividad:**
+
+[![Actividad UC-05](../docs/diagramas/capitulo2/actividad_uc05_modificar.png)](../docs/diagramas/capitulo2/actividad_uc05_modificar.png)
+
 ---
 
 ## UC-06 · Cancelar Pedido
@@ -158,6 +166,10 @@ Descripción detallada de los casos de uso del sistema (actor, descripción, pre
 
 **Flujos alternativos:**
 - *FA-01:* Si quedan menos de 15 minutos, no se permite cancelar, lo intente quien lo intente.
+
+**Diagrama de actividad:**
+
+[![Actividad UC-06](../docs/diagramas/capitulo2/actividad_uc06_cancelar.png)](../docs/diagramas/capitulo2/actividad_uc06_cancelar.png)
 
 ---
 
@@ -181,6 +193,10 @@ Descripción detallada de los casos de uso del sistema (actor, descripción, pre
 - *FA-01:* Si no hay hueco, la IA sugiere franjas cercanas.
 - *FA-02:* Si el mensaje no está claro, la IA pide que se complete o aclare.
 - *FA-03:* Si la conversación se complica o el cliente lo pide, un empleado toma el control del chat (UC-08).
+
+**Diagrama de actividad:**
+
+[![Actividad UC-07](../docs/diagramas/capitulo2/actividad_uc07_whatsapp.png)](../docs/diagramas/capitulo2/actividad_uc07_whatsapp.png)
 
 ---
 

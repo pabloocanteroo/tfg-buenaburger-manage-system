@@ -1,0 +1,81 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title realizarPedidoWeb()
+
+|Cliente|
+start
+:Consulta la carta digital;
+:Selecciona productos y cantidades;
+note right
+  Hamburguesa: añade/quita ingredientes,
+  añade extras de pago
+  Patatas: añade extras de pago
+  Bebida: sin personalizacion
+end note
+
+if (Tiene cuenta?) then (si — Cliente Registrado)
+  :Datos precargados desde perfil;
+else (no — Cliente Invitado)
+  :Introduce nombre, telefono y email;
+endif
+
+:Selecciona fecha y bloque horario disponible;
+
+|Sistema|
+:Calcula numero de hamburguesas del pedido;
+
+if (Pedido > 10 hamburguesas?) then (si)
+  :Calcula cuantos bloques consecutivos son necesarios;
+  :Verifica que todos estan disponibles y sin cerrar;
+  if (Bloques consecutivos disponibles?) then (no)
+    :Devuelve error: no hay hueco suficiente en esa franja;
+    |Cliente|
+    :Selecciona otra franja horaria;
+    |Sistema|
+  endif
+  :Reserva todos los bloques consecutivos;
+else (no, 10 o menos)
+  :Verifica disponibilidad del bloque seleccionado;
+  if (Bloque disponible?) then (no)
+    :Devuelve error: bloque lleno;
+    |Cliente|
+    :Selecciona otro bloque;
+    |Sistema|
+  endif
+  :Reserva el bloque seleccionado;
+endif
+
+|Cliente|
+:Elige metodo de pago;
+
+if (Pago con Stripe?) then (si)
+  |Sistema|
+  :Crea sesion de pago en Stripe;
+  note right: <<planificado>>
+  |Cliente|
+  :Completa pago en formulario de Stripe;
+  |Sistema|
+  :Recibe webhook de confirmacion de Stripe;
+  note right: <<planificado>>
+  :Marca pedido como CONFIRMADO;
+  :Registra stripePagado = true;
+else (pago en establecimiento)
+  |Sistema|
+  :Marca pedido como CONFIRMADO;
+  :Registra metodoPago = PAGO_EN_LOCAL;
+endif
+
+|Sistema|
+:Incrementa hamburgesasOcupadas en cada bloque reservado;
+:Genera numero de pedido (BB-YYYYMMDD-XXXX);
+:Emite evento WebSocket a pantalla de cocina;
+:Imprime ticket en cocina via TCP/ESC-POS;
+note right
+  Email de confirmacion al cliente
+  <<planificado>>
+end note
+
+|Cliente|
+:Visualiza numero de pedido y hora de recogida;
+stop
+@enduml

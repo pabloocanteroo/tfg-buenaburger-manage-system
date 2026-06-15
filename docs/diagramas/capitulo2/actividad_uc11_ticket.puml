@@ -1,0 +1,69 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title imprimirTicket() — Automatico al confirmar pedido
+
+|Servidor (Node.js)|
+start
+:Pedido confirmado;
+note right
+  Via: Web (registrado o invitado),
+  WhatsApp o Telefono
+end note
+
+fork
+  :--- Impresion ---\\nGenera bytes ESC/POS del ticket;
+  note right
+    Ticket CLIENTE:
+    - Numero de pedido
+    - Hora de recogida
+    - Nombre del cliente
+    ---
+    Por cada LineaPedido:
+      cantidad x producto
+      Ingredientes excluidos
+      Ingredientes añadidos
+      Extras añadidos (cantidad)
+    ---
+    Total
+    PAGADO (Stripe) / PAGA EN LOCAL
+
+    Ticket COCINA (compacto):
+    - Numero de pedido (grande)
+    - Hora de recogida (grande)
+    - Nombre del cliente
+    ---
+    Por cada LineaPedido:
+      cantidad x PRODUCTO (mayusculas)
+      Ingredientes excluidos
+      Ingredientes añadidos
+      Extras
+    ---
+    Canal: WEB / WHATSAPP / TELEFONO
+  end note
+
+  if (Impresora accesible por TCP?) then (si)
+    :Abre conexion TCP al puerto 9100\\nde la impresora WiFi;
+    :Envia comandos ESC/POS;
+    :Cierra conexion TCP;
+    |Impresora Termica|
+    :Imprime ticket fisico;
+  else (no — impresora offline)
+    |Servidor (Node.js)|
+    :Encola el pedido para reintento;
+    note right
+      Se reintenta al recuperar
+      la impresora o manualmente
+      desde el panel admin
+    end note
+  endif
+
+fork again
+  :--- Notificacion cocina ---\\nEmite evento 'nuevo-pedido'\\nvia Socket.io;
+  |Pantalla Cocina (iPad)|
+  :Recibe evento WebSocket;
+  :Reproduce alerta sonora;
+  :Actualiza lista de pedidos en pantalla;
+end fork
+
+stop
+@enduml

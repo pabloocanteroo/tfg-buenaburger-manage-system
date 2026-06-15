@@ -1,0 +1,53 @@
+@startuml
+skinparam defaultFontName Segoe UI
+title crearPedidoTelefonico() — POS Interno
+
+|Empleado o Admin|
+start
+:Accede al POS interno;
+:Introduce nombre y telefono del cliente;
+:Selecciona productos y cantidades;
+note right
+  Hamburguesa: añade/quita ingredientes,
+  añade extras de pago
+  Patatas: añade extras de pago
+  Bebida: sin personalizacion
+end note
+:Selecciona la hora de recogida;
+
+|Sistema|
+:Calcula numero de hamburguesas totales;
+:Comprueba disponibilidad del bloque (o bloques consecutivos si >10 burgers);
+
+if (Hay hueco disponible?) then (si)
+  :Reserva el bloque o bloques consecutivos necesarios;
+else (bloque lleno)
+  |Empleado o Admin|
+  :Comprueba que el bloque esta lleno;
+
+  if (Fuerza el bloque?) then (si — opcion forzarBloque)
+    |Sistema|
+    :Crea el pedido ignorando el limite de capacidad;
+    note right
+      Util para pedidos urgentes
+      o clientes habituales
+    end note
+  else (no — elige otra hora)
+    |Empleado o Admin|
+    :Selecciona un bloque distinto con disponibilidad;
+    |Sistema|
+    :Reserva ese bloque;
+  endif
+endif
+
+|Sistema|
+:Crea Pedido\\n(canal=TELEFONO, metodoPago=PAGO_EN_LOCAL, estado=CONFIRMADO);
+:Incrementa hamburgesasOcupadas en los bloques reservados;
+:Genera numero de pedido (BB-YYYYMMDD-XXXX);
+:Emite evento WebSocket a pantalla cocina;
+:Imprime ticket en cocina via TCP/ESC-POS;
+
+|Empleado o Admin|
+:Comunica al cliente el numero de pedido y la hora de recogida;
+stop
+@enduml
