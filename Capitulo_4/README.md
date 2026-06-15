@@ -65,14 +65,6 @@ El cliente puede pedir como invitado o iniciar sesión. Los clientes registrados
 |:--:|:--:|
 | [![Login](../docs/diagramas/capturas/login.png)](../docs/diagramas/capturas/login.png) | [![Perfil e historial](../docs/diagramas/capturas/perfil_historial.png)](../docs/diagramas/capturas/perfil_historial.png) |
 
-### Secuencia detallada del pedido web
-
-<div align="center">
-
-[![Secuencia pedido web](../docs/diagramas/capitulo4/03_secuencia_pedido_web.png)](../docs/diagramas/capitulo4/03_secuencia_pedido_web.png)
-
-</div>
-
 ---
 
 ## 3. Sistema TPV — UC-09
@@ -143,15 +135,6 @@ El cliente escribe en lenguaje natural; el backend construye un *prompt* con la 
 [![Conversación WhatsApp](../docs/diagramas/capturas/whatsapp_chat.png)](../docs/diagramas/capturas/whatsapp_chat.png)
 
 </div>
-
-| Servicio externo | Uso | Integración |
-|---|---|---|
-| MongoDB Atlas | Persistencia | Driver Mongoose |
-| Stripe | Pagos online | SDK + webhook firmado |
-| Meta WhatsApp Business API | Mensajería | Webhook entrante + HTTP saliente |
-| Anthropic (Claude) | Lenguaje natural | SDK `@anthropic-ai/sdk` |
-| Socket.IO | Tiempo real + impresión remota | WebSocket |
-| Impresora ESC/POS | Tickets | TCP puerto 9100 |
 
 ---
 

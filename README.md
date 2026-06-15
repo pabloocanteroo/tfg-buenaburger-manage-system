@@ -39,10 +39,9 @@ El proceso de ingeniería se recorre en este orden. Cada fila enlaza al lugar ex
 | 4 | **Casos de uso** — objetivos por actor | [Cap. 2 · §4](Capitulo_2/README.md#4-casos-de-uso) | Diagrama de casos de uso + detalle en texto |
 | 5 | **Diagramas de secuencia/colaboración** por UC | [Cap. 3 · §2](Capitulo_3/README.md#2-realización-de-casos-de-uso-colaboración) | UC-02, UC-09, UC-11, UC-14 |
 | 6 | **Modelo MVC (análisis)** | [Cap. 3 · §1](Capitulo_3/README.md#1-clases-de-análisis-mvc) | Clases de análisis vista / controlador / modelo |
-| 7 | **Prototipos de vistas** | [Cap. 2 · §5](Capitulo_2/README.md#5-prototipos-de-vistas) | Prototipos por caso de uso |
-| 8 | **Diagrama de arquitectura** | [Cap. 3 · §3](Capitulo_3/README.md#3-arquitectura) | Capas + componentes + despliegue |
-| 9 | **Modelo de datos** | [Cap. 3 · §4](Capitulo_3/README.md#4-modelo-de-datos) | Diagrama entidad-relación (ERD) |
-| 10 | **Vistas y módulos de código** | [Cap. 4](Capitulo_4/README.md) · [Organización del código](#cómo-está-organizado-el-código) | Navegación + mapeo MVC → carpetas |
+| 7 | **Diagrama de arquitectura** | [Cap. 3 · §3](Capitulo_3/README.md#3-arquitectura) | Capas + componentes + despliegue |
+| 8 | **Modelo de datos** | [Cap. 3 · §4](Capitulo_3/README.md#4-modelo-de-datos) | Diagrama entidad-relación (ERD) |
+| 9 | **Vistas y módulos de código** | [Cap. 4](Capitulo_4/README.md) · [Organización del código](#cómo-está-organizado-el-código) | Navegación + mapeo MVC → carpetas |
 
 ---
 
@@ -51,7 +50,7 @@ El proceso de ingeniería se recorre en este orden. Cada fila enlaza al lugar ex
 | Capítulo | Disciplina | Contenido principal |
 |---|---|---|
 | [**Capítulo 1 — Introducción**](Capitulo_1/README.md) | Contexto y objetivos | Problema, estado del arte, propuesta, objetivos, stack |
-| [**Capítulo 2 — Requisitos**](Capitulo_2/README.md) | Análisis del problema | Dominio, requisitos, contexto, casos de uso, prototipos |
+| [**Capítulo 2 — Requisitos**](Capitulo_2/README.md) | Análisis del problema | Dominio, requisitos, contexto, casos de uso |
 | [**Capítulo 3 — Diseño**](Capitulo_3/README.md) | Análisis y diseño | MVC, colaboración, arquitectura, datos, clases de diseño |
 | [**Capítulo 4 — Implementación**](Capitulo_4/README.md) | Construcción | Interfaces, navegación, impresión, WhatsApp IA, código |
 | [**Capítulo 5 — Evaluación**](Capitulo_5/README.md) | Cierre | Hipótesis, objetivos, discusión, líneas futuras |

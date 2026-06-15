@@ -5,7 +5,7 @@
 > **Disciplina:** análisis del problema. **Punto de partida de todo el proceso.**
 > **Qué se muestra aquí:** del vocabulario del negocio (modelo del dominio) salen los requisitos; de los requisitos, los casos de uso; y de ahí, todo el diseño del Capítulo 3.
 
-**Recorrido del capítulo:** [1. Modelo del dominio](#1-modelo-del-dominio) → [2. Requisitos](#2-requisitos) → [3. Diagrama de contexto](#3-diagrama-de-contexto) → [4. Casos de uso](#4-casos-de-uso) → [5. Prototipos de vistas](#5-prototipos-de-vistas)
+**Recorrido del capítulo:** [1. Modelo del dominio](#1-modelo-del-dominio) → [2. Requisitos](#2-requisitos) → [3. Diagrama de contexto](#3-diagrama-de-contexto) → [4. Casos de uso](#4-casos-de-uso)
 
 ---
 
@@ -172,22 +172,6 @@ El ciclo de vida del `Pedido` se recorre **navegando por los casos de uso** que 
 El diagrama agrupa los casos de uso por canal (Web, POS interno, Panel de Administración y Canal WhatsApp «planificado») y refleja las relaciones `«include»` (p. ej. *Realizar Pedido* → *Imprimir Ticket*) y `«extend»` (p. ej. *Forzar Bloque Lleno* sobre *Crear Pedido Telefónico*).
 
 👉 **El detalle de cada caso de uso** (actor, precondiciones, postcondiciones, flujo principal y flujos alternativos) está en **[casos-de-uso.md](casos-de-uso.md)**. Los flujos interactivos por caso de uso están en [`docs/diagramas/capitulo2/`](../docs/diagramas/capitulo2) (`04-pedido-web.html`, `05-pedido-whatsapp.html`, `08-telefonico.html`, `09-ticket.html`, `10-bloques.html`).
-
----
-
-## 5. Prototipos de vistas
-
-Antes de diseñar e implementar, se prototiparon las pantallas clave de cada caso de uso. Estas son las vistas **ya implementadas** del sistema final:
-
-| Landing — punto de entrada | Carta — UC-01 |
-|:--:|:--:|
-| [![Landing](../docs/diagramas/capturas/landing.png)](../docs/diagramas/capturas/landing.png) | [![Carta](../docs/diagramas/capturas/carta.png)](../docs/diagramas/capturas/carta.png) |
-
-| Personalización — UC-02 | Carrito — UC-02 |
-|:--:|:--:|
-| [![Modal de personalización](../docs/diagramas/capturas/modal_personalizacion.png)](../docs/diagramas/capturas/modal_personalizacion.png) | [![Carrito](../docs/diagramas/capturas/carta_carrito.png)](../docs/diagramas/capturas/carta_carrito.png) |
-
-> El recorrido completo de todas las vistas (checkout en 3 pasos, TPV, paneles de empleado y administración, perfil del cliente y WhatsApp) está en el **[Capítulo 4 — Descripción de la solución](../Capitulo_4/README.md)**.
 
 ---
 
