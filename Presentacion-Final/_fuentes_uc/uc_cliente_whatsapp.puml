@@ -18,6 +18,6 @@ rectangle "Buena Burger System" {
   usecase "Imprimir Ticket\n(UC-11)" as U11
 }
 CW --> U7
-U8 ..> U7 : <<extend>>
+U7 ..> U8 : <<extend>>
 U7 ..> U11 : <<include>>
 @enduml
