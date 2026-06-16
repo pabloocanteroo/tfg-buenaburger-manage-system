@@ -1,3 +1,5 @@
+<a id="indice"></a>
+
 <div align="center">
 
 # Buena Burger Management System
@@ -10,6 +12,22 @@ Pablo Cantero · Universidad Europea del Atlántico · 2026
 </div>
 
 ---
+
+<div align="center">
+
+## Índice
+
+| | |
+|:--|:--|
+| **[Parte 1 — Problema y propuesta](#parte-1)** | **[Parte 2 — Modelo y casos de uso](#parte-2)** |
+| **[Parte 3 — Diseño: MVC y arquitectura](#parte-3)** | **[Parte 4 — Interfaces del sistema](#parte-4)** |
+| **[Parte 5 — Resultados y cierre](#parte-5)** | |
+
+</div>
+
+---
+
+<a id="parte-1"></a>
 
 # Parte 1 · Problema y propuesta
 
@@ -39,13 +57,11 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 4. **Sistema de bloques de producción** (5 min, 10 hamburguesas/bloque) — el núcleo diferencial.
 5. **Panel de administración** con estadísticas, carta, empleados y calendario.
 
-### Alcance
-
-- **Qué cubre** → gestión completa del pedido *take away* multicanal: web, WhatsApp con IA, TPV, bloques de producción, panel de administración e impresión automática.
-- **Qué está en producción** → el núcleo (TPV + bloques + impresión) ya en uso real en el local; web y WhatsApp desarrollados, pendientes de publicar por motivos legales (RGPD y VERI\*FACTU).
-- **Qué queda fuera** → *delivery*, servicio en mesa, modelo multi-restaurante, pruebas automatizadas y VERI\*FACTU (líneas futuras).
+<div align="right"><sub><a href="#indice">↑ Volver al índice</a></sub></div>
 
 ---
+
+<a id="parte-2"></a>
 
 # Parte 2 · Modelo y casos de uso
 
@@ -107,7 +123,11 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
+<div align="right"><sub><a href="#indice">↑ Volver al índice</a></sub></div>
+
 ---
+
+<a id="parte-3"></a>
 
 # Parte 3 · Diseño: MVC y arquitectura
 
@@ -127,7 +147,11 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
+<div align="right"><sub><a href="#indice">↑ Volver al índice</a></sub></div>
+
 ---
+
+<a id="parte-4"></a>
 
 # Parte 4 · Interfaces del sistema
 
@@ -139,9 +163,26 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
+<div align="right"><sub><a href="#indice">↑ Volver al índice</a></sub></div>
+
 ---
 
+<a id="parte-5"></a>
+
 # Parte 5 · Resultados y cierre
+
+## Alcance del trabajo
+
+| Dentro del alcance | Fuera del alcance |
+|---|---|
+| Web de pedidos con personalización, hora y pago | *Delivery* y servicio en mesa |
+| Asistente de WhatsApp con IA (Claude) | Modelo multi-restaurante (SaaS) |
+| TPV para pedidos telefónicos y presenciales | Suite de pruebas automatizadas |
+| **Bloques de producción** — el núcleo diferencial | Cumplimiento VERI\*FACTU |
+| Panel de administración y estadísticas | App móvil nativa e inventario |
+| Impresión automática de tickets | |
+
+> **Alcance de despliegue:** el núcleo (TPV + bloques + impresión) ya está **en producción real** en el local; el portal web y el asistente de WhatsApp están desarrollados y validados, **pendientes de publicar** por motivos legales (RGPD y VERI\*FACTU).
 
 ## Validación — una parte del sistema ya está en producción
 
@@ -178,6 +219,8 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 | Fidelización | Baja |
 | Integración con inventario | Baja |
 | Analítica y predicción de demanda | Baja |
+
+<div align="right"><sub><a href="#indice">↑ Volver al índice</a></sub></div>
 
 ---
 
