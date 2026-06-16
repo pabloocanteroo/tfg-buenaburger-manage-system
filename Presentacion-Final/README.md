@@ -21,8 +21,6 @@ Pablo Cantero · Universidad Europea del Atlántico · 2026
 
 ### [Parte 3 · Diseño: MVC y arquitectura](parte3.md)
 
-### [Parte 4 · Interfaces del sistema](parte4.md)
-
-### [Parte 5 · Resultados y cierre](parte5.md)
+### [Parte 4 · Cierre](parte4.md)
 
 </div>

@@ -1,19 +1,36 @@
 <div align="right"><a href="README.md">← Índice</a></div>
 
-# Parte 4 · Interfaces del sistema
+# Parte 4 · Cierre
 
-### Prototipos de interfaz — los tres perfiles de usuario
+## Conclusión
 
-<div align="center">
+- La solución **resuelve el problema** planteado: automatiza la recepción de pedidos, elimina los errores de las comandas a mano y controla la capacidad de cocina con los bloques de producción.
+- **Objetivos cumplidos**, con los bloques de producción como aportación diferencial.
 
-<img src="img/prototipos_3_perfiles.png" alt="Prototipos de interfaz de los tres perfiles">
+## Una parte del sistema ya está en producción
 
-</div>
+- El **núcleo** (TPV + bloques de producción + impresión) está **en uso real en el local**, cada noche de servicio.
+- La web pública y el asistente de WhatsApp con IA están **desarrollados y validados**, pendientes de publicar por **motivos legales** (RGPD y VERI\*FACTU).
+
+## Futuras líneas de actuación
+
+- **VERI\*FACTU (prioridad alta)** → numeración inalterable, hash encadenado, QR en el ticket y comunicación con la AEAT.
+
+| Línea | Prioridad |
+|---|:--:|
+| Adaptación VERI\*FACTU | Alta |
+| Notificaciones push / SMS | Media |
+| App móvil nativa | Media |
+| Fidelización | Baja |
+| Integración con inventario | Baja |
+| Analítica y predicción de demanda | Baja |
 
 ---
 
 <div align="center">
 
-[← Parte 3](parte3.md) · [Índice](README.md) · [Parte 5 · Resultados y cierre →](parte5.md)
+### Ha sido un placer. Muchas gracias al tribunal por su atención.
+
+[← Parte 3](parte3.md) · [Índice](README.md)
 
 </div>

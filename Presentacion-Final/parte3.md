@@ -22,6 +22,6 @@
 
 <div align="center">
 
-[← Parte 2](parte2.md) · [Índice](README.md) · [Parte 4 · Interfaces →](parte4.md)
+[← Parte 2](parte2.md) · [Índice](README.md) · [Parte 4 · Cierre →](parte4.md)
 
 </div>
