@@ -11,20 +11,25 @@ Pablo Cantero · Universidad Europea del Atlántico · 2026
 
 ---
 
-## 1. El problema
+# Parte 1 · Problema y propuesta
 
-Buena Burger es una hamburguesería artesanal *smash* de Oruña de Piélagos (Cantabria). Opera **solo en *take away*, viernes, sábado y domingo de 20:30 a 23:00**, atendiendo **50–80 pedidos por noche** con un equipo de 4 personas. La gestión es **manual**: una persona dedicada en exclusiva a teléfono y WhatsApp, y comandas escritas a mano.
+## El problema
 
-Cuatro problemas derivan de ese modelo:
+**El negocio:**
+
+- Hamburguesería artesanal *smash* en Oruña de Piélagos (Cantabria).
+- Solo *take away*: viernes, sábado y domingo, de 20:30 a 23:00.
+- 50–80 pedidos por noche, con un equipo de 4 personas.
+- Gestión **manual**: una persona dedicada a teléfono/WhatsApp + comandas a mano.
+
+**Problemas que genera:**
 
 - **Errores en la toma de pedidos** → producto mal preparado, pérdida de materia prima y de cliente.
-- **Coste laboral** de una persona dedicada solo a recibir pedidos (en una operación de 7,5 h/semana).
-- **Sin trazabilidad**: no hay historial digital, ni datos para decidir.
-- **Cuellos de botella en producción**: sin control de capacidad por franjas, los picos saturan la cocina y rompen la puntualidad —el valor central del negocio.
+- **Coste laboral** de una persona dedicada solo a recibir pedidos.
+- **Sin trazabilidad** → no hay historial digital ni datos para decidir.
+- **Cuellos de botella en producción** → sin control de capacidad por franjas, los picos saturan la cocina y rompen la puntualidad.
 
----
-
-## 2. Propuesta de solución
+## Propuesta de solución
 
 Una aplicación web de **gestión integral de pedidos multicanal** con cinco piezas:
 
@@ -34,9 +39,17 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 4. **Sistema de bloques de producción** (5 min, 10 hamburguesas/bloque) — el núcleo diferencial.
 5. **Panel de administración** con estadísticas, carta, empleados y calendario.
 
+### Alcance
+
+- **Qué cubre** → gestión completa del pedido *take away* multicanal: web, WhatsApp con IA, TPV, bloques de producción, panel de administración e impresión automática.
+- **Qué está en producción** → el núcleo (TPV + bloques + impresión) ya en uso real en el local; web y WhatsApp desarrollados, pendientes de publicar por motivos legales (RGPD y VERI\*FACTU).
+- **Qué queda fuera** → *delivery*, servicio en mesa, modelo multi-restaurante, pruebas automatizadas y VERI\*FACTU (líneas futuras).
+
 ---
 
-## 3. Modelo del dominio
+# Parte 2 · Modelo y casos de uso
+
+## Modelo del dominio
 
 <div align="center">
 
@@ -44,9 +57,7 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
----
-
-## 4. Diagrama de contexto
+## Diagrama de contexto
 
 <div align="center">
 
@@ -54,9 +65,7 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
----
-
-## 5. Casos de uso por actor
+## Casos de uso por actor
 
 ### ClienteRegistrado
 
@@ -100,7 +109,9 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 ---
 
-## 6. Modelo–Vista–Controlador
+# Parte 3 · Diseño: MVC y arquitectura
+
+## Modelo–Vista–Controlador
 
 <div align="center">
 
@@ -108,9 +119,7 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
----
-
-## 7. Arquitectura
+## Arquitectura
 
 <div align="center">
 
@@ -120,7 +129,7 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 ---
 
-## 8. Interfaces del sistema
+# Parte 4 · Interfaces del sistema
 
 ### Prototipos de interfaz — los tres perfiles de usuario
 
@@ -130,41 +139,36 @@ Una aplicación web de **gestión integral de pedidos multicanal** con cinco pie
 
 </div>
 
-### Diagrama de navegación
-
-<div align="center">
-
-<img src="img/navegacion.png" alt="Diagrama de navegación">
-
-</div>
-
 ---
 
-## 9. Validación — una parte del sistema ya está en producción
+# Parte 5 · Resultados y cierre
 
-La propuesta de solución **se valida en la práctica**: la recepción de pedidos se automatiza vía web y WhatsApp con IA, los errores de las comandas a mano desaparecen (cada pedido queda registrado y validado por el servidor), el sistema de bloques controla la capacidad de cocina en tiempo real, y el canal telefónico se mantiene guiado por el TPV.
+## Validación — una parte del sistema ya está en producción
 
-La validación se apoyó en dos vías complementarias:
+**La propuesta de solución se valida en la práctica:**
 
-1. **Sprint Reviews con el propietario** de Buena Burger como *Product Owner*, verificando sobre datos reales los flujos de los casos de uso de mayor prioridad en cada incremento.
-2. **Despliegue real de `buenaburger-pos-v1`** —el núcleo de TPV y lógica de bloques de producción—, que **lleva en uso en el local gestionando los pedidos de cada noche de servicio**. Es la evidencia de validación más sólida: ha permitido detectar y corregir, bajo carga y uso reales, comportamientos no previstos en el análisis inicial.
+- Recepción de pedidos **automatizada** vía web y WhatsApp con IA.
+- **Cero errores** de comandas a mano: cada pedido queda registrado y validado por el servidor.
+- Los **bloques** controlan la capacidad de cocina en tiempo real.
+- El canal **telefónico** se mantiene, pero guiado por el TPV.
 
-Esta validación en producción es la respuesta a la ausencia de una suite de pruebas automatizadas: el núcleo crítico se ha probado en condiciones reales de servicio, no solo en entorno de desarrollo.
+**Cómo se validó — dos vías:**
 
----
+- **Sprint Reviews** con el propietario (*Product Owner*), sobre datos reales, en cada incremento.
+- **Despliegue real de `buenaburger-pos-v1`** (núcleo TPV + bloques): **en uso en el local cada noche de servicio**. Es la evidencia más sólida: ha permitido detectar y corregir, bajo carga real, comportamientos no previstos en el análisis.
 
-## 10. Discusión de resultados
+> La validación en producción es la respuesta a la ausencia de una suite de pruebas automatizadas: el núcleo crítico se ha probado en condiciones reales, no solo en desarrollo.
 
-- **Bloques de producción como diferencial:** formaliza matemáticamente lo que antes era intuición del empleado. Generación automática por cron (60 días) en lugar de a demanda → mejor respuesta y menos contención de escritura.
-- **Frontend sin framework:** cero dependencias y carga inmediata, a cambio de gestionar el estado manualmente. Sostenible para un equipo sin experiencia en frameworks.
-- **NoSQL para pedidos personalizables:** el esquema documental simplifica las líneas con personalizaciones variables; coste: agregaciones complejas para estadísticas.
-- **Encapsulación del proveedor de IA:** toda la lógica en `ia.service.js`; el proveedor puede sustituirse sin tocar la arquitectura.
+## Discusión de resultados
 
----
+- **Bloques de producción (el diferencial)** → formalizan matemáticamente lo que antes era intuición del empleado; generación automática por cron (60 días) → mejor respuesta y menos contención.
+- **Frontend sin framework** → cero dependencias y carga inmediata, a cambio de gestionar el estado a mano. Sostenible para el equipo.
+- **NoSQL para pedidos personalizables** → simplifica las líneas con personalizaciones variables; coste: agregaciones complejas para estadísticas.
+- **Encapsulación de la IA** → toda la lógica en `ia.service.js`; el proveedor se puede sustituir sin tocar la arquitectura.
 
-## 11. Futuras líneas de actuación
+## Futuras líneas de actuación
 
-**Adaptación al reglamento VERI\*FACTU (prioridad alta).** Obligatorio para software de facturación (RD 1007/2023, Orden HAC/1177/2024; plazos prorrogados a 2027). Requiere numeración inalterable, hash SHA-256 encadenado, imposibilidad de borrado, QR en cada ticket y comunicación con la AEAT.
+- **VERI\*FACTU (prioridad alta)** → obligatorio para software de facturación (RD 1007/2023; plazos a 2027). Requiere numeración inalterable, hash SHA-256 encadenado, imposibilidad de borrado, QR en cada ticket y comunicación con la AEAT.
 
 | Línea | Prioridad |
 |---|:--:|
