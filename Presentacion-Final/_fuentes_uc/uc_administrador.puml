@@ -1,0 +1,33 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F5F5F5
+  BorderColor #146B8C
+}
+skinparam actor {
+  BorderColor #8B1E3F
+}
+skinparam ArrowColor #555555
+actor "Empleado" as EM
+actor "Administrador" as AD
+AD --|> EM
+rectangle "Buena Burger System" {
+  usecase "Gestionar Carta\n(UC-12)" as U12
+  usecase "Gestionar Extras\n(UC-13)" as U13
+  usecase "Configurar Bloques\n(UC-14)" as U14
+  usecase "Ver Estadísticas\n(UC-15)" as U15
+  usecase "Gestionar Empleados\n(UC-16)" as U16
+  usecase "Cerrar Día de Operación\n(UC-17)" as U17
+  usecase "Gestionar Diferencia Económica\n(UC-18)" as U18
+}
+AD --> U12
+AD --> U13
+AD --> U14
+AD --> U15
+AD --> U16
+AD --> U17
+AD --> U18
+@enduml

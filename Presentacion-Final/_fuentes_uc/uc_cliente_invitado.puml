@@ -1,0 +1,23 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F5F5F5
+  BorderColor #146B8C
+}
+skinparam actor {
+  BorderColor #8B1E3F
+}
+skinparam ArrowColor #555555
+actor "ClienteInvitado" as CI
+rectangle "Buena Burger System" {
+  usecase "Consultar Carta\n(UC-01)" as U1
+  usecase "Realizar Pedido Web\n(UC-02)" as U2
+  usecase "Imprimir Ticket\n(UC-11)" as U11
+}
+CI --> U1
+CI --> U2
+U2 ..> U11 : <<include>>
+@enduml
